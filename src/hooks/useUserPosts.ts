@@ -2,6 +2,7 @@ import {useState, useCallback} from 'react';
 import type {Post} from '../types';
 import {getUserPosts} from '../api/posts';
 import {PAGINATION_LIMIT} from '../config';
+import {logError} from '../utils/log';
 
 export function useUserPosts(username: string) {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -22,7 +23,9 @@ export function useUserPosts(username: string) {
         setPosts(prev => (reset ? data : [...prev, ...data]));
         setPage(p + 1);
         setHasMore(data.length === PAGINATION_LIMIT);
-      } catch {}
+      } catch (e) {
+        logError('useUserPosts:fetch', e);
+      }
       setLoading(false);
     },
     [username, page, hasMore, loading],

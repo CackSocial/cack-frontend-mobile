@@ -12,6 +12,7 @@ import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import {useAuthStore} from '../../stores/authStore';
 import {useColors, fonts} from '../../theme';
+import {logError} from '../../utils/log';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {AuthStackParamList} from '../../navigation/types';
 
@@ -36,6 +37,14 @@ export default function RegisterScreen({navigation}: Props) {
       setLocalError('Username and password are required');
       return;
     }
+    if (username.trim().length < 3 || username.trim().length > 50) {
+      setLocalError('Username must be between 3 and 50 characters');
+      return;
+    }
+    if (!/^[a-zA-Z0-9]+$/.test(username.trim())) {
+      setLocalError('Username must contain only letters and numbers');
+      return;
+    }
     if (password.length < 6) {
       setLocalError('Password must be at least 6 characters');
       return;
@@ -47,7 +56,9 @@ export default function RegisterScreen({navigation}: Props) {
     setLoading(true);
     try {
       await register(username.trim(), password, displayName.trim() || undefined);
-    } catch {}
+    } catch (e) {
+      logError('RegisterScreen:register', e);
+    }
     setLoading(false);
   };
 

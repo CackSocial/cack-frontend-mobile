@@ -6,6 +6,7 @@ import {getFollowers} from '../../api/users';
 import {followUser, unfollowUser} from '../../api/follows';
 import {useColors} from '../../theme';
 import {PAGINATION_LIMIT} from '../../config';
+import {logError} from '../../utils/log';
 import type {UserProfile} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ProfileStackParamList} from '../../navigation/types';
@@ -34,7 +35,9 @@ export default function FollowersScreen({route, navigation}: Props) {
         setUsers(prev => (reset ? data : [...prev, ...data]));
         setPage(p + 1);
         setHasMore(data.length === PAGINATION_LIMIT);
-      } catch {}
+      } catch (e) {
+        logError('FollowersScreen:fetch', e);
+      }
       setLoading(false);
     },
     [username, page, hasMore, loading],
@@ -56,7 +59,9 @@ export default function FollowersScreen({route, navigation}: Props) {
           u.id === user.id ? {...u, is_following: !u.is_following} : u,
         ),
       );
-    } catch {}
+    } catch (e) {
+      logError('FollowersScreen:followToggle', e);
+    }
   };
 
   return (

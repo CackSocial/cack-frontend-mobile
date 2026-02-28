@@ -203,7 +203,7 @@ export default function ProfileScreen({route, navigation}: Props) {
                     {backgroundColor: c.bgTertiary},
                   ]}
                   onPress={() =>
-                    (navigation as any).navigate('MessagesTab', {
+                    navigation.getParent()?.navigate('MessagesTab', {
                       screen: 'Conversation',
                       params: {
                         username: profile.username,
@@ -271,14 +271,14 @@ export default function ProfileScreen({route, navigation}: Props) {
       <PostCard
         post={item}
         onPress={() =>
-          (navigation as any).navigate('PostDetail', {postId: item.id})
+          navigation.navigate('PostDetail', {postId: item.id})
         }
         onAuthorPress={() =>
           navigation.push('Profile', {username: item.author.username})
         }
         onLike={() => handleToggleLike(item)}
         onComment={() =>
-          (navigation as any).navigate('PostDetail', {postId: item.id})
+          navigation.navigate('PostDetail', {postId: item.id})
         }
       />
     ),

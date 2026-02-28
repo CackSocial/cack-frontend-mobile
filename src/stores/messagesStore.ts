@@ -3,6 +3,7 @@ import type {ConversationListItem, Message} from '../types';
 import * as api from '../api';
 import {WS_URL, PAGINATION_LIMIT} from '../config';
 import {useAuthStore} from './authStore';
+import {logError} from '../utils/log';
 
 interface MessagesState {
   conversations: ConversationListItem[];
@@ -45,7 +46,9 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
         if (data.type === 'message') {
           get().receiveMessage(data as Message);
         }
-      } catch {}
+      } catch (e) {
+        logError('ws:onmessage', e);
+      }
     };
 
     ws.onclose = () => {
@@ -137,7 +140,8 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
     try {
       const res = await api.getConversations(1, PAGINATION_LIMIT);
       set({conversations: res.data ?? [], isLoading: false});
-    } catch {
+    } catch (e) {
+      logError('fetchConversations', e);
       set({isLoading: false});
     }
   },
@@ -156,7 +160,8 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
         },
       }));
       return msgs;
-    } catch {
+    } catch (e) {
+      logError('fetchMessages', e);
       return [];
     }
   },

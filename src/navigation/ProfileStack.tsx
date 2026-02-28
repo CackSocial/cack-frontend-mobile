@@ -7,6 +7,7 @@ import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import FollowersScreen from '../screens/profile/FollowersScreen';
 import FollowingScreen from '../screens/profile/FollowingScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
+import PostDetailScreen from '../screens/post/PostDetailScreen';
 import {useColors, fonts} from '../theme';
 import type {ProfileStackParamList} from './types';
 
@@ -60,6 +61,11 @@ export default function ProfileStack() {
         name="Settings"
         component={SettingsScreen}
         options={{title: 'Settings'}}
+      />
+      <Stack.Screen
+        name="PostDetail"
+        component={PostDetailScreen}
+        options={{title: 'Post'}}
       />
     </Stack.Navigator>
   );

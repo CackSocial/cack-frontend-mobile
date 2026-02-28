@@ -2,6 +2,7 @@ import {create} from 'zustand';
 import type {Post} from '../types';
 import * as api from '../api';
 import {PAGINATION_LIMIT} from '../config';
+import {logError} from '../utils/log';
 
 /** Cached post metadata kept in sync across all screens */
 interface CachedPostState {
@@ -58,7 +59,8 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         isLoading: false,
         postCache: newCache,
       });
-    } catch {
+    } catch (e) {
+      logError('fetchTimeline', e);
       set({isLoading: false});
     }
   },
@@ -102,7 +104,8 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     }));
 
     const apiCall = newLiked ? api.likePost : api.unlikePost;
-    apiCall(id).catch(() => {
+    apiCall(id).catch(e => {
+      logError('toggleLike', e);
       set(s => ({
         timeline: s.timeline.map(p =>
           p.id !== id ? p : {...p, is_liked: wasLiked, like_count: wasCount},

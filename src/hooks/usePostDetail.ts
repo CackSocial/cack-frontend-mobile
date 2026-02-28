@@ -3,6 +3,7 @@ import type {Post, Comment} from '../types';
 import {getPost} from '../api/posts';
 import {getComments} from '../api/comments';
 import {PAGINATION_LIMIT} from '../config';
+import {logError} from '../utils/log';
 
 export function usePostDetail(postId: string) {
   const [post, setPost] = useState<Post | null>(null);
@@ -16,7 +17,9 @@ export function usePostDetail(postId: string) {
     try {
       const data = await getPost(postId);
       setPost(data);
-    } catch {}
+    } catch (e) {
+      logError('usePostDetail:fetchPost', e);
+    }
     setLoading(false);
   }, [postId]);
 
@@ -31,7 +34,9 @@ export function usePostDetail(postId: string) {
         setComments(prev => (reset ? data : [...prev, ...data]));
         setCommentsPage(p + 1);
         setCommentsHasMore(data.length === PAGINATION_LIMIT);
-      } catch {}
+      } catch (e) {
+        logError('usePostDetail:fetchComments', e);
+      }
     },
     [postId, commentsPage, commentsHasMore],
   );

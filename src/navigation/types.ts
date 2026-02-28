@@ -10,12 +10,19 @@ export type HomeStackParamList = {
   PostDetail: {postId: string};
   Profile: {username: string};
   CreatePost: undefined;
+  Followers: {username: string};
+  Following: {username: string};
+  EditProfile: undefined;
 };
 
 export type ExploreStackParamList = {
   Explore: undefined;
   TagPosts: {tagName: string};
   Profile: {username: string};
+  PostDetail: {postId: string};
+  Followers: {username: string};
+  Following: {username: string};
+  EditProfile: undefined;
 };
 
 export type MessagesStackParamList = {
@@ -30,6 +37,7 @@ export type ProfileStackParamList = {
   Followers: {username: string};
   Following: {username: string};
   Settings: undefined;
+  PostDetail: {postId: string};
 };
 
 export type MainTabParamList = {

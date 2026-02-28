@@ -4,6 +4,9 @@ import HomeScreen from '../screens/home/HomeScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
 import CreatePostScreen from '../screens/post/CreatePostScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import FollowersScreen from '../screens/profile/FollowersScreen';
+import FollowingScreen from '../screens/profile/FollowingScreen';
+import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import {useColors, fonts} from '../theme';
 import type {HomeStackParamList} from './types';
 
@@ -39,6 +42,21 @@ export default function HomeStack() {
         name="Profile"
         component={ProfileScreen}
         options={({route}) => ({title: `@${route.params.username}`})}
+      />
+      <Stack.Screen
+        name="Followers"
+        component={FollowersScreen}
+        options={{title: 'Followers'}}
+      />
+      <Stack.Screen
+        name="Following"
+        component={FollowingScreen}
+        options={{title: 'Following'}}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{title: 'Edit Profile'}}
       />
     </Stack.Navigator>
   );

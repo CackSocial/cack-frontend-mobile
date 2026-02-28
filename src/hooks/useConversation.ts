@@ -2,6 +2,7 @@ import {useState, useCallback} from 'react';
 import type {Message} from '../types';
 import {getMessages} from '../api/messages';
 import {PAGINATION_LIMIT} from '../config';
+import {logError} from '../utils/log';
 
 export function useConversation(username: string) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -24,7 +25,9 @@ export function useConversation(username: string) {
         );
         setPage(p + 1);
         setHasMore(data.length === PAGINATION_LIMIT);
-      } catch {}
+      } catch (e) {
+        logError('useConversation:fetch', e);
+      }
       setLoading(false);
     },
     [username, page, hasMore, loading],

@@ -8,6 +8,7 @@ import MessagesStack from './MessagesStack';
 import ProfileStack from './ProfileStack';
 import {useMessagesStore} from '../stores/messagesStore';
 import {useColors, fonts} from '../theme';
+import type {ConversationListItem} from '../types';
 import type {MainTabParamList} from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -21,7 +22,11 @@ const TAB_ROOT: Record<string, string> = {
 
 export default function MainTabs() {
   const c = useColors();
-  const getUnreadTotal = useMessagesStore(s => s.getUnreadTotal);
+  const conversations = useMessagesStore(s => s.conversations);
+  const unreadTotal = useMemo(
+    () => conversations.reduce((sum: number, c: ConversationListItem) => sum + c.unread_count, 0),
+    [conversations],
+  );
 
   const baseTabBarStyle = useMemo(
     () => ({
@@ -112,7 +117,7 @@ export default function MainTabs() {
             <Icon name="message-outline" size={size} color={color} />
           ),
           tabBarBadge:
-            getUnreadTotal() > 0 ? getUnreadTotal() : undefined,
+            unreadTotal > 0 ? unreadTotal : undefined,
           tabBarStyle: getTabBarStyle(route, 'MessagesTab'),
         })}
       />

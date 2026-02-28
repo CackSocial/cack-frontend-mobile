@@ -13,6 +13,7 @@ import {useSyncLikes} from '../../hooks/useSyncLikes';
 import {usePostsStore} from '../../stores/postsStore';
 import {useColors} from '../../theme';
 import {PAGINATION_LIMIT} from '../../config';
+import {logError} from '../../utils/log';
 import type {Post} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ExploreStackParamList} from '../../navigation/types';
@@ -45,7 +46,9 @@ export default function TagPostsScreen({route, navigation}: Props) {
         setPosts(prev => (reset ? data : [...prev, ...data]));
         setPage(p + 1);
         setHasMore(data.length === PAGINATION_LIMIT);
-      } catch {}
+      } catch (e) {
+        logError('TagPostsScreen:fetch', e);
+      }
       setLoading(false);
     },
     [tagName, page, hasMore, loading],
@@ -67,7 +70,8 @@ export default function TagPostsScreen({route, navigation}: Props) {
     cachePost(post.id, {is_liked: newLiked, like_count: newCount});
     try {
       was ? await unlikePost(post.id) : await likePost(post.id);
-    } catch {
+    } catch (e) {
+      logError('TagPostsScreen:toggleLike', e);
       setPosts(prev =>
         prev.map(p =>
           p.id === post.id ? {...p, is_liked: was, like_count: post.like_count} : p,
@@ -86,14 +90,14 @@ export default function TagPostsScreen({route, navigation}: Props) {
           <PostCard
             post={item}
             onPress={() =>
-              (navigation as any).navigate('PostDetail', {postId: item.id})
+              navigation.navigate('PostDetail', {postId: item.id})
             }
             onAuthorPress={() =>
               navigation.navigate('Profile', {username: item.author.username})
             }
             onLike={() => toggleLike(item)}
             onComment={() =>
-              (navigation as any).navigate('PostDetail', {postId: item.id})
+              navigation.navigate('PostDetail', {postId: item.id})
             }
           />
         )}

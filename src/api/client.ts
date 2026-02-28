@@ -43,7 +43,16 @@ client.interceptors.response.use(
   },
   error => {
     if (error.response?.status === 401) {
-      // Will be handled by auth store listener
+      // Auto-logout on expired/invalid token (skip auth endpoints)
+      const url = error.config?.url || '';
+      if (!url.startsWith('/auth/')) {
+        // Lazy import to avoid circular dependency
+        const {useAuthStore} = require('../stores/authStore');
+        const {isAuthenticated, logout} = useAuthStore.getState();
+        if (isAuthenticated) {
+          logout();
+        }
+      }
     }
     const msg =
       error.response?.data?.message ||

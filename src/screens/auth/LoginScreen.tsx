@@ -12,6 +12,7 @@ import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import {useAuthStore} from '../../stores/authStore';
 import {useColors, fonts} from '../../theme';
+import {logError} from '../../utils/log';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {AuthStackParamList} from '../../navigation/types';
 
@@ -32,7 +33,9 @@ export default function LoginScreen({navigation}: Props) {
     setLoading(true);
     try {
       await login(username.trim(), password);
-    } catch {}
+    } catch (e) {
+      logError('LoginScreen:login', e);
+    }
     setLoading(false);
   };
 
