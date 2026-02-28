@@ -3,9 +3,11 @@ import type {Post} from '../types';
 import * as api from '../api';
 import {PAGINATION_LIMIT} from '../config';
 
-interface LikeState {
+/** Cached post metadata kept in sync across all screens */
+interface CachedPostState {
   is_liked: boolean;
   like_count: number;
+  comment_count: number;
 }
 
 interface PostsState {
@@ -13,13 +15,13 @@ interface PostsState {
   timelinePage: number;
   timelineHasMore: boolean;
   isLoading: boolean;
-  likeCache: Record<string, LikeState>;
+  postCache: Record<string, CachedPostState>;
   fetchTimeline(reset?: boolean): Promise<void>;
   prependPost(post: Post): void;
   removePost(id: string): void;
   toggleLike(id: string): void;
-  cacheLike(id: string, is_liked: boolean, like_count: number): void;
-  applyLikeCache(posts: Post[]): Post[];
+  cachePost(id: string, meta: Partial<CachedPostState>): void;
+  applyPostCache(posts: Post[]): Post[];
   updatePost(id: string, updates: Partial<Post>): void;
 }
 
@@ -28,7 +30,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
   timelinePage: 1,
   timelineHasMore: true,
   isLoading: false,
-  likeCache: {},
+  postCache: {},
 
   async fetchTimeline(reset = false) {
     const state = get();
@@ -41,17 +43,20 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     try {
       const res = await api.getTimeline(page, PAGINATION_LIMIT);
       const posts = res.data ?? [];
-      // Populate likeCache from fetched posts
-      const newCache = {...get().likeCache};
+      const newCache = {...get().postCache};
       posts.forEach(p => {
-        newCache[p.id] = {is_liked: p.is_liked, like_count: p.like_count};
+        newCache[p.id] = {
+          is_liked: p.is_liked,
+          like_count: p.like_count,
+          comment_count: p.comment_count,
+        };
       });
       set({
         timeline: reset ? posts : [...state.timeline, ...posts],
         timelinePage: page + 1,
         timelineHasMore: posts.length === PAGINATION_LIMIT,
         isLoading: false,
-        likeCache: newCache,
+        postCache: newCache,
       });
     } catch {
       set({isLoading: false});
@@ -61,9 +66,13 @@ export const usePostsStore = create<PostsState>((set, get) => ({
   prependPost(post: Post) {
     set(s => ({
       timeline: [post, ...s.timeline],
-      likeCache: {
-        ...s.likeCache,
-        [post.id]: {is_liked: post.is_liked, like_count: post.like_count},
+      postCache: {
+        ...s.postCache,
+        [post.id]: {
+          is_liked: post.is_liked,
+          like_count: post.like_count,
+          comment_count: post.comment_count,
+        },
       },
     }));
   },
@@ -74,51 +83,71 @@ export const usePostsStore = create<PostsState>((set, get) => ({
 
   toggleLike(id: string) {
     const state = get();
-    const cached = state.likeCache[id];
-    const wasLiked = cached ? cached.is_liked : state.timeline.find(p => p.id === id)?.is_liked ?? false;
-    const wasCount = cached ? cached.like_count : state.timeline.find(p => p.id === id)?.like_count ?? 0;
+    const cached = state.postCache[id];
+    const post = state.timeline.find(p => p.id === id);
+    const wasLiked = cached?.is_liked ?? post?.is_liked ?? false;
+    const wasCount = cached?.like_count ?? post?.like_count ?? 0;
+    const commentCount = cached?.comment_count ?? post?.comment_count ?? 0;
     const newLiked = !wasLiked;
     const newCount = wasCount + (newLiked ? 1 : -1);
 
-    // Update timeline + cache
     set(s => ({
       timeline: s.timeline.map(p =>
         p.id !== id ? p : {...p, is_liked: newLiked, like_count: newCount},
       ),
-      likeCache: {...s.likeCache, [id]: {is_liked: newLiked, like_count: newCount}},
+      postCache: {
+        ...s.postCache,
+        [id]: {is_liked: newLiked, like_count: newCount, comment_count: commentCount},
+      },
     }));
 
-    // Fire-and-forget API call; revert on error
     const apiCall = newLiked ? api.likePost : api.unlikePost;
     apiCall(id).catch(() => {
       set(s => ({
         timeline: s.timeline.map(p =>
           p.id !== id ? p : {...p, is_liked: wasLiked, like_count: wasCount},
         ),
-        likeCache: {...s.likeCache, [id]: {is_liked: wasLiked, like_count: wasCount}},
+        postCache: {
+          ...s.postCache,
+          [id]: {is_liked: wasLiked, like_count: wasCount, comment_count: commentCount},
+        },
       }));
     });
   },
 
-  // Write like state to global cache + update timeline if present
-  cacheLike(id: string, is_liked: boolean, like_count: number) {
-    set(s => ({
-      timeline: s.timeline.map(p =>
-        p.id !== id ? p : {...p, is_liked, like_count},
-      ),
-      likeCache: {...s.likeCache, [id]: {is_liked, like_count}},
-    }));
+  // Write post metadata to global cache + update timeline if present
+  cachePost(id: string, meta: Partial<CachedPostState>) {
+    set(s => {
+      const prev = s.postCache[id];
+      const post = s.timeline.find(p => p.id === id);
+      const merged: CachedPostState = {
+        is_liked: meta.is_liked ?? prev?.is_liked ?? post?.is_liked ?? false,
+        like_count: meta.like_count ?? prev?.like_count ?? post?.like_count ?? 0,
+        comment_count: meta.comment_count ?? prev?.comment_count ?? post?.comment_count ?? 0,
+      };
+      return {
+        timeline: s.timeline.map(p =>
+          p.id !== id ? p : {...p, ...merged},
+        ),
+        postCache: {...s.postCache, [id]: merged},
+      };
+    });
   },
 
-  // Apply cached like states to an array of posts
-  applyLikeCache(posts: Post[]): Post[] {
-    const cache = get().likeCache;
+  // Apply cached post states to an array of posts
+  applyPostCache(posts: Post[]): Post[] {
+    const cache = get().postCache;
     let changed = false;
     const result = posts.map(p => {
       const c = cache[p.id];
-      if (c && (c.is_liked !== p.is_liked || c.like_count !== p.like_count)) {
+      if (!c) return p;
+      if (
+        c.is_liked !== p.is_liked ||
+        c.like_count !== p.like_count ||
+        c.comment_count !== p.comment_count
+      ) {
         changed = true;
-        return {...p, ...c};
+        return {...p, is_liked: c.is_liked, like_count: c.like_count, comment_count: c.comment_count};
       }
       return p;
     });

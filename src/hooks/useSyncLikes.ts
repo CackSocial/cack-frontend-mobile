@@ -4,7 +4,7 @@ import {usePostsStore} from '../stores/postsStore';
 import type {Post} from '../types';
 
 /**
- * Syncs like states from the global likeCache into local posts when the screen gains focus.
+ * Syncs cached post state (likes + comment counts) into local posts on focus.
  * Use in any screen that maintains its own local posts array.
  */
 export function useSyncLikes(
@@ -12,14 +12,14 @@ export function useSyncLikes(
 ) {
   useFocusEffect(
     useCallback(() => {
-      const apply = usePostsStore.getState().applyLikeCache;
+      const apply = usePostsStore.getState().applyPostCache;
       setPosts(prev => apply(prev));
     }, [setPosts]),
   );
 }
 
 /**
- * Syncs like state for a single post from the global likeCache on focus.
+ * Syncs cached post state for a single post on focus.
  * Use in PostDetailScreen or similar single-post views.
  */
 export function useSyncPostLike(
@@ -27,16 +27,22 @@ export function useSyncPostLike(
 ) {
   useFocusEffect(
     useCallback(() => {
-      const cache = usePostsStore.getState().likeCache;
+      const cache = usePostsStore.getState().postCache;
       setPost(prev => {
         if (!prev) return prev;
         const cached = cache[prev.id];
         if (
           cached &&
           (cached.is_liked !== prev.is_liked ||
-            cached.like_count !== prev.like_count)
+            cached.like_count !== prev.like_count ||
+            cached.comment_count !== prev.comment_count)
         ) {
-          return {...prev, ...cached};
+          return {
+            ...prev,
+            is_liked: cached.is_liked,
+            like_count: cached.like_count,
+            comment_count: cached.comment_count,
+          };
         }
         return prev;
       });

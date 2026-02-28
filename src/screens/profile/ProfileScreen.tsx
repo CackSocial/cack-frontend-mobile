@@ -33,7 +33,7 @@ export default function ProfileScreen({route, navigation}: Props) {
   const paramUsername = route.params?.username;
   const c = useColors();
   const currentUser = useAuthStore(s => s.user);
-  const cacheLike = usePostsStore(s => s.cacheLike);
+  const cachePost = usePostsStore(s => s.cachePost);
 
   const username = paramUsername || currentUser?.username || '';
   const isOwnProfile = !paramUsername || paramUsername === currentUser?.username;
@@ -103,7 +103,7 @@ export default function ProfileScreen({route, navigation}: Props) {
         ),
       );
       // Update global cache + timeline
-      cacheLike(post.id, newLiked, newCount);
+      cachePost(post.id, {is_liked: newLiked, like_count: newCount});
       try {
         was ? await unlikePost(post.id) : await likePost(post.id);
       } catch {
@@ -115,10 +115,10 @@ export default function ProfileScreen({route, navigation}: Props) {
               : p,
           ),
         );
-        cacheLike(post.id, was, post.like_count);
+        cachePost(post.id, {is_liked: was, like_count: post.like_count});
       }
     },
-    [setPosts, cacheLike],
+    [setPosts, cachePost],
   );
 
   const renderHeader = useCallback(() => {

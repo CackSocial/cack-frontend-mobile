@@ -31,7 +31,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
   const {postId} = route.params;
   const c = useColors();
   const currentUser = useAuthStore(s => s.user);
-  const cacheLike = usePostsStore(s => s.cacheLike);
+  const cachePost = usePostsStore(s => s.cachePost);
 
   const {
     post,
@@ -47,7 +47,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
   const [commentText, setCommentText] = useState('');
   const [sending, setSending] = useState(false);
 
-  // Sync like state from global cache on focus
+  // Sync post state from global cache on focus
   useSyncPostLike(setPost);
 
   useEffect(() => {
@@ -61,14 +61,14 @@ export default function PostDetailScreen({route, navigation}: Props) {
     const newLiked = !was;
     const newCount = post.like_count + (was ? -1 : 1);
     setPost({...post, is_liked: newLiked, like_count: newCount});
-    cacheLike(post.id, newLiked, newCount);
+    cachePost(post.id, {is_liked: newLiked, like_count: newCount});
     try {
       was ? await unlikePost(post.id) : await likePost(post.id);
     } catch {
       setPost({...post, is_liked: was, like_count: post.like_count});
-      cacheLike(post.id, was, post.like_count);
+      cachePost(post.id, {is_liked: was, like_count: post.like_count});
     }
-  }, [post, setPost, cacheLike]);
+  }, [post, setPost, cachePost]);
 
   const handleSendComment = async () => {
     if (!commentText.trim() || sending) return;
@@ -77,6 +77,10 @@ export default function PostDetailScreen({route, navigation}: Props) {
       const newComment = await createComment(postId, commentText.trim());
       addComment(newComment);
       setCommentText('');
+      // Update global cache so other screens see the new count
+      if (post) {
+        cachePost(postId, {comment_count: post.comment_count + 1});
+      }
     } catch (e: any) {
       Alert.alert('Error', e.message);
     }

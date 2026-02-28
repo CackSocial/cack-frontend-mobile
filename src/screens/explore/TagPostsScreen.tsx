@@ -22,7 +22,7 @@ type Props = NativeStackScreenProps<ExploreStackParamList, 'TagPosts'>;
 export default function TagPostsScreen({route, navigation}: Props) {
   const {tagName} = route.params;
   const c = useColors();
-  const cacheLike = usePostsStore(s => s.cacheLike);
+  const cachePost = usePostsStore(s => s.cachePost);
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(1);
@@ -64,7 +64,7 @@ export default function TagPostsScreen({route, navigation}: Props) {
         p.id === post.id ? {...p, is_liked: newLiked, like_count: newCount} : p,
       ),
     );
-    cacheLike(post.id, newLiked, newCount);
+    cachePost(post.id, {is_liked: newLiked, like_count: newCount});
     try {
       was ? await unlikePost(post.id) : await likePost(post.id);
     } catch {
@@ -73,9 +73,9 @@ export default function TagPostsScreen({route, navigation}: Props) {
           p.id === post.id ? {...p, is_liked: was, like_count: post.like_count} : p,
         ),
       );
-      cacheLike(post.id, was, post.like_count);
+      cachePost(post.id, {is_liked: was, like_count: post.like_count});
     }
-  }, [cacheLike]);
+  }, [cachePost]);
 
   return (
     <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
