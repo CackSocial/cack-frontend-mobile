@@ -5,9 +5,8 @@ import HomeStack from './HomeStack';
 import ExploreStack from './ExploreStack';
 import MessagesStack from './MessagesStack';
 import ProfileStack from './ProfileStack';
-import Badge from '../components/common/Badge';
 import {useMessagesStore} from '../stores/messagesStore';
-import {useColors} from '../theme';
+import {useColors, fonts} from '../theme';
 import type {MainTabParamList} from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -20,12 +19,33 @@ export default function MainTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
-          backgroundColor: c.bgPrimary,
+          position: 'absolute',
+          left: 12,
+          right: 12,
+          bottom: 12,
+          height: 64,
+          borderRadius: 18,
+          backgroundColor: c.bgElevated,
           borderTopColor: c.border,
+          borderTopWidth: 1,
+          paddingTop: 8,
+          paddingBottom: 8,
+        },
+        tabBarItemStyle: {borderRadius: 12},
+        tabBarLabelStyle: {
+          fontFamily: fonts.bodySemiBold,
+          fontSize: 11,
         },
         tabBarActiveTintColor: c.accent,
         tabBarInactiveTintColor: c.textMuted,
+        tabBarActiveBackgroundColor: c.bgSecondary,
+        tabBarBadgeStyle: {
+          backgroundColor: c.accent,
+          color: c.accentText,
+          fontFamily: fonts.bodySemiBold,
+        },
       }}>
       <Tab.Screen
         name="HomeTab"

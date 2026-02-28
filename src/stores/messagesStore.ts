@@ -2,6 +2,7 @@ import {create} from 'zustand';
 import type {ConversationListItem, Message} from '../types';
 import * as api from '../api';
 import {WS_URL, PAGINATION_LIMIT} from '../config';
+import {useAuthStore} from './authStore';
 
 interface MessagesState {
   conversations: ConversationListItem[];
@@ -49,12 +50,14 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
 
     ws.onclose = () => {
       set({ws: null});
-      // Reconnect with exponential backoff
       if (reconnectTimer) clearTimeout(reconnectTimer);
       reconnectTimer = setTimeout(() => {
         const current = get();
         if (!current.ws) {
-          current.connectWS(token);
+          const freshToken = useAuthStore.getState().token;
+          if (freshToken) {
+            current.connectWS(freshToken);
+          }
         }
       }, reconnectDelay);
       reconnectDelay = Math.min(reconnectDelay * 2, 30000);
@@ -102,8 +105,11 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
       const partnerKey = conv?.user.username;
 
       const newMessages = {...s.messages};
-      if (partnerKey && newMessages[partnerKey]) {
-        newMessages[partnerKey] = [...newMessages[partnerKey], msg];
+      if (partnerKey) {
+        const existing = newMessages[partnerKey] || [];
+        if (!existing.some(m => m.id === msg.id)) {
+          newMessages[partnerKey] = [...existing, msg];
+        }
       }
 
       // Update conversation list

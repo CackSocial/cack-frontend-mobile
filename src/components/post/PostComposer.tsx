@@ -166,7 +166,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   tagPreview: {
-    color: '#0a0a0a',
     fontSize: 13,
     fontFamily: fonts.bodySemiBold,
   },

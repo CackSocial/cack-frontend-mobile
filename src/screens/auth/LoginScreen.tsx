@@ -53,8 +53,8 @@ export default function LoginScreen({navigation}: Props) {
         </View>
 
         {error && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
+          <View style={[styles.errorBox, {backgroundColor: c.dangerBg}]}>
+            <Text style={[styles.errorText, {color: c.danger}]}>{error}</Text>
           </View>
         )}
 
@@ -99,7 +99,7 @@ export default function LoginScreen({navigation}: Props) {
           <Text style={[styles.linkText, {color: c.textTertiary}]}>
             Don't have an account?{' '}
           </Text>
-          <Text style={styles.link}>Sign Up</Text>
+          <Text style={[styles.link, {color: c.textSecondary}]}>Sign Up</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -127,13 +127,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   errorBox: {
-    backgroundColor: '#fef2f2',
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
   },
   errorText: {
-    color: '#dc2626',
     fontSize: 14,
   },
   btn: {
@@ -150,7 +148,6 @@ const styles = StyleSheet.create({
   },
   link: {
     fontSize: 14,
-    color: '#525252',
     fontFamily: fonts.bodySemiBold,
   },
 });

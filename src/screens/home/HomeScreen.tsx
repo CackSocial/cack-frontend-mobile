@@ -38,29 +38,31 @@ export default function HomeScreen({navigation}: Props) {
     }
   }, [timelineHasMore, isLoading, fetchTimeline]);
 
-  const navigateToPost = (post: Post) => {
+  const navigateToPost = useCallback((post: Post) => {
     navigation.navigate('PostDetail', {postId: post.id});
-  };
+  }, [navigation]);
 
-  const navigateToProfile = (username: string) => {
+  const navigateToProfile = useCallback((username: string) => {
     navigation.navigate('Profile', {username});
-  };
+  }, [navigation]);
 
-  const renderPost = ({item}: {item: Post}) => (
+  const handleTagPress = useCallback((tag: string) => {
+    navigation.getParent()?.navigate('ExploreTab', {
+      screen: 'TagPosts',
+      params: {tagName: tag},
+    });
+  }, [navigation]);
+
+  const renderPost = useCallback(({item}: {item: Post}) => (
     <PostCard
       post={item}
       onPress={() => navigateToPost(item)}
       onAuthorPress={() => navigateToProfile(item.author.username)}
       onLike={() => toggleLike(item.id)}
       onComment={() => navigateToPost(item)}
-      onTagPress={tag =>
-        navigation.getParent()?.navigate('ExploreTab', {
-          screen: 'TagPosts',
-          params: {tagName: tag},
-        })
-      }
+      onTagPress={handleTagPress}
     />
-  );
+  ), [navigateToPost, navigateToProfile, toggleLike, handleTagPress]);
 
   return (
     <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>

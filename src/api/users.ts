@@ -14,6 +14,17 @@ export async function updateMe(
   return data;
 }
 
+export async function searchUsers(
+  query: string,
+  page = 1,
+  limit = PAGINATION_LIMIT,
+): Promise<PaginatedResponse<UserProfile>> {
+  const {data} = await client.get<PaginatedResponse<UserProfile>>('/users', {
+    params: {q: query, page, limit},
+  });
+  return data;
+}
+
 export async function getFollowers(
   username: string,
   page = 1,

@@ -1,6 +1,7 @@
 import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {
   View,
+  Text,
   FlatList,
   TextInput,
   TouchableOpacity,
@@ -17,7 +18,7 @@ import MessageBubble from '../../components/messages/MessageBubble';
 import {useConversation} from '../../hooks/useConversation';
 import {useMessagesStore} from '../../stores/messagesStore';
 import {useAuthStore} from '../../stores/authStore';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 import {sendMessage as sendMessageApi} from '../../api/messages';
 import {MAX_IMAGE_SIZE_MB} from '../../config';
 import type {Message, ImageAsset} from '../../types';
@@ -31,7 +32,6 @@ export default function ConversationScreen({route}: Props) {
   const c = useColors();
   const currentUser = useAuthStore(s => s.user);
   const wsSend = useMessagesStore(s => s.sendMessage);
-  const ws = useMessagesStore(s => s.ws);
 
   const {messages, loading, hasMore, refresh, loadMore, addMessage} =
     useConversation(username);
@@ -40,24 +40,32 @@ export default function ConversationScreen({route}: Props) {
   const [imagePreview, setImagePreview] = useState<ImageAsset | null>(null);
   const [sending, setSending] = useState(false);
   const listRef = useRef<FlatList>(null);
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     refresh();
   }, []);
 
+  useEffect(() => {
+    seenMessageIdsRef.current = new Set(messages.map(m => m.id));
+  }, [messages]);
+
   // Listen for incoming WS messages for this conversation
   useEffect(() => {
     const unsub = useMessagesStore.subscribe(state => {
       const convMsgs = state.messages[username];
-      if (convMsgs && convMsgs.length > messages.length) {
-        const newest = convMsgs[convMsgs.length - 1];
-        if (newest && !messages.find(m => m.id === newest.id)) {
-          addMessage(newest);
-        }
+      const newest = convMsgs?.[convMsgs.length - 1];
+      if (
+        newest &&
+        newest.sender_id !== currentUser?.id &&
+        !seenMessageIdsRef.current.has(newest.id)
+      ) {
+        seenMessageIdsRef.current.add(newest.id);
+        addMessage(newest);
       }
     });
     return unsub;
-  }, [username, messages.length]);
+  }, [username, addMessage, currentUser?.id]);
 
   const handleSend = async () => {
     if ((!text.trim() && !imagePreview) || sending) return;
@@ -138,12 +146,17 @@ export default function ConversationScreen({route}: Props) {
         ListHeaderComponent={
           loading ? (
             <ActivityIndicator style={{paddingVertical: 12}} size="small" />
+          ) : hasMore ? (
+            <TouchableOpacity
+              onPress={loadMore}
+              style={styles.loadMoreBtn}
+              accessibilityLabel="Load older messages">
+              <Text style={[styles.loadMoreText, {color: c.textTertiary}]}>
+                Load older messages
+              </Text>
+            </TouchableOpacity>
           ) : null
         }
-        onStartReached={() => {
-          if (hasMore) loadMore();
-        }}
-        inverted={false}
       />
 
       {imagePreview && (
@@ -157,54 +170,65 @@ export default function ConversationScreen({route}: Props) {
 
       <View
         style={[
-          styles.inputBar,
+          styles.composerShell,
           {
-            backgroundColor: c.bgSecondary,
+            backgroundColor: c.bgPrimary,
             borderTopColor: c.border,
           },
         ]}>
-        <TouchableOpacity
-          onPress={pickImage}
-          accessibilityLabel="Attach image"
-          accessibilityRole="button">
-          <Icon
-            name="image-outline"
-            size={24}
-            color={c.textMuted}
-          />
-        </TouchableOpacity>
-        <TextInput
+        <View
           style={[
-            styles.textInput,
-            {color: c.textPrimary},
-          ]}
-          placeholder="Type a message..."
-          placeholderTextColor={c.textMuted}
-          value={text}
-          onChangeText={setText}
-          multiline
-          maxLength={5000}
-          accessibilityLabel="Message input"
-        />
-        <TouchableOpacity
-          onPress={handleSend}
-          disabled={(!text.trim() && !imagePreview) || sending}
-          accessibilityRole="button"
-          accessibilityLabel="Send message">
-          {sending ? (
-            <ActivityIndicator size="small" color={c.accent} />
-          ) : (
-            <Icon
-              name="send"
-              size={24}
-              color={
-                text.trim() || imagePreview
-                  ? c.accent
-                  : c.textMuted
-              }
-            />
-          )}
-        </TouchableOpacity>
+            styles.inputBar,
+            {
+              backgroundColor: c.bgSecondary,
+              borderColor: c.borderStrong,
+            },
+          ]}>
+          <TouchableOpacity
+            onPress={pickImage}
+            style={[styles.iconBtn, {backgroundColor: c.bgTertiary}]}
+            accessibilityLabel="Attach image"
+            accessibilityRole="button">
+            <Icon name="image-outline" size={20} color={c.textMuted} />
+          </TouchableOpacity>
+          <TextInput
+            style={[
+              styles.textInput,
+              {color: c.textPrimary},
+            ]}
+            placeholder="Type a message..."
+            placeholderTextColor={c.textMuted}
+            value={text}
+            onChangeText={setText}
+            multiline
+            maxLength={5000}
+            accessibilityLabel="Message input"
+          />
+          <TouchableOpacity
+            onPress={handleSend}
+            disabled={(!text.trim() && !imagePreview) || sending}
+            style={[
+              styles.sendBtn,
+              {
+                backgroundColor:
+                  text.trim() || imagePreview ? c.accent : c.bgTertiary,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Send message">
+            {sending ? (
+              <ActivityIndicator size="small" color={c.accentText} />
+            ) : (
+              <Icon
+                name="send"
+                size={18}
+                color={
+                  text.trim() || imagePreview ? c.accentText : c.textMuted
+                }
+              />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -215,19 +239,49 @@ const styles = StyleSheet.create({
   listContent: {
     paddingVertical: 8,
   },
+  loadMoreBtn: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  loadMoreText: {
+    fontSize: 13,
+    fontFamily: fonts.bodyMedium,
+  },
+  composerShell: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+  },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderTopWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 18,
+    borderWidth: 1,
     gap: 8,
+  },
+  iconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   textInput: {
     flex: 1,
     fontSize: 15,
+    fontFamily: fonts.body,
     maxHeight: 100,
     paddingVertical: 8,
+    paddingHorizontal: 2,
+  },
+  sendBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   imagePreviewRow: {
     flexDirection: 'row',

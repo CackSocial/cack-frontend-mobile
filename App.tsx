@@ -16,7 +16,7 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar
         barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
-        backgroundColor={theme === 'dark' ? '#111827' : '#ffffff'}
+        backgroundColor={theme === 'dark' ? '#0a0a0a' : '#fafafa'}
       />
       <RootNavigator />
     </SafeAreaProvider>

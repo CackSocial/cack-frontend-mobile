@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useMemo} from 'react';
+import React, {useEffect, useState, useMemo, useCallback} from 'react';
 import {
   View,
   Text,
@@ -9,70 +9,134 @@ import {
   StyleSheet,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
+import ErrorBanner from '../../components/common/ErrorBanner';
 import {getTrendingTags} from '../../api/tags';
+import {searchUsers} from '../../api/users';
 import {useColors, fonts} from '../../theme';
+import {useDebounce} from '../../hooks/useDebounce';
 import {formatCount} from '../../utils/format';
-import type {Tag} from '../../types';
+import type {Tag, UserProfile} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ExploreStackParamList} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<ExploreStackParamList, 'Explore'>;
+
+type SearchMode = 'tags' | 'users';
 
 export default function ExploreScreen({navigation}: Props) {
   const c = useColors();
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [searchMode, setSearchMode] = useState<SearchMode>('tags');
+  const [userResults, setUserResults] = useState<UserProfile[]>([]);
+  const [userSearching, setUserSearching] = useState(false);
+
+  const debouncedQuery = useDebounce(query, 350);
 
   useEffect(() => {
     loadTags();
   }, []);
 
-  const loadTags = async () => {
+  const loadTags = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await getTrendingTags();
       setTags(data ?? []);
-    } catch {}
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load trending tags');
+    }
     setLoading(false);
-  };
+  }, []);
 
-  const filtered = useMemo(() => {
+  // Search users when debounced query changes and mode is 'users'
+  useEffect(() => {
+    if (searchMode !== 'users' || !debouncedQuery.trim()) {
+      setUserResults([]);
+      return;
+    }
+    let cancelled = false;
+    const doSearch = async () => {
+      setUserSearching(true);
+      try {
+        const res = await searchUsers(debouncedQuery.trim());
+        if (!cancelled) setUserResults(res.data ?? []);
+      } catch {
+        if (!cancelled) setUserResults([]);
+      }
+      if (!cancelled) setUserSearching(false);
+    };
+    doSearch();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedQuery, searchMode]);
+
+  const filteredTags = useMemo(() => {
     if (!query.trim()) return tags;
     const q = query.toLowerCase().replace(/^#/, '');
     return tags.filter(t => t.name.toLowerCase().includes(q));
   }, [tags, query]);
 
-  if (loading) {
+  const renderTag = useCallback(
+    ({item}: {item: Tag}) => (
+      <TouchableOpacity
+        style={[styles.tagRow, {borderBottomColor: c.border}]}
+        onPress={() => navigation.navigate('TagPosts', {tagName: item.name})}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`Tag ${item.name}, ${item.post_count} posts`}>
+        <View style={[styles.hashBg, {backgroundColor: c.bgSecondary}]}>
+          <Icon name="pound" size={18} color={c.textTertiary} />
+        </View>
+        <View style={styles.tagInfo}>
+          <Text style={[styles.tagName, {color: c.textPrimary}]}>
+            {item.name}
+          </Text>
+          <Text style={[styles.tagCount, {color: c.textTertiary}]}>
+            {formatCount(item.post_count)} posts
+          </Text>
+        </View>
+        <Icon name="chevron-right" size={20} color={c.textMuted} />
+      </TouchableOpacity>
+    ),
+    [c, navigation],
+  );
+
+  const renderUser = useCallback(
+    ({item}: {item: UserProfile}) => (
+      <TouchableOpacity
+        style={[styles.tagRow, {borderBottomColor: c.border}]}
+        onPress={() => navigation.navigate('Profile', {username: item.username})}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.display_name} @${item.username}`}>
+        <Avatar uri={item.avatar_url} name={item.display_name} size={40} />
+        <View style={styles.tagInfo}>
+          <Text style={[styles.tagName, {color: c.textPrimary}]}>
+            {item.display_name}
+          </Text>
+          <Text style={[styles.tagCount, {color: c.textTertiary}]}>
+            @{item.username}
+          </Text>
+        </View>
+        <Icon name="chevron-right" size={20} color={c.textMuted} />
+      </TouchableOpacity>
+    ),
+    [c, navigation],
+  );
+
+  if (loading && searchMode === 'tags') {
     return (
       <View style={[styles.center, {backgroundColor: c.bgPrimary}]}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
-
-  const renderTag = ({item}: {item: Tag}) => (
-    <TouchableOpacity
-      style={[styles.tagRow, {borderBottomColor: c.border}]}
-      onPress={() => navigation.navigate('TagPosts', {tagName: item.name})}
-      activeOpacity={0.7}
-      accessibilityRole="button"
-      accessibilityLabel={`Tag ${item.name}, ${item.post_count} posts`}>
-      <View style={[styles.hashBg, {backgroundColor: c.bgSecondary}]}>
-        <Icon name="pound" size={18} color={c.textTertiary} />
-      </View>
-      <View style={styles.tagInfo}>
-        <Text style={[styles.tagName, {color: c.textPrimary}]}>
-          {item.name}
-        </Text>
-        <Text style={[styles.tagCount, {color: c.textTertiary}]}>
-          {formatCount(item.post_count)} posts
-        </Text>
-      </View>
-      <Icon name="chevron-right" size={20} color={c.textMuted} />
-    </TouchableOpacity>
-  );
 
   return (
     <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
@@ -82,13 +146,13 @@ export default function ExploreScreen({navigation}: Props) {
           <Icon name="magnify" size={20} color={c.textMuted} />
           <TextInput
             style={[styles.searchInput, {color: c.textPrimary}]}
-            placeholder="Search tags…"
+            placeholder={searchMode === 'tags' ? 'Search tags…' : 'Search people…'}
             placeholderTextColor={c.textMuted}
             value={query}
             onChangeText={setQuery}
             autoCapitalize="none"
             autoCorrect={false}
-            accessibilityLabel="Search tags"
+            accessibilityLabel="Search"
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery('')}>
@@ -98,19 +162,79 @@ export default function ExploreScreen({navigation}: Props) {
         </View>
       </View>
 
-      {/* Section title */}
-      <Text style={[styles.sectionTitle, {color: c.textPrimary}]}>
-        Trending Tags
-      </Text>
+      {/* Search mode tabs */}
+      <View style={[styles.modeTabs, {borderBottomColor: c.border}]}>
+        <TouchableOpacity
+          style={styles.modeTab}
+          onPress={() => setSearchMode('tags')}
+          accessibilityRole="tab"
+          accessibilityState={{selected: searchMode === 'tags'}}>
+          <Text
+            style={[
+              styles.modeTabText,
+              {color: searchMode === 'tags' ? c.textPrimary : c.textMuted},
+            ]}>
+            Tags
+          </Text>
+          {searchMode === 'tags' && (
+            <View style={[styles.modeIndicator, {backgroundColor: c.accent}]} />
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.modeTab}
+          onPress={() => setSearchMode('users')}
+          accessibilityRole="tab"
+          accessibilityState={{selected: searchMode === 'users'}}>
+          <Text
+            style={[
+              styles.modeTabText,
+              {color: searchMode === 'users' ? c.textPrimary : c.textMuted},
+            ]}>
+            People
+          </Text>
+          {searchMode === 'users' && (
+            <View style={[styles.modeIndicator, {backgroundColor: c.accent}]} />
+          )}
+        </TouchableOpacity>
+      </View>
 
-      <FlatList
-        data={filtered}
-        keyExtractor={item => item.name}
-        renderItem={renderTag}
-        ListEmptyComponent={
-          <EmptyState icon="tag-outline" title={query ? 'No matching tags' : 'No trending tags'} />
-        }
-      />
+      {error && searchMode === 'tags' && <ErrorBanner message={error} onRetry={loadTags} />}
+
+      {searchMode === 'tags' ? (
+        <>
+          <Text style={[styles.sectionTitle, {color: c.textPrimary}]}>
+            {query.trim() ? 'Search Results' : 'Trending Tags'}
+          </Text>
+          <FlatList
+            data={filteredTags}
+            keyExtractor={item => item.name}
+            renderItem={renderTag}
+            ListEmptyComponent={
+              <EmptyState icon="tag-outline" title={query ? 'No matching tags' : 'No trending tags'} />
+            }
+          />
+        </>
+      ) : (
+        <>
+          {userSearching && (
+            <ActivityIndicator style={{paddingVertical: 16}} size="small" />
+          )}
+          <FlatList
+            data={userResults}
+            keyExtractor={item => item.id}
+            renderItem={renderUser}
+            ListEmptyComponent={
+              !userSearching ? (
+                <EmptyState
+                  icon="account-search-outline"
+                  title={debouncedQuery.trim() ? 'No users found' : 'Search for people'}
+                  subtitle={!debouncedQuery.trim() ? 'Type a name or username above' : undefined}
+                />
+              ) : null
+            }
+          />
+        </>
+      )}
     </View>
   );
 }
@@ -171,5 +295,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonts.body,
     marginTop: 1,
+  },
+  modeTabs: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+  },
+  modeTab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    position: 'relative',
+  },
+  modeTabText: {
+    fontSize: 14,
+    fontFamily: fonts.bodySemiBold,
+  },
+  modeIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    height: 2.5,
+    width: 40,
+    borderRadius: 2,
   },
 });

@@ -20,7 +20,7 @@ import {deletePost} from '../../api/posts';
 import {likePost, unlikePost} from '../../api/likes';
 import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 import type {Comment} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {HomeStackParamList} from '../../navigation/types';
@@ -196,36 +196,51 @@ export default function PostDetailScreen({route, navigation}: Props) {
       {/* Comment input bar */}
       <View
         style={[
-          styles.inputBar,
+          styles.composerShell,
           {
-            backgroundColor: c.bgSecondary,
+            backgroundColor: c.bgPrimary,
             borderTopColor: c.border,
           },
         ]}>
-        <TextInput
+        <View
           style={[
-            styles.commentInput,
-            {color: c.textPrimary},
-          ]}
-          placeholder="Write a comment..."
-          placeholderTextColor={c.textMuted}
-          value={commentText}
-          onChangeText={setCommentText}
-          multiline
-          maxLength={2000}
-          accessibilityLabel="Comment input"
-        />
-        <TouchableOpacity
-          onPress={handleSendComment}
-          disabled={!commentText.trim() || sending}
-          accessibilityRole="button"
-          accessibilityLabel="Send comment">
-          <Icon
-            name="send"
-            size={24}
-            color={commentText.trim() ? c.accent : c.textMuted}
+            styles.inputBar,
+            {
+              backgroundColor: c.bgSecondary,
+              borderColor: c.borderStrong,
+            },
+          ]}>
+          <TextInput
+            style={[
+              styles.commentInput,
+              {color: c.textPrimary},
+            ]}
+            placeholder="Write a comment..."
+            placeholderTextColor={c.textMuted}
+            value={commentText}
+            onChangeText={setCommentText}
+            multiline
+            maxLength={2000}
+            accessibilityLabel="Comment input"
           />
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleSendComment}
+            disabled={!commentText.trim() || sending}
+            style={[
+              styles.sendBtn,
+              {
+                backgroundColor: commentText.trim() ? c.accent : c.bgTertiary,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Send comment">
+            <Icon
+              name="send"
+              size={18}
+              color={commentText.trim() ? c.accentText : c.textMuted}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -234,18 +249,32 @@ export default function PostDetailScreen({route, navigation}: Props) {
 const styles = StyleSheet.create({
   flex: {flex: 1},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+  composerShell: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+  },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderTopWidth: 1,
+    paddingVertical: 6,
+    borderRadius: 18,
+    borderWidth: 1,
     gap: 8,
   },
   commentInput: {
     flex: 1,
     fontSize: 15,
+    fontFamily: fonts.body,
     maxHeight: 100,
     paddingVertical: 8,
+  },
+  sendBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

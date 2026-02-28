@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useEffect, useState, useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,17 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import Button from '../../components/common/Button';
 import PostCard from '../../components/post/PostCard';
 import EmptyState from '../../components/common/EmptyState';
+import ErrorBanner from '../../components/common/ErrorBanner';
 import {getUser} from '../../api/users';
 import {followUser, unfollowUser} from '../../api/follows';
+import {likePost, unlikePost} from '../../api/likes';
 import {useUserPosts} from '../../hooks/useUserPosts';
 import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
@@ -38,48 +41,81 @@ export default function ProfileScreen({route, navigation}: Props) {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [followLoading, setFollowLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'likes'>('posts');
+  const [error, setError] = useState<string | null>(null);
 
-  const {posts, loading: postsLoading, hasMore, refresh, loadMore} =
+  const {posts, setPosts, loading: postsLoading, hasMore, refresh, loadMore} =
     useUserPosts(username);
 
   useEffect(() => {
     loadProfile();
     refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     setLoadingProfile(true);
+    setError(null);
     try {
       const data = await getUser(username);
       setProfile(data);
-    } catch {}
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load profile');
+    }
     setLoadingProfile(false);
-  };
+  }, [username]);
 
-  const handleFollowToggle = async () => {
+  const handleFollowToggle = useCallback(async () => {
     if (!profile || followLoading) return;
     setFollowLoading(true);
     try {
       if (profile.is_following) {
         await unfollowUser(profile.username);
-        setProfile({
-          ...profile,
-          is_following: false,
-          follower_count: profile.follower_count - 1,
-        });
+        setProfile(prev =>
+          prev ? {...prev, is_following: false, follower_count: prev.follower_count - 1} : prev,
+        );
       } else {
         await followUser(profile.username);
-        setProfile({
-          ...profile,
-          is_following: true,
-          follower_count: profile.follower_count + 1,
-        });
+        setProfile(prev =>
+          prev ? {...prev, is_following: true, follower_count: prev.follower_count + 1} : prev,
+        );
       }
-    } catch {}
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to update follow status');
+    }
     setFollowLoading(false);
-  };
+  }, [profile, followLoading]);
 
-  const renderHeader = () => {
+  const handleToggleLike = useCallback(
+    async (post: Post) => {
+      const was = post.is_liked;
+      // Optimistic update on local posts
+      setPosts(prev =>
+        prev.map(p =>
+          p.id === post.id
+            ? {...p, is_liked: !was, like_count: p.like_count + (was ? -1 : 1)}
+            : p,
+        ),
+      );
+      // Also sync with timeline store
+      toggleTimelineLike(post.id);
+      try {
+        was ? await unlikePost(post.id) : await likePost(post.id);
+      } catch {
+        // Revert on error
+        setPosts(prev =>
+          prev.map(p =>
+            p.id === post.id
+              ? {...p, is_liked: was, like_count: p.like_count + (was ? 1 : -1)}
+              : p,
+          ),
+        );
+        toggleTimelineLike(post.id);
+      }
+    },
+    [setPosts, toggleTimelineLike],
+  );
+
+  const renderHeader = useCallback(() => {
     if (!profile) return null;
     return (
       <View>
@@ -144,6 +180,7 @@ export default function ProfileScreen({route, navigation}: Props) {
                 title="Edit Profile"
                 variant="secondary"
                 onPress={() => navigation.navigate('EditProfile')}
+                style={styles.editBtn}
               />
             ) : (
               <>
@@ -218,25 +255,33 @@ export default function ProfileScreen({route, navigation}: Props) {
         </View>
       </View>
     );
-  };
+  }, [profile, c, posts.length, activeTab, isOwnProfile, followLoading, navigation, handleFollowToggle]);
 
-  const likedPosts = posts.filter(p => p.is_liked);
-
+  const likedPosts = useMemo(() => posts.filter(p => p.is_liked), [posts]);
   const displayPosts = activeTab === 'posts' ? posts : likedPosts;
 
-  const renderPost = ({item}: {item: Post}) => (
-    <PostCard
-      post={item}
-      onPress={() =>
-        (navigation as any).navigate('PostDetail', {postId: item.id})
-      }
-      onAuthorPress={() => {}}
-      onLike={() => toggleTimelineLike(item.id)}
-      onComment={() =>
-        (navigation as any).navigate('PostDetail', {postId: item.id})
-      }
-    />
+  const renderPost = useCallback(
+    ({item}: {item: Post}) => (
+      <PostCard
+        post={item}
+        onPress={() =>
+          (navigation as any).navigate('PostDetail', {postId: item.id})
+        }
+        onAuthorPress={() =>
+          navigation.push('Profile', {username: item.author.username})
+        }
+        onLike={() => handleToggleLike(item)}
+        onComment={() =>
+          (navigation as any).navigate('PostDetail', {postId: item.id})
+        }
+      />
+    ),
+    [navigation, handleToggleLike],
   );
+
+  const handleEndReached = useCallback(() => {
+    if (hasMore && activeTab === 'posts') loadMore();
+  }, [hasMore, activeTab, loadMore]);
 
   if (loadingProfile && !profile) {
     return (
@@ -248,6 +293,7 @@ export default function ProfileScreen({route, navigation}: Props) {
 
   return (
     <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
+      {error && <ErrorBanner message={error} onRetry={loadProfile} />}
       <FlatList
         data={displayPosts}
         keyExtractor={item => item.id}
@@ -261,9 +307,7 @@ export default function ProfileScreen({route, navigation}: Props) {
             />
           ) : null
         }
-        onEndReached={() => {
-          if (hasMore && activeTab === 'posts') loadMore();
-        }}
+        onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
           postsLoading ? (
@@ -322,6 +366,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
     width: '100%',
     paddingHorizontal: 20,
+    justifyContent: 'center',
+  },
+  editBtn: {
+    minWidth: 160,
   },
   msgBtn: {
     width: 42,

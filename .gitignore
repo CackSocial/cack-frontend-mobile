@@ -3,6 +3,9 @@ node_modules/
 
 # Build outputs
 android/app/build/
+android/.gradle/
+android/app/.cxx/
+android/build/
 ios/build/
 ios/Pods/
 

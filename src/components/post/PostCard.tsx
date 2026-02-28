@@ -120,15 +120,13 @@ export default function PostCard({
                 size={18}
                 color={post.is_liked ? '#ef4444' : c.textMuted}
               />
-              {post.like_count > 0 && (
-                <Text
-                  style={[
-                    styles.actionCount,
-                    {color: post.is_liked ? '#ef4444' : c.textMuted},
-                  ]}>
-                  {formatCount(post.like_count)}
-                </Text>
-              )}
+              <Text
+                style={[
+                  styles.actionCount,
+                  {color: post.is_liked ? '#ef4444' : c.textMuted},
+                ]}>
+                {post.like_count > 0 ? formatCount(post.like_count) : ' '}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -137,11 +135,9 @@ export default function PostCard({
               accessibilityRole="button"
               accessibilityLabel="View comments">
               <Icon name="comment-outline" size={18} color={c.textMuted} />
-              {post.comment_count > 0 && (
-                <Text style={[styles.actionCount, {color: c.textMuted}]}>
-                  {formatCount(post.comment_count)}
-                </Text>
-              )}
+              <Text style={[styles.actionCount, {color: c.textMuted}]}>
+                {post.comment_count > 0 ? formatCount(post.comment_count) : ' '}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -202,8 +198,6 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     marginTop: 12,
-    gap: 0,
-    justifyContent: 'space-between',
     paddingRight: 48,
   },
   actionBtn: {
@@ -211,6 +205,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     paddingVertical: 2,
+    minWidth: 54,
   },
   actionCount: {
     fontSize: 13,
