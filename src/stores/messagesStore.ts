@@ -96,9 +96,6 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
 
   receiveMessage(msg: Message) {
     set(s => {
-      // Find conversation partner username
-      const partnerId =
-        msg.sender_id === msg.receiver_id ? msg.sender_id : msg.sender_id;
       const conv = s.conversations.find(
         c => c.user.id === msg.sender_id || c.user.id === msg.receiver_id,
       );
@@ -115,8 +112,9 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
           return {
             ...c,
             last_message: msg,
+            // c.user is the conversation partner; increment if they sent it
             unread_count:
-              msg.sender_id !== partnerId
+              msg.sender_id === c.user.id
                 ? c.unread_count + 1
                 : c.unread_count,
           };

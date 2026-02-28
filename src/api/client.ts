@@ -30,6 +30,13 @@ client.interceptors.response.use(
       if (!body.success) {
         return Promise.reject(new Error(body.message || 'Request failed'));
       }
+      // Paginated responses carry page/limit/total alongside data
+      if ('page' in body) {
+        return {
+          ...response,
+          data: {data: body.data, page: body.page, limit: body.limit, total: body.total},
+        };
+      }
       return {...response, data: body.data};
     }
     return response;
