@@ -71,7 +71,16 @@ export default function MainTabs() {
           color: c.accentText,
           fontFamily: fonts.bodySemiBold,
         },
-      }}>
+      }}
+      screenListeners={({navigation, route}) => ({
+        tabPress: () => {
+          // Pop nested stacks to their root when tab is pressed
+          const root = TAB_ROOT[route.name];
+          if (root) {
+            navigation.navigate(route.name as any, {screen: root});
+          }
+        },
+      })}>
       <Tab.Screen
         name="HomeTab"
         component={HomeStack}

@@ -53,6 +53,7 @@ export default function HomeScreen({navigation}: Props) {
     navigation.getParent()?.navigate('ExploreTab', {
       screen: 'TagPosts',
       params: {tagName: tag},
+      initial: false,
     });
   }, [navigation]);
 

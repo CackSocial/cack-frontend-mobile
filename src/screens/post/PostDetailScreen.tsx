@@ -162,6 +162,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
             navigation.getParent()?.navigate('ExploreTab', {
               screen: 'TagPosts',
               params: {tagName: tag},
+              initial: false,
             })
           }
         />
