@@ -7,7 +7,6 @@ import RenderTaggedContent from '../../utils/renderTaggedContent';
 import {formatRelativeTime, formatCount} from '../../utils/format';
 import {UPLOADS_URL} from '../../config';
 import {useColors, fonts} from '../../theme';
-import {useAuthStore} from '../../stores/authStore';
 
 interface Props {
   post: Post;
@@ -15,7 +14,6 @@ interface Props {
   onAuthorPress?: () => void;
   onLike?: () => void;
   onComment?: () => void;
-  onDelete?: () => void;
   onTagPress?: (tag: string) => void;
 }
 
@@ -25,19 +23,15 @@ export default function PostCard({
   onAuthorPress,
   onLike,
   onComment,
-  onDelete,
   onTagPress,
 }: Props) {
   const c = useColors();
-  const currentUser = useAuthStore(s => s.user);
 
   const imageUri = post.image_url
     ? post.image_url.startsWith('http')
       ? post.image_url
       : `${UPLOADS_URL}/${post.image_url}`
     : null;
-
-  const isOwn = currentUser?.id === post.author.id;
 
   const handleShare = () => {
     Share.share({message: post.content});
@@ -78,14 +72,6 @@ export default function PostCard({
                 @{post.author.username} · {formatRelativeTime(post.created_at)}
               </Text>
             </TouchableOpacity>
-            {isOwn && onDelete && (
-              <TouchableOpacity
-                onPress={onDelete}
-                accessibilityLabel="Delete post"
-                accessibilityRole="button">
-                <Icon name="delete-outline" size={18} color={c.textMuted} />
-              </TouchableOpacity>
-            )}
           </View>
 
           {/* Content */}
@@ -198,7 +184,7 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     marginTop: 12,
-    paddingRight: 48,
+    justifyContent: 'space-between',
   },
   actionBtn: {
     flexDirection: 'row',

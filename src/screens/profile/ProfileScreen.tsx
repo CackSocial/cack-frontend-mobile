@@ -32,7 +32,7 @@ export default function ProfileScreen({route, navigation}: Props) {
   const paramUsername = route.params?.username;
   const c = useColors();
   const currentUser = useAuthStore(s => s.user);
-  const toggleTimelineLike = usePostsStore(s => s.toggleLike);
+  const syncLikeState = usePostsStore(s => s.syncLikeState);
 
   const username = paramUsername || currentUser?.username || '';
   const isOwnProfile = !paramUsername || paramUsername === currentUser?.username;
@@ -96,8 +96,8 @@ export default function ProfileScreen({route, navigation}: Props) {
             : p,
         ),
       );
-      // Also sync with timeline store
-      toggleTimelineLike(post.id);
+      // Also sync with timeline store (state only, no API)
+      syncLikeState(post.id);
       try {
         was ? await unlikePost(post.id) : await likePost(post.id);
       } catch {
@@ -109,10 +109,10 @@ export default function ProfileScreen({route, navigation}: Props) {
               : p,
           ),
         );
-        toggleTimelineLike(post.id);
+        syncLikeState(post.id);
       }
     },
-    [setPosts, toggleTimelineLike],
+    [setPosts, syncLikeState],
   );
 
   const renderHeader = useCallback(() => {

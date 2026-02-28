@@ -1,5 +1,6 @@
-import React, {useEffect} from 'react';
-import {View, FlatList, ActivityIndicator, RefreshControl, StyleSheet} from 'react-native';
+import React, {useEffect, useLayoutEffect} from 'react';
+import {View, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, StyleSheet} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ConversationItem from '../../components/messages/ConversationItem';
 import EmptyState from '../../components/common/EmptyState';
 import {useMessagesStore} from '../../stores/messagesStore';
@@ -13,6 +14,20 @@ type Props = NativeStackScreenProps<MessagesStackParamList, 'Messages'>;
 export default function MessagesScreen({navigation}: Props) {
   const c = useColors();
   const {conversations, isLoading, fetchConversations} = useMessagesStore();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('NewConversation')}
+          style={{padding: 4}}
+          accessibilityLabel="New message"
+          accessibilityRole="button">
+          <Icon name="pencil-box-outline" size={24} color={c.textPrimary} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, c]);
 
   useEffect(() => {
     fetchConversations();

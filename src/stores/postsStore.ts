@@ -12,6 +12,7 @@ interface PostsState {
   prependPost(post: Post): void;
   removePost(id: string): void;
   toggleLike(id: string): void;
+  syncLikeState(id: string): void;
   updatePost(id: string, updates: Partial<Post>): void;
 }
 
@@ -82,6 +83,17 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         }),
       }));
     });
+  },
+
+  // State-only like toggle (no API call) — used by screens that handle their own API
+  syncLikeState(id: string) {
+    set(s => ({
+      timeline: s.timeline.map(p => {
+        if (p.id !== id) return p;
+        const liked = !p.is_liked;
+        return {...p, is_liked: liked, like_count: p.like_count + (liked ? 1 : -1)};
+      }),
+    }));
   },
 
   updatePost(id: string, updates: Partial<Post>) {

@@ -28,7 +28,7 @@ type SearchMode = 'tags' | 'users';
 export default function ExploreScreen({navigation}: Props) {
   const c = useColors();
   const [tags, setTags] = useState<Tag[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [searchMode, setSearchMode] = useState<SearchMode>('tags');
@@ -130,14 +130,6 @@ export default function ExploreScreen({navigation}: Props) {
     [c, navigation],
   );
 
-  if (loading && searchMode === 'tags') {
-    return (
-      <View style={[styles.center, {backgroundColor: c.bgPrimary}]}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
       {/* Search bar */}
@@ -205,14 +197,18 @@ export default function ExploreScreen({navigation}: Props) {
           <Text style={[styles.sectionTitle, {color: c.textPrimary}]}>
             {query.trim() ? 'Search Results' : 'Trending Tags'}
           </Text>
-          <FlatList
-            data={filteredTags}
-            keyExtractor={item => item.name}
-            renderItem={renderTag}
-            ListEmptyComponent={
-              <EmptyState icon="tag-outline" title={query ? 'No matching tags' : 'No trending tags'} />
-            }
-          />
+          {loading ? (
+            <ActivityIndicator style={{paddingVertical: 24}} size="large" />
+          ) : (
+            <FlatList
+              data={filteredTags}
+              keyExtractor={item => item.name}
+              renderItem={renderTag}
+              ListEmptyComponent={
+                <EmptyState icon="tag-outline" title={query ? 'No matching tags' : 'No trending tags'} />
+              }
+            />
+          )}
         </>
       ) : (
         <>
@@ -241,7 +237,6 @@ export default function ExploreScreen({navigation}: Props) {
 
 const styles = StyleSheet.create({
   container: {flex: 1},
-  center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   searchWrapper: {
     paddingHorizontal: 16,
     paddingTop: 12,

@@ -1,17 +1,19 @@
 import React, {useEffect, useCallback} from 'react';
 import {
   View,
+  Text,
   FlatList,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Avatar from '../../components/common/Avatar';
 import PostCard from '../../components/post/PostCard';
 import EmptyState from '../../components/common/EmptyState';
 import {usePostsStore} from '../../stores/postsStore';
-import {useColors} from '../../theme';
+import {useAuthStore} from '../../stores/authStore';
+import {useColors, fonts} from '../../theme';
 import type {Post} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {HomeStackParamList} from '../../navigation/types';
@@ -20,6 +22,7 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
 
 export default function HomeScreen({navigation}: Props) {
   const c = useColors();
+  const currentUser = useAuthStore(s => s.user);
   const {timeline, isLoading, timelineHasMore, fetchTimeline} =
     usePostsStore();
   const toggleLike = usePostsStore(s => s.toggleLike);
@@ -64,12 +67,31 @@ export default function HomeScreen({navigation}: Props) {
     />
   ), [navigateToPost, navigateToProfile, toggleLike, handleTagPress]);
 
+  const renderHeader = useCallback(() => (
+    <TouchableOpacity
+      style={[styles.composerBar, {borderBottomColor: c.border}]}
+      onPress={() => navigation.navigate('CreatePost')}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel="Create new post">
+      <Avatar
+        uri={currentUser?.avatar_url}
+        name={currentUser?.display_name ?? ''}
+        size={36}
+      />
+      <Text style={[styles.composerPlaceholder, {color: c.textMuted}]}>
+        What's on your mind?
+      </Text>
+    </TouchableOpacity>
+  ), [c, currentUser, navigation]);
+
   return (
     <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
       <FlatList
         data={timeline}
         keyExtractor={item => item.id}
         renderItem={renderPost}
+        ListHeaderComponent={renderHeader}
         refreshControl={
           <RefreshControl refreshing={isLoading && timeline.length > 0} onRefresh={handleRefresh} />
         }
@@ -90,16 +112,6 @@ export default function HomeScreen({navigation}: Props) {
           ) : null
         }
       />
-
-      {/* FAB */}
-      <TouchableOpacity
-        style={[styles.fab, {backgroundColor: c.accent}]}
-        onPress={() => navigation.navigate('CreatePost')}
-        activeOpacity={0.8}
-        accessibilityRole="button"
-        accessibilityLabel="Create new post">
-        <Icon name="plus" size={28} color={c.accentText} />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -108,22 +120,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  composerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    gap: 12,
+  },
+  composerPlaceholder: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: fonts.body,
+  },
   loader: {
     paddingVertical: 20,
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
   },
 });

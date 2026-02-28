@@ -1,22 +1,17 @@
 import React from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {Comment} from '../../types';
 import Avatar from '../common/Avatar';
 import {formatRelativeTime} from '../../utils/format';
 import {useColors, fonts} from '../../theme';
-import {useAuthStore} from '../../stores/authStore';
 
 interface Props {
   comment: Comment;
   onAuthorPress?: () => void;
-  onDelete?: () => void;
 }
 
-export default function CommentItem({comment, onAuthorPress, onDelete}: Props) {
+export default function CommentItem({comment, onAuthorPress}: Props) {
   const c = useColors();
-  const currentUser = useAuthStore(s => s.user);
-  const isOwn = currentUser?.id === comment.author.id;
 
   return (
     <View
@@ -45,14 +40,6 @@ export default function CommentItem({comment, onAuthorPress, onDelete}: Props) {
           <Text style={[styles.time, {color: c.textTertiary}]}>
             {formatRelativeTime(comment.created_at)}
           </Text>
-          {isOwn && onDelete && (
-            <TouchableOpacity
-              onPress={onDelete}
-              accessibilityLabel="Delete comment"
-              accessibilityRole="button">
-              <Icon name="delete-outline" size={16} color="#ef4444" />
-            </TouchableOpacity>
-          )}
         </View>
         <Text style={[styles.content, {color: c.textSecondary}]}>
           {comment.content}

@@ -15,11 +15,9 @@ import PostCard from '../../components/post/PostCard';
 import CommentItem from '../../components/post/CommentItem';
 import EmptyState from '../../components/common/EmptyState';
 import {usePostDetail} from '../../hooks/usePostDetail';
-import {createComment, deleteComment} from '../../api/comments';
-import {deletePost} from '../../api/posts';
+import {createComment} from '../../api/comments';
 import {likePost, unlikePost} from '../../api/likes';
 import {usePostsStore} from '../../stores/postsStore';
-import {useAuthStore} from '../../stores/authStore';
 import {useColors, fonts} from '../../theme';
 import type {Comment} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -30,9 +28,7 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'PostDetail'>;
 export default function PostDetailScreen({route, navigation}: Props) {
   const {postId} = route.params;
   const c = useColors();
-  const currentUser = useAuthStore(s => s.user);
-  const toggleTimelineLike = usePostsStore(s => s.toggleLike);
-  const removeFromTimeline = usePostsStore(s => s.removePost);
+  const syncLikeState = usePostsStore(s => s.syncLikeState);
 
   const {
     post,
@@ -43,7 +39,6 @@ export default function PostDetailScreen({route, navigation}: Props) {
     fetchPost,
     fetchComments,
     addComment,
-    removeComment,
   } = usePostDetail(postId);
 
   const [commentText, setCommentText] = useState('');
@@ -62,7 +57,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
       is_liked: !was,
       like_count: post.like_count + (was ? -1 : 1),
     });
-    toggleTimelineLike(post.id);
+    syncLikeState(post.id);
     try {
       was ? await unlikePost(post.id) : await likePost(post.id);
     } catch {
@@ -71,59 +66,21 @@ export default function PostDetailScreen({route, navigation}: Props) {
         is_liked: was,
         like_count: post.like_count,
       });
-      toggleTimelineLike(post.id);
+      syncLikeState(post.id);
     }
-  }, [post, setPost, toggleTimelineLike]);
-
-  const handleDeletePost = useCallback(async () => {
-    if (!post) return;
-    Alert.alert('Delete Post', 'Are you sure?', [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deletePost(post.id);
-            removeFromTimeline(post.id);
-            navigation.goBack();
-          } catch (e: any) {
-            Alert.alert('Error', e.message);
-          }
-        },
-      },
-    ]);
-  }, [post, navigation, removeFromTimeline]);
+  }, [post, setPost, syncLikeState]);
 
   const handleSendComment = async () => {
     if (!commentText.trim() || sending) return;
     setSending(true);
     try {
-      const c = await createComment(postId, commentText.trim());
-      addComment(c);
+      const newComment = await createComment(postId, commentText.trim());
+      addComment(newComment);
       setCommentText('');
     } catch (e: any) {
       Alert.alert('Error', e.message);
     }
     setSending(false);
-  };
-
-  const handleDeleteComment = (commentId: string) => {
-    Alert.alert('Delete Comment', 'Are you sure?', [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteComment(commentId);
-            removeComment(commentId);
-          } catch (e: any) {
-            Alert.alert('Error', e.message);
-          }
-        },
-      },
-    ]);
   };
 
   const navigateToProfile = (username: string) => {
@@ -136,9 +93,6 @@ export default function PostDetailScreen({route, navigation}: Props) {
         post={post}
         onAuthorPress={() => navigateToProfile(post.author.username)}
         onLike={handleLike}
-        onDelete={
-          currentUser?.id === post.author.id ? handleDeletePost : undefined
-        }
         onTagPress={tag =>
           navigation.getParent()?.navigate('ExploreTab', {
             screen: 'TagPosts',
@@ -152,11 +106,6 @@ export default function PostDetailScreen({route, navigation}: Props) {
     <CommentItem
       comment={item}
       onAuthorPress={() => navigateToProfile(item.author.username)}
-      onDelete={
-        currentUser?.id === item.author.id
-          ? () => handleDeleteComment(item.id)
-          : undefined
-      }
     />
   );
 

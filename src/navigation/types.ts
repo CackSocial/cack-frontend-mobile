@@ -20,6 +20,7 @@ export type ExploreStackParamList = {
 
 export type MessagesStackParamList = {
   Messages: undefined;
+  NewConversation: undefined;
   Conversation: {username: string; userId: string; displayName: string};
 };
 
