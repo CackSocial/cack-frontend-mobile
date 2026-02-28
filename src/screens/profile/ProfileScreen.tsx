@@ -9,7 +9,6 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {useFocusEffect} from '@react-navigation/native';
 import Avatar from '../../components/common/Avatar';
 import Button from '../../components/common/Button';
 import PostCard from '../../components/post/PostCard';
@@ -19,6 +18,7 @@ import {getUser} from '../../api/users';
 import {followUser, unfollowUser} from '../../api/follows';
 import {likePost, unlikePost} from '../../api/likes';
 import {useUserPosts} from '../../hooks/useUserPosts';
+import {useSyncLikes} from '../../hooks/useSyncLikes';
 import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
 import {useColors, fonts} from '../../theme';
@@ -33,7 +33,7 @@ export default function ProfileScreen({route, navigation}: Props) {
   const paramUsername = route.params?.username;
   const c = useColors();
   const currentUser = useAuthStore(s => s.user);
-  const syncLikeState = usePostsStore(s => s.syncLikeState);
+  const cacheLike = usePostsStore(s => s.cacheLike);
 
   const username = paramUsername || currentUser?.username || '';
   const isOwnProfile = !paramUsername || paramUsername === currentUser?.username;
@@ -53,24 +53,8 @@ export default function ProfileScreen({route, navigation}: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
-  // Sync like states from timeline store when screen gains focus
-  useFocusEffect(
-    useCallback(() => {
-      const timeline = usePostsStore.getState().timeline;
-      setPosts(prev => {
-        let changed = false;
-        const next = prev.map(p => {
-          const tp = timeline.find(t => t.id === p.id);
-          if (tp && (tp.is_liked !== p.is_liked || tp.like_count !== p.like_count)) {
-            changed = true;
-            return {...p, is_liked: tp.is_liked, like_count: tp.like_count};
-          }
-          return p;
-        });
-        return changed ? next : prev;
-      });
-    }, [setPosts]),
-  );
+  // Sync like states from global cache when screen gains focus
+  useSyncLikes(setPosts);
 
   const loadProfile = useCallback(async () => {
     setLoadingProfile(true);
@@ -108,16 +92,18 @@ export default function ProfileScreen({route, navigation}: Props) {
   const handleToggleLike = useCallback(
     async (post: Post) => {
       const was = post.is_liked;
+      const newLiked = !was;
+      const newCount = post.like_count + (was ? -1 : 1);
       // Optimistic update on local posts
       setPosts(prev =>
         prev.map(p =>
           p.id === post.id
-            ? {...p, is_liked: !was, like_count: p.like_count + (was ? -1 : 1)}
+            ? {...p, is_liked: newLiked, like_count: newCount}
             : p,
         ),
       );
-      // Also sync with timeline store (state only, no API)
-      syncLikeState(post.id);
+      // Update global cache + timeline
+      cacheLike(post.id, newLiked, newCount);
       try {
         was ? await unlikePost(post.id) : await likePost(post.id);
       } catch {
@@ -125,14 +111,14 @@ export default function ProfileScreen({route, navigation}: Props) {
         setPosts(prev =>
           prev.map(p =>
             p.id === post.id
-              ? {...p, is_liked: was, like_count: p.like_count + (was ? 1 : -1)}
+              ? {...p, is_liked: was, like_count: post.like_count}
               : p,
           ),
         );
-        syncLikeState(post.id);
+        cacheLike(post.id, was, post.like_count);
       }
     },
-    [setPosts, syncLikeState],
+    [setPosts, cacheLike],
   );
 
   const renderHeader = useCallback(() => {

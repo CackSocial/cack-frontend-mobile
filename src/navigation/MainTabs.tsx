@@ -1,5 +1,6 @@
-import React from 'react';
+import React, {useMemo, useCallback} from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {getFocusedRouteNameFromRoute} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import HomeStack from './HomeStack';
 import ExploreStack from './ExploreStack';
@@ -11,28 +12,52 @@ import type {MainTabParamList} from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+const TAB_ROOT: Record<string, string> = {
+  HomeTab: 'Home',
+  ExploreTab: 'Explore',
+  MessagesTab: 'Messages',
+  ProfileTab: 'Profile',
+};
+
 export default function MainTabs() {
   const c = useColors();
   const getUnreadTotal = useMessagesStore(s => s.getUnreadTotal);
+
+  const baseTabBarStyle = useMemo(
+    () => ({
+      position: 'absolute' as const,
+      left: 12,
+      right: 12,
+      bottom: 12,
+      height: 64,
+      borderRadius: 18,
+      backgroundColor: c.bgElevated,
+      borderTopColor: c.border,
+      borderTopWidth: 1,
+      paddingTop: 8,
+      paddingBottom: 8,
+    }),
+    [c],
+  );
+
+  const getTabBarStyle = useCallback(
+    (route: any, tabName: string) => {
+      const routeName = getFocusedRouteNameFromRoute(route);
+      // undefined or root screen name → show tab bar
+      if (!routeName || routeName === TAB_ROOT[tabName]) {
+        return baseTabBarStyle;
+      }
+      // Nested screen → hide tab bar
+      return {display: 'none' as const};
+    },
+    [baseTabBarStyle],
+  );
 
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarHideOnKeyboard: true,
-        tabBarStyle: {
-          position: 'absolute',
-          left: 12,
-          right: 12,
-          bottom: 12,
-          height: 64,
-          borderRadius: 18,
-          backgroundColor: c.bgElevated,
-          borderTopColor: c.border,
-          borderTopWidth: 1,
-          paddingTop: 8,
-          paddingBottom: 8,
-        },
         tabBarItemStyle: {borderRadius: 12},
         tabBarLabelStyle: {
           fontFamily: fonts.bodySemiBold,
@@ -50,44 +75,48 @@ export default function MainTabs() {
       <Tab.Screen
         name="HomeTab"
         component={HomeStack}
-        options={{
+        options={({route}) => ({
           tabBarLabel: 'Home',
           tabBarIcon: ({color, size}) => (
             <Icon name="home-outline" size={size} color={color} />
           ),
-        }}
+          tabBarStyle: getTabBarStyle(route, 'HomeTab'),
+        })}
       />
       <Tab.Screen
         name="ExploreTab"
         component={ExploreStack}
-        options={{
+        options={({route}) => ({
           tabBarLabel: 'Explore',
           tabBarIcon: ({color, size}) => (
             <Icon name="compass-outline" size={size} color={color} />
           ),
-        }}
+          tabBarStyle: getTabBarStyle(route, 'ExploreTab'),
+        })}
       />
       <Tab.Screen
         name="MessagesTab"
         component={MessagesStack}
-        options={{
+        options={({route}) => ({
           tabBarLabel: 'Messages',
           tabBarIcon: ({color, size}) => (
             <Icon name="message-outline" size={size} color={color} />
           ),
           tabBarBadge:
             getUnreadTotal() > 0 ? getUnreadTotal() : undefined,
-        }}
+          tabBarStyle: getTabBarStyle(route, 'MessagesTab'),
+        })}
       />
       <Tab.Screen
         name="ProfileTab"
         component={ProfileStack}
-        options={{
+        options={({route}) => ({
           tabBarLabel: 'Profile',
           tabBarIcon: ({color, size}) => (
             <Icon name="account-outline" size={size} color={color} />
           ),
-        }}
+          tabBarStyle: getTabBarStyle(route, 'ProfileTab'),
+        })}
       />
     </Tab.Navigator>
   );

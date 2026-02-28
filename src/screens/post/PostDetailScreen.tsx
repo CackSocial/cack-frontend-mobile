@@ -1,6 +1,7 @@
 import React, {useEffect, useState, useCallback} from 'react';
 import {
   View,
+  Text,
   FlatList,
   TextInput,
   TouchableOpacity,
@@ -13,11 +14,14 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import PostCard from '../../components/post/PostCard';
 import CommentItem from '../../components/post/CommentItem';
+import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
 import {usePostDetail} from '../../hooks/usePostDetail';
+import {useSyncPostLike} from '../../hooks/useSyncLikes';
 import {createComment} from '../../api/comments';
 import {likePost, unlikePost} from '../../api/likes';
 import {usePostsStore} from '../../stores/postsStore';
+import {useAuthStore} from '../../stores/authStore';
 import {useColors, fonts} from '../../theme';
 import type {Comment} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -28,7 +32,8 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'PostDetail'>;
 export default function PostDetailScreen({route, navigation}: Props) {
   const {postId} = route.params;
   const c = useColors();
-  const syncLikeState = usePostsStore(s => s.syncLikeState);
+  const currentUser = useAuthStore(s => s.user);
+  const cacheLike = usePostsStore(s => s.cacheLike);
 
   const {
     post,
@@ -44,6 +49,9 @@ export default function PostDetailScreen({route, navigation}: Props) {
   const [commentText, setCommentText] = useState('');
   const [sending, setSending] = useState(false);
 
+  // Sync like state from global cache on focus
+  useSyncPostLike(setPost);
+
   useEffect(() => {
     fetchPost();
     fetchComments(true);
@@ -52,23 +60,17 @@ export default function PostDetailScreen({route, navigation}: Props) {
   const handleLike = useCallback(async () => {
     if (!post) return;
     const was = post.is_liked;
-    setPost({
-      ...post,
-      is_liked: !was,
-      like_count: post.like_count + (was ? -1 : 1),
-    });
-    syncLikeState(post.id);
+    const newLiked = !was;
+    const newCount = post.like_count + (was ? -1 : 1);
+    setPost({...post, is_liked: newLiked, like_count: newCount});
+    cacheLike(post.id, newLiked, newCount);
     try {
       was ? await unlikePost(post.id) : await likePost(post.id);
     } catch {
-      setPost({
-        ...post,
-        is_liked: was,
-        like_count: post.like_count,
-      });
-      syncLikeState(post.id);
+      setPost({...post, is_liked: was, like_count: post.like_count});
+      cacheLike(post.id, was, post.like_count);
     }
-  }, [post, setPost, syncLikeState]);
+  }, [post, setPost, cacheLike]);
 
   const handleSendComment = async () => {
     if (!commentText.trim() || sending) return;
@@ -89,17 +91,25 @@ export default function PostDetailScreen({route, navigation}: Props) {
 
   const renderHeader = () =>
     post ? (
-      <PostCard
-        post={post}
-        onAuthorPress={() => navigateToProfile(post.author.username)}
-        onLike={handleLike}
-        onTagPress={tag =>
-          navigation.getParent()?.navigate('ExploreTab', {
-            screen: 'TagPosts',
-            params: {tagName: tag},
-          })
-        }
-      />
+      <View>
+        <PostCard
+          post={post}
+          onAuthorPress={() => navigateToProfile(post.author.username)}
+          onLike={handleLike}
+          onTagPress={tag =>
+            navigation.getParent()?.navigate('ExploreTab', {
+              screen: 'TagPosts',
+              params: {tagName: tag},
+            })
+          }
+        />
+        {/* Replies header */}
+        <View style={[styles.repliesHeader, {borderBottomColor: c.border}]}>
+          <Text style={[styles.repliesTitle, {color: c.textPrimary}]}>
+            Replies
+          </Text>
+        </View>
+      </View>
     ) : null;
 
   const renderComment = ({item}: {item: Comment}) => (
@@ -120,7 +130,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
   return (
     <KeyboardAvoidingView
       style={[styles.flex, {backgroundColor: c.bgPrimary}]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={88}>
       <FlatList
         data={comments}
@@ -131,8 +141,8 @@ export default function PostDetailScreen({route, navigation}: Props) {
           !loading ? (
             <EmptyState
               icon="comment-outline"
-              title="No comments yet"
-              subtitle="Be the first to comment"
+              title="No replies yet"
+              subtitle="Be the first to reply"
             />
           ) : null
         }
@@ -142,54 +152,48 @@ export default function PostDetailScreen({route, navigation}: Props) {
         onEndReachedThreshold={0.5}
       />
 
-      {/* Comment input bar */}
+      {/* X-style reply bar */}
       <View
         style={[
-          styles.composerShell,
-          {
-            backgroundColor: c.bgPrimary,
-            borderTopColor: c.border,
-          },
+          styles.replyBar,
+          {backgroundColor: c.bgPrimary, borderTopColor: c.border},
         ]}>
+        <Avatar
+          uri={currentUser?.avatar_url}
+          name={currentUser?.display_name ?? ''}
+          size={32}
+        />
         <View
           style={[
-            styles.inputBar,
-            {
-              backgroundColor: c.bgSecondary,
-              borderColor: c.borderStrong,
-            },
+            styles.replyInputWrap,
+            {backgroundColor: c.bgSecondary, borderColor: c.borderStrong},
           ]}>
           <TextInput
-            style={[
-              styles.commentInput,
-              {color: c.textPrimary},
-            ]}
-            placeholder="Write a comment..."
+            style={[styles.replyInput, {color: c.textPrimary}]}
+            placeholder="Post your reply"
             placeholderTextColor={c.textMuted}
             value={commentText}
             onChangeText={setCommentText}
             multiline
             maxLength={2000}
-            accessibilityLabel="Comment input"
+            accessibilityLabel="Reply input"
           />
-          <TouchableOpacity
-            onPress={handleSendComment}
-            disabled={!commentText.trim() || sending}
-            style={[
-              styles.sendBtn,
-              {
-                backgroundColor: commentText.trim() ? c.accent : c.bgTertiary,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Send comment">
-            <Icon
-              name="send"
-              size={18}
-              color={commentText.trim() ? c.accentText : c.textMuted}
-            />
-          </TouchableOpacity>
         </View>
+        <TouchableOpacity
+          onPress={handleSendComment}
+          disabled={!commentText.trim() || sending}
+          style={[
+            styles.replyBtn,
+            {backgroundColor: commentText.trim() ? c.accent : c.bgTertiary},
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Send reply">
+          <Icon
+            name="send"
+            size={18}
+            color={commentText.trim() ? c.accentText : c.textMuted}
+          />
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -198,31 +202,41 @@ export default function PostDetailScreen({route, navigation}: Props) {
 const styles = StyleSheet.create({
   flex: {flex: 1},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  composerShell: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderTopWidth: 1,
+  repliesHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
   },
-  inputBar: {
+  repliesTitle: {
+    fontSize: 16,
+    fontFamily: fonts.bodySemiBold,
+  },
+  replyBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 18,
-    borderWidth: 1,
-    gap: 8,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    gap: 10,
   },
-  commentInput: {
+  replyInputWrap: {
     flex: 1,
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    maxHeight: 120,
+  },
+  replyInput: {
     fontSize: 15,
     fontFamily: fonts.body,
     maxHeight: 100,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
-  sendBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  replyBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
