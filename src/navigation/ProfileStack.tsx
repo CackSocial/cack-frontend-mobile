@@ -7,7 +7,7 @@ import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import FollowersScreen from '../screens/profile/FollowersScreen';
 import FollowingScreen from '../screens/profile/FollowingScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
-import {useColors} from '../theme';
+import {useColors, fonts} from '../theme';
 import type {ProfileStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -21,6 +21,7 @@ export default function ProfileStack() {
         headerStyle: {backgroundColor: c.bgPrimary},
         headerTintColor: c.textPrimary,
         headerShadowVisible: false,
+        headerTitleStyle: {fontFamily: fonts.display},
       }}>
       <Stack.Screen
         name="Profile"

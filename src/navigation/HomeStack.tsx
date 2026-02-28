@@ -4,7 +4,7 @@ import HomeScreen from '../screens/home/HomeScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
 import CreatePostScreen from '../screens/post/CreatePostScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
-import {useColors} from '../theme';
+import {useColors, fonts} from '../theme';
 import type {HomeStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -18,11 +18,12 @@ export default function HomeStack() {
         headerStyle: {backgroundColor: c.bgPrimary},
         headerTintColor: c.textPrimary,
         headerShadowVisible: false,
+        headerTitleStyle: {fontFamily: fonts.display},
       }}>
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{title: 'Cack'}}
+        options={{title: 'Cack Social'}}
       />
       <Stack.Screen
         name="PostDetail"

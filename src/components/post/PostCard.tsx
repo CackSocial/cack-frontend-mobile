@@ -1,12 +1,12 @@
-import React, {useCallback} from 'react';
-import {View, Text, Image, TouchableOpacity, StyleSheet} from 'react-native';
+import React from 'react';
+import {View, Text, Image, TouchableOpacity, StyleSheet, Share} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {Post} from '../../types';
 import Avatar from '../common/Avatar';
 import RenderTaggedContent from '../../utils/renderTaggedContent';
 import {formatRelativeTime, formatCount} from '../../utils/format';
 import {UPLOADS_URL} from '../../config';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 import {useAuthStore} from '../../stores/authStore';
 
 interface Props {
@@ -39,6 +39,10 @@ export default function PostCard({
 
   const isOwn = currentUser?.id === post.author.id;
 
+  const handleShare = () => {
+    Share.share({message: post.content});
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={0.9}
@@ -52,103 +56,103 @@ export default function PostCard({
       ]}
       accessibilityRole="button"
       accessibilityLabel={`Post by ${post.author.display_name}`}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={onAuthorPress}
-          style={styles.authorRow}
-          accessibilityLabel={`View ${post.author.display_name}'s profile`}>
+      <View style={styles.row}>
+        <TouchableOpacity onPress={onAuthorPress}>
           <Avatar
             uri={post.author.avatar_url}
             name={post.author.display_name}
             size={40}
           />
-          <View style={styles.authorInfo}>
-            <Text
-              style={[
-                styles.displayName,
-                {color: c.textPrimary},
-              ]}>
-              {post.author.display_name}
-            </Text>
-            <Text style={[styles.username, {color: c.textTertiary}]}>
-              @{post.author.username} · {formatRelativeTime(post.created_at)}
-            </Text>
+        </TouchableOpacity>
+        <View style={styles.body}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={onAuthorPress}
+              style={styles.authorRow}
+              accessibilityLabel={`View ${post.author.display_name}'s profile`}>
+              <Text style={[styles.displayName, {color: c.textPrimary}]}>
+                {post.author.display_name}
+              </Text>
+              <Text style={[styles.meta, {color: c.textTertiary}]}>
+                @{post.author.username} · {formatRelativeTime(post.created_at)}
+              </Text>
+            </TouchableOpacity>
+            {isOwn && onDelete && (
+              <TouchableOpacity
+                onPress={onDelete}
+                accessibilityLabel="Delete post"
+                accessibilityRole="button">
+                <Icon name="delete-outline" size={18} color={c.textMuted} />
+              </TouchableOpacity>
+            )}
           </View>
-        </TouchableOpacity>
-        {isOwn && onDelete && (
-          <TouchableOpacity
-            onPress={onDelete}
-            accessibilityLabel="Delete post"
-            accessibilityRole="button">
-            <Icon name="delete-outline" size={20} color="#ef4444" />
-          </TouchableOpacity>
-        )}
-      </View>
 
-      {/* Content */}
-      <View style={styles.content}>
-        <RenderTaggedContent
-          content={post.content}
-          style={{color: c.textPrimary, fontSize: 15, lineHeight: 22}}
-          tagStyle={{color: c.accent}}
-          onTagPress={onTagPress}
-        />
-      </View>
+          {/* Content */}
+          <View style={styles.content}>
+            <RenderTaggedContent
+              content={post.content}
+              style={{color: c.textPrimary, fontSize: 15, lineHeight: 24, fontFamily: fonts.body}}
+              tagStyle={{color: c.accent, fontFamily: fonts.bodySemiBold}}
+              onTagPress={onTagPress}
+            />
+          </View>
 
-      {/* Image */}
-      {imageUri && (
-        <Image
-          source={{uri: imageUri}}
-          style={styles.postImage}
-          resizeMode="cover"
-          accessibilityLabel="Post image"
-        />
-      )}
-
-      {/* Actions */}
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={onLike}
-          accessibilityRole="button"
-          accessibilityLabel={post.is_liked ? 'Unlike post' : 'Like post'}>
-          <Icon
-            name={post.is_liked ? 'heart' : 'heart-outline'}
-            size={20}
-            color={post.is_liked ? '#ef4444' : c.textMuted}
-          />
-          {post.like_count > 0 && (
-            <Text
-              style={[
-                styles.actionCount,
-                {color: post.is_liked ? '#ef4444' : c.textMuted},
-              ]}>
-              {formatCount(post.like_count)}
-            </Text>
+          {/* Image */}
+          {imageUri && (
+            <Image
+              source={{uri: imageUri}}
+              style={styles.postImage}
+              resizeMode="cover"
+              accessibilityLabel="Post image"
+            />
           )}
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={onComment}
-          accessibilityRole="button"
-          accessibilityLabel="View comments">
-          <Icon
-            name="comment-outline"
-            size={20}
-            color={c.textMuted}
-          />
-          {post.comment_count > 0 && (
-            <Text
-              style={[
-                styles.actionCount,
-                {color: c.textMuted},
-              ]}>
-              {formatCount(post.comment_count)}
-            </Text>
-          )}
-        </TouchableOpacity>
+          {/* Actions — 3 buttons evenly spaced */}
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={onLike}
+              accessibilityRole="button"
+              accessibilityLabel={post.is_liked ? 'Unlike post' : 'Like post'}>
+              <Icon
+                name={post.is_liked ? 'heart' : 'heart-outline'}
+                size={18}
+                color={post.is_liked ? '#ef4444' : c.textMuted}
+              />
+              {post.like_count > 0 && (
+                <Text
+                  style={[
+                    styles.actionCount,
+                    {color: post.is_liked ? '#ef4444' : c.textMuted},
+                  ]}>
+                  {formatCount(post.like_count)}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={onComment}
+              accessibilityRole="button"
+              accessibilityLabel="View comments">
+              <Icon name="comment-outline" size={18} color={c.textMuted} />
+              {post.comment_count > 0 && (
+                <Text style={[styles.actionCount, {color: c.textMuted}]}>
+                  {formatCount(post.comment_count)}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={handleShare}
+              accessibilityRole="button"
+              accessibilityLabel="Share post">
+              <Icon name="share-outline" size={18} color={c.textMuted} />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -157,8 +161,15 @@ export default function PostCard({
 const styles = StyleSheet.create({
   card: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  body: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -169,20 +180,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-  },
-  authorInfo: {
-    marginLeft: 10,
-    flex: 1,
+    gap: 6,
   },
   displayName: {
-    fontWeight: '700',
-    fontSize: 15,
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 14,
   },
-  username: {
+  meta: {
     fontSize: 13,
+    fontFamily: fonts.body,
   },
   content: {
-    marginTop: 8,
+    marginTop: 4,
   },
   postImage: {
     width: '100%',
@@ -192,15 +201,19 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    marginTop: 10,
-    gap: 24,
+    marginTop: 12,
+    gap: 0,
+    justifyContent: 'space-between',
+    paddingRight: 48,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
+    paddingVertical: 2,
   },
   actionCount: {
     fontSize: 13,
+    fontFamily: fonts.body,
   },
 });

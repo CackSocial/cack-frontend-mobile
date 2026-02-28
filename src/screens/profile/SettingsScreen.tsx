@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useAuthStore} from '../../stores/authStore';
 import {useThemeStore} from '../../stores/themeStore';
 import {useMessagesStore} from '../../stores/messagesStore';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 
 export default function SettingsScreen() {
   const theme = useThemeStore(s => s.theme);
@@ -80,6 +80,6 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
 });

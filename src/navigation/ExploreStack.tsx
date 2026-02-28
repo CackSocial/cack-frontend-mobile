@@ -3,7 +3,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import ExploreScreen from '../screens/explore/ExploreScreen';
 import TagPostsScreen from '../screens/explore/TagPostsScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
-import {useColors} from '../theme';
+import {useColors, fonts} from '../theme';
 import type {ExploreStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<ExploreStackParamList>();
@@ -17,6 +17,7 @@ export default function ExploreStack() {
         headerStyle: {backgroundColor: c.bgPrimary},
         headerTintColor: c.textPrimary,
         headerShadowVisible: false,
+        headerTitleStyle: {fontFamily: fonts.display},
       }}>
       <Stack.Screen
         name="Explore"

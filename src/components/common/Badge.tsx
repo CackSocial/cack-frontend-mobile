@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 
 interface Props {
   count: number;
@@ -32,6 +32,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   text: {
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
 });

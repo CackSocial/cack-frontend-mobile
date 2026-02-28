@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {Comment} from '../../types';
 import Avatar from '../common/Avatar';
 import {formatRelativeTime} from '../../utils/format';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 import {useAuthStore} from '../../stores/authStore';
 
 interface Props {
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   name: {
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
   },
   time: {

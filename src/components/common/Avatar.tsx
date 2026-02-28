@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, Image, Text, StyleSheet} from 'react-native';
 import {UPLOADS_URL} from '../../config';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 
 interface Props {
   uri?: string;
@@ -57,6 +57,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   initial: {
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
 });

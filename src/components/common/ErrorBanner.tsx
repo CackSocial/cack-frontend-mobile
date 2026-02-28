@@ -1,6 +1,7 @@
 import React from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {fonts} from '../../theme';
 
 interface Props {
   message: string;
@@ -42,7 +43,7 @@ const styles = StyleSheet.create({
   },
   retry: {
     color: '#fef2f2',
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
   },
 });

@@ -1,7 +1,7 @@
 import React from 'react';
 import {Text, StyleSheet} from 'react-native';
 import type {TextStyle} from 'react-native';
-import {useColors} from '../theme';
+import {useColors, fonts} from '../theme';
 
 const TAG_REGEX = /#(\w+)/g;
 
@@ -57,6 +57,6 @@ export default function RenderTaggedContent({
 
 const styles = StyleSheet.create({
   tag: {
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 });

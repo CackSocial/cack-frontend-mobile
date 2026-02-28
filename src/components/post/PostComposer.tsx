@@ -13,7 +13,7 @@ import {launchImageLibrary} from 'react-native-image-picker';
 import type {ImageAsset} from '../../types';
 import Button from '../common/Button';
 import {MAX_POST_LENGTH, MAX_IMAGE_SIZE_MB} from '../../config';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 
 interface Props {
   onSubmit: (content: string, image?: ImageAsset) => Promise<void>;
@@ -138,6 +138,7 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 16,
+    fontFamily: fonts.body,
     minHeight: 100,
     textAlignVertical: 'top',
     borderRadius: 12,
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
   tagPreview: {
     color: '#0a0a0a',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   toolbar: {
     flexDirection: 'row',
@@ -177,6 +178,7 @@ const styles = StyleSheet.create({
   },
   charCount: {
     fontSize: 12,
+    fontFamily: fonts.body,
     flex: 1,
     textAlign: 'center',
   },

@@ -2,7 +2,7 @@ import React from 'react';
 import {TouchableOpacity, Text, StyleSheet} from 'react-native';
 import type {Tag} from '../../types';
 import {formatCount} from '../../utils/format';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 
 interface Props {
   tag: Tag;
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.bodySemiBold,
   },
   count: {
     fontSize: 13,

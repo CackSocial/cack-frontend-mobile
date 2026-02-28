@@ -11,7 +11,7 @@ import {
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import {useAuthStore} from '../../stores/authStore';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {AuthStackParamList} from '../../navigation/types';
 
@@ -158,10 +158,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: '800',
+    fontFamily: fonts.displayBold,
   },
   subtitle: {
     fontSize: 16,
+    fontFamily: fonts.body,
     marginTop: 6,
   },
   errorBox: {
@@ -184,10 +185,11 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
+    fontFamily: fonts.body,
   },
   link: {
     fontSize: 14,
     color: '#525252',
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 });

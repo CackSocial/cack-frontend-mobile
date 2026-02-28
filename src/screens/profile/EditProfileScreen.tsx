@@ -75,5 +75,10 @@ const styles = StyleSheet.create({
   container: {flex: 1},
   content: {
     padding: 20,
+    flexGrow: 1,
+    justifyContent: 'center',
+    maxWidth: 480,
+    alignSelf: 'center',
+    width: '100%',
   },
 });

@@ -4,7 +4,7 @@ import type {ConversationListItem} from '../../types';
 import Avatar from '../common/Avatar';
 import Badge from '../common/Badge';
 import {formatMessageTime} from '../../utils/format';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 
 interface Props {
   conversation: ConversationListItem;
@@ -52,7 +52,7 @@ export default function ConversationItem({conversation, onPress}: Props) {
               styles.snippet,
               {
                 color: c.textSecondary,
-                fontWeight: unread_count > 0 ? '600' : '400',
+                fontFamily: unread_count > 0 ? fonts.bodySemiBold : fonts.body,
               },
             ]}
             numberOfLines={1}>
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   name: {
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     fontSize: 15,
     flex: 1,
   },

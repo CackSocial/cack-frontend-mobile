@@ -1,3 +1,4 @@
+import {Platform} from 'react-native';
 import {useThemeStore} from './stores/themeStore';
 
 const light = {
@@ -56,3 +57,13 @@ export function useColors(): ThemeColors {
   const theme = useThemeStore(s => s.theme);
   return colors[theme];
 }
+
+// Typography matching the web's Syne (display) + Outfit (body) system
+export const fonts = {
+  display: Platform.select({android: 'Syne-Bold', ios: 'Syne-Bold'}) || 'System',
+  displayBold: Platform.select({android: 'Syne-ExtraBold', ios: 'Syne-ExtraBold'}) || 'System',
+  body: Platform.select({android: 'Outfit-Regular', ios: 'Outfit-Regular'}) || 'System',
+  bodyMedium: Platform.select({android: 'Outfit-Medium', ios: 'Outfit-Medium'}) || 'System',
+  bodySemiBold: Platform.select({android: 'Outfit-SemiBold', ios: 'Outfit-SemiBold'}) || 'System',
+  bodyBold: Platform.select({android: 'Outfit-Bold', ios: 'Outfit-Bold'}) || 'System',
+};

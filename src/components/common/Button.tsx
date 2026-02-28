@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import type {ViewStyle, TextStyle} from 'react-native';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 
 interface Props {
   title: string;
@@ -101,6 +101,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   text: {
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 });

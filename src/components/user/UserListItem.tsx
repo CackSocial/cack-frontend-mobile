@@ -3,7 +3,7 @@ import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import type {UserProfile} from '../../types';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
-import {useColors} from '../../theme';
+import {useColors, fonts} from '../../theme';
 import {useAuthStore} from '../../stores/authStore';
 
 interface Props {
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     fontSize: 15,
   },
   username: {
