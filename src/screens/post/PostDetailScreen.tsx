@@ -27,10 +27,77 @@ import type {HomeStackParamList} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'PostDetail'>;
 
+/** Self-contained reply bar — owns its own text state so typing doesn't re-render the parent */
+const ReplyBar = React.memo(function ReplyBar({
+  onSubmit,
+}: {
+  onSubmit: (text: string) => Promise<void>;
+}) {
+  const c = useColors();
+  const currentUser = useAuthStore(s => s.user);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const handleSend = useCallback(async () => {
+    const trimmed = text.trim();
+    if (!trimmed || sending) return;
+    setSending(true);
+    try {
+      await onSubmit(trimmed);
+      setText('');
+    } catch {}
+    setSending(false);
+  }, [text, sending, onSubmit]);
+
+  return (
+    <View
+      style={[
+        styles.replyBar,
+        {borderBottomColor: c.border, borderTopColor: c.border},
+      ]}>
+      <Avatar
+        uri={currentUser?.avatar_url}
+        name={currentUser?.display_name ?? ''}
+        size={32}
+      />
+      <View
+        style={[
+          styles.replyInputWrap,
+          {backgroundColor: c.bgSecondary, borderColor: c.borderStrong},
+        ]}>
+        <TextInput
+          style={[styles.replyInput, {color: c.textPrimary}]}
+          placeholder="Post your reply"
+          placeholderTextColor={c.textMuted}
+          value={text}
+          onChangeText={setText}
+          multiline
+          maxLength={2000}
+          accessibilityLabel="Reply input"
+        />
+      </View>
+      <TouchableOpacity
+        onPress={handleSend}
+        disabled={!text.trim() || sending}
+        style={[
+          styles.replyBtn,
+          {backgroundColor: text.trim() ? c.accent : c.bgTertiary},
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Send reply">
+        <Icon
+          name="send"
+          size={18}
+          color={text.trim() ? c.accentText : c.textMuted}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+});
+
 export default function PostDetailScreen({route, navigation}: Props) {
   const {postId} = route.params;
   const c = useColors();
-  const currentUser = useAuthStore(s => s.user);
   const cachePost = usePostsStore(s => s.cachePost);
 
   const {
@@ -43,9 +110,6 @@ export default function PostDetailScreen({route, navigation}: Props) {
     fetchComments,
     addComment,
   } = usePostDetail(postId);
-
-  const [commentText, setCommentText] = useState('');
-  const [sending, setSending] = useState(false);
 
   // Sync post state from global cache on focus
   useSyncPostLike(setPost);
@@ -70,28 +134,24 @@ export default function PostDetailScreen({route, navigation}: Props) {
     }
   }, [post, setPost, cachePost]);
 
-  const handleSendComment = async () => {
-    if (!commentText.trim() || sending) return;
-    setSending(true);
+  const handleSubmitComment = useCallback(async (text: string) => {
     try {
-      const newComment = await createComment(postId, commentText.trim());
+      const newComment = await createComment(postId, text);
       addComment(newComment);
-      setCommentText('');
-      // Update global cache so other screens see the new count
       if (post) {
         cachePost(postId, {comment_count: post.comment_count + 1});
       }
     } catch (e: any) {
       Alert.alert('Error', e.message);
+      throw e; // let ReplyBar know it failed
     }
-    setSending(false);
-  };
+  }, [postId, post, addComment, cachePost]);
 
   const navigateToProfile = (username: string) => {
     navigation.navigate('Profile', {username});
   };
 
-  const renderHeader = () =>
+  const renderHeader = useCallback(() =>
     post ? (
       <View>
         <PostCard
@@ -105,50 +165,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
             })
           }
         />
-        {/* Reply input — below post, above comments */}
-        <View
-          style={[
-            styles.replyBar,
-            {borderBottomColor: c.border, borderTopColor: c.border},
-          ]}>
-          <Avatar
-            uri={currentUser?.avatar_url}
-            name={currentUser?.display_name ?? ''}
-            size={32}
-          />
-          <View
-            style={[
-              styles.replyInputWrap,
-              {backgroundColor: c.bgSecondary, borderColor: c.borderStrong},
-            ]}>
-            <TextInput
-              style={[styles.replyInput, {color: c.textPrimary}]}
-              placeholder="Post your reply"
-              placeholderTextColor={c.textMuted}
-              value={commentText}
-              onChangeText={setCommentText}
-              multiline
-              maxLength={2000}
-              accessibilityLabel="Reply input"
-            />
-          </View>
-          <TouchableOpacity
-            onPress={handleSendComment}
-            disabled={!commentText.trim() || sending}
-            style={[
-              styles.replyBtn,
-              {backgroundColor: commentText.trim() ? c.accent : c.bgTertiary},
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Send reply">
-            <Icon
-              name="send"
-              size={18}
-              color={commentText.trim() ? c.accentText : c.textMuted}
-            />
-          </TouchableOpacity>
-        </View>
-        {/* Replies header */}
+        <ReplyBar onSubmit={handleSubmitComment} />
         {comments.length > 0 && (
           <View style={[styles.repliesHeader, {borderBottomColor: c.border}]}>
             <Text style={[styles.repliesTitle, {color: c.textPrimary}]}>
@@ -157,7 +174,8 @@ export default function PostDetailScreen({route, navigation}: Props) {
           </View>
         )}
       </View>
-    ) : null;
+    ) : null,
+  [post, comments.length, handleLike, handleSubmitComment, c, navigation]);
 
   const renderComment = ({item}: {item: Comment}) => (
     <CommentItem
