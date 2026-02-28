@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {useFocusEffect} from '@react-navigation/native';
 import Avatar from '../../components/common/Avatar';
 import Button from '../../components/common/Button';
 import PostCard from '../../components/post/PostCard';
@@ -51,6 +52,25 @@ export default function ProfileScreen({route, navigation}: Props) {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
+
+  // Sync like states from timeline store when screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      const timeline = usePostsStore.getState().timeline;
+      setPosts(prev => {
+        let changed = false;
+        const next = prev.map(p => {
+          const tp = timeline.find(t => t.id === p.id);
+          if (tp && (tp.is_liked !== p.is_liked || tp.like_count !== p.like_count)) {
+            changed = true;
+            return {...p, is_liked: tp.is_liked, like_count: tp.like_count};
+          }
+          return p;
+        });
+        return changed ? next : prev;
+      });
+    }, [setPosts]),
+  );
 
   const loadProfile = useCallback(async () => {
     setLoadingProfile(true);
