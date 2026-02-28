@@ -5,8 +5,6 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
   StyleSheet,
   ActivityIndicator,
@@ -103,12 +101,57 @@ export default function PostDetailScreen({route, navigation}: Props) {
             })
           }
         />
-        {/* Replies header */}
-        <View style={[styles.repliesHeader, {borderBottomColor: c.border}]}>
-          <Text style={[styles.repliesTitle, {color: c.textPrimary}]}>
-            Replies
-          </Text>
+        {/* Reply input — below post, above comments */}
+        <View
+          style={[
+            styles.replyBar,
+            {borderBottomColor: c.border, borderTopColor: c.border},
+          ]}>
+          <Avatar
+            uri={currentUser?.avatar_url}
+            name={currentUser?.display_name ?? ''}
+            size={32}
+          />
+          <View
+            style={[
+              styles.replyInputWrap,
+              {backgroundColor: c.bgSecondary, borderColor: c.borderStrong},
+            ]}>
+            <TextInput
+              style={[styles.replyInput, {color: c.textPrimary}]}
+              placeholder="Post your reply"
+              placeholderTextColor={c.textMuted}
+              value={commentText}
+              onChangeText={setCommentText}
+              multiline
+              maxLength={2000}
+              accessibilityLabel="Reply input"
+            />
+          </View>
+          <TouchableOpacity
+            onPress={handleSendComment}
+            disabled={!commentText.trim() || sending}
+            style={[
+              styles.replyBtn,
+              {backgroundColor: commentText.trim() ? c.accent : c.bgTertiary},
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Send reply">
+            <Icon
+              name="send"
+              size={18}
+              color={commentText.trim() ? c.accentText : c.textMuted}
+            />
+          </TouchableOpacity>
         </View>
+        {/* Replies header */}
+        {comments.length > 0 && (
+          <View style={[styles.repliesHeader, {borderBottomColor: c.border}]}>
+            <Text style={[styles.repliesTitle, {color: c.textPrimary}]}>
+              Replies
+            </Text>
+          </View>
+        )}
       </View>
     ) : null;
 
@@ -128,10 +171,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.flex, {backgroundColor: c.bgPrimary}]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={88}>
+    <View style={[styles.flex, {backgroundColor: c.bgPrimary}]}>
       <FlatList
         data={comments}
         keyExtractor={item => item.id}
@@ -150,73 +190,22 @@ export default function PostDetailScreen({route, navigation}: Props) {
           if (commentsHasMore) fetchComments(false);
         }}
         onEndReachedThreshold={0.5}
+        keyboardShouldPersistTaps="handled"
       />
-
-      {/* X-style reply bar */}
-      <View
-        style={[
-          styles.replyBar,
-          {backgroundColor: c.bgPrimary, borderTopColor: c.border},
-        ]}>
-        <Avatar
-          uri={currentUser?.avatar_url}
-          name={currentUser?.display_name ?? ''}
-          size={32}
-        />
-        <View
-          style={[
-            styles.replyInputWrap,
-            {backgroundColor: c.bgSecondary, borderColor: c.borderStrong},
-          ]}>
-          <TextInput
-            style={[styles.replyInput, {color: c.textPrimary}]}
-            placeholder="Post your reply"
-            placeholderTextColor={c.textMuted}
-            value={commentText}
-            onChangeText={setCommentText}
-            multiline
-            maxLength={2000}
-            accessibilityLabel="Reply input"
-          />
-        </View>
-        <TouchableOpacity
-          onPress={handleSendComment}
-          disabled={!commentText.trim() || sending}
-          style={[
-            styles.replyBtn,
-            {backgroundColor: commentText.trim() ? c.accent : c.bgTertiary},
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="Send reply">
-          <Icon
-            name="send"
-            size={18}
-            color={commentText.trim() ? c.accentText : c.textMuted}
-          />
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: {flex: 1},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  repliesHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  repliesTitle: {
-    fontSize: 16,
-    fontFamily: fonts.bodySemiBold,
-  },
   replyBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderTopWidth: 1,
+    borderBottomWidth: 1,
     gap: 10,
   },
   replyInputWrap: {
@@ -239,5 +228,14 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  repliesHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  repliesTitle: {
+    fontSize: 16,
+    fontFamily: fonts.bodySemiBold,
   },
 });

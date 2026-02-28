@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {useFocusEffect} from '@react-navigation/native';
 import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
 import ErrorBanner from '../../components/common/ErrorBanner';
@@ -37,10 +38,6 @@ export default function ExploreScreen({navigation}: Props) {
 
   const debouncedQuery = useDebounce(query, 350);
 
-  useEffect(() => {
-    loadTags();
-  }, []);
-
   const loadTags = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -52,6 +49,13 @@ export default function ExploreScreen({navigation}: Props) {
     }
     setLoading(false);
   }, []);
+
+  // Refresh trending tags every time the screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      loadTags();
+    }, [loadTags]),
+  );
 
   // Search users when debounced query changes and mode is 'users'
   useEffect(() => {
