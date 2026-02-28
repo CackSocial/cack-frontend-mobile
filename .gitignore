@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+android/app/build/
+ios/build/
+ios/Pods/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Metro
+.metro-health-check*
+
+# Testing
+coverage/
