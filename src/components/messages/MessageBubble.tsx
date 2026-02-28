@@ -3,7 +3,7 @@ import {View, Text, Image, StyleSheet} from 'react-native';
 import type {Message} from '../../types';
 import {formatMessageTime} from '../../utils/format';
 import {UPLOADS_URL} from '../../config';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 
 interface Props {
   message: Message;
@@ -11,8 +11,7 @@ interface Props {
 }
 
 export default function MessageBubble({message, isOwn}: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
 
   const imageUri = message.image_url
     ? message.image_url.startsWith('http')
@@ -20,13 +19,8 @@ export default function MessageBubble({message, isOwn}: Props) {
       : `${UPLOADS_URL}/${message.image_url}`
     : null;
 
-  const bubbleBg = isOwn
-    ? '#3b82f6'
-    : isDark
-    ? '#374151'
-    : '#f3f4f6';
-
-  const textColor = isOwn ? '#ffffff' : isDark ? '#f3f4f6' : '#111827';
+  const bubbleBg = isOwn ? c.accent : c.bgSecondary;
+  const textColor = isOwn ? c.accentText : c.textPrimary;
 
   return (
     <View
@@ -60,7 +54,7 @@ export default function MessageBubble({message, isOwn}: Props) {
           <Text
             style={[
               styles.time,
-              {color: isOwn ? 'rgba(255,255,255,0.7)' : isDark ? '#6b7280' : '#9ca3af'},
+              {color: isOwn ? c.accentText : c.textMuted, opacity: isOwn ? 0.6 : 1},
             ]}>
             {formatMessageTime(message.created_at)}
           </Text>
@@ -68,7 +62,7 @@ export default function MessageBubble({message, isOwn}: Props) {
             <Text
               style={[
                 styles.read,
-                {color: 'rgba(255,255,255,0.7)'},
+                {color: c.accentText, opacity: 0.6},
               ]}>
               ✓✓
             </Text>

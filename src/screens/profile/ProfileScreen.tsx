@@ -17,7 +17,7 @@ import {followUser, unfollowUser} from '../../api/follows';
 import {useUserPosts} from '../../hooks/useUserPosts';
 import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import {formatCount} from '../../utils/format';
 import type {UserProfile, Post} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -27,8 +27,7 @@ type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
 
 export default function ProfileScreen({route, navigation}: Props) {
   const paramUsername = route.params?.username;
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
   const currentUser = useAuthStore(s => s.user);
   const toggleTimelineLike = usePostsStore(s => s.toggleLike);
 
@@ -88,14 +87,14 @@ export default function ProfileScreen({route, navigation}: Props) {
           name={profile.display_name}
           size={80}
         />
-        <Text style={[styles.displayName, {color: isDark ? '#f3f4f6' : '#111827'}]}>
+        <Text style={[styles.displayName, {color: c.textPrimary}]}>
           {profile.display_name}
         </Text>
-        <Text style={[styles.username, {color: isDark ? '#6b7280' : '#9ca3af'}]}>
+        <Text style={[styles.username, {color: c.textTertiary}]}>
           @{profile.username}
         </Text>
         {profile.bio ? (
-          <Text style={[styles.bio, {color: isDark ? '#d1d5db' : '#4b5563'}]}>
+          <Text style={[styles.bio, {color: c.textSecondary}]}>
             {profile.bio}
           </Text>
         ) : null}
@@ -107,10 +106,10 @@ export default function ProfileScreen({route, navigation}: Props) {
               navigation.navigate('Followers', {username: profile.username})
             }
             accessibilityLabel={`${profile.follower_count} followers`}>
-            <Text style={[styles.statNum, {color: isDark ? '#f3f4f6' : '#111827'}]}>
+            <Text style={[styles.statNum, {color: c.textPrimary}]}>
               {formatCount(profile.follower_count)}
             </Text>
-            <Text style={[styles.statLabel, {color: isDark ? '#6b7280' : '#9ca3af'}]}>
+            <Text style={[styles.statLabel, {color: c.textTertiary}]}>
               Followers
             </Text>
           </TouchableOpacity>
@@ -120,10 +119,10 @@ export default function ProfileScreen({route, navigation}: Props) {
               navigation.navigate('Following', {username: profile.username})
             }
             accessibilityLabel={`${profile.following_count} following`}>
-            <Text style={[styles.statNum, {color: isDark ? '#f3f4f6' : '#111827'}]}>
+            <Text style={[styles.statNum, {color: c.textPrimary}]}>
               {formatCount(profile.following_count)}
             </Text>
-            <Text style={[styles.statLabel, {color: isDark ? '#6b7280' : '#9ca3af'}]}>
+            <Text style={[styles.statLabel, {color: c.textTertiary}]}>
               Following
             </Text>
           </TouchableOpacity>
@@ -148,7 +147,7 @@ export default function ProfileScreen({route, navigation}: Props) {
               <TouchableOpacity
                 style={[
                   styles.msgBtn,
-                  {backgroundColor: isDark ? '#374151' : '#e5e7eb'},
+                  {backgroundColor: c.bgTertiary},
                 ]}
                 onPress={() =>
                   (navigation as any).navigate('MessagesTab', {
@@ -164,7 +163,7 @@ export default function ProfileScreen({route, navigation}: Props) {
                 <Icon
                   name="message-outline"
                   size={20}
-                  color={isDark ? '#d1d5db' : '#374151'}
+                  color={c.textSecondary}
                 />
               </TouchableOpacity>
             </>
@@ -190,14 +189,14 @@ export default function ProfileScreen({route, navigation}: Props) {
 
   if (loadingProfile && !profile) {
     return (
-      <View style={[styles.center, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}>
+      <View style={[styles.center, {backgroundColor: c.bgPrimary}]}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}>
+    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
       <FlatList
         data={posts}
         keyExtractor={item => item.id}

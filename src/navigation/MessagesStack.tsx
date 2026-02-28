@@ -2,20 +2,19 @@ import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import MessagesScreen from '../screens/messages/MessagesScreen';
 import ConversationScreen from '../screens/messages/ConversationScreen';
-import {useThemeStore} from '../stores/themeStore';
+import {useColors} from '../theme';
 import type {MessagesStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<MessagesStackParamList>();
 
 export default function MessagesStack() {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
 
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: {backgroundColor: isDark ? '#111827' : '#ffffff'},
-        headerTintColor: isDark ? '#f3f4f6' : '#111827',
+        headerStyle: {backgroundColor: c.bgPrimary},
+        headerTintColor: c.textPrimary,
         headerShadowVisible: false,
       }}>
       <Stack.Screen

@@ -13,7 +13,7 @@ import {launchImageLibrary} from 'react-native-image-picker';
 import type {ImageAsset} from '../../types';
 import Button from '../common/Button';
 import {MAX_POST_LENGTH, MAX_IMAGE_SIZE_MB} from '../../config';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 
 interface Props {
   onSubmit: (content: string, image?: ImageAsset) => Promise<void>;
@@ -21,8 +21,7 @@ interface Props {
 }
 
 export default function PostComposer({onSubmit, loading}: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
   const [content, setContent] = useState('');
   const [image, setImage] = useState<ImageAsset | null>(null);
 
@@ -62,18 +61,18 @@ export default function PostComposer({onSubmit, loading}: Props) {
     <View
       style={[
         styles.container,
-        {backgroundColor: isDark ? '#111827' : '#ffffff'},
+        {backgroundColor: c.bgPrimary},
       ]}>
       <TextInput
         style={[
           styles.input,
           {
-            color: isDark ? '#f3f4f6' : '#111827',
-            backgroundColor: isDark ? '#1f2937' : '#f9fafb',
+            color: c.textPrimary,
+            backgroundColor: c.bgSecondary,
           },
         ]}
         placeholder="What's on your mind?"
-        placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+        placeholderTextColor={c.textMuted}
         multiline
         maxLength={MAX_POST_LENGTH + 100}
         value={content}
@@ -96,7 +95,7 @@ export default function PostComposer({onSubmit, loading}: Props) {
       {tags.length > 0 && (
         <View style={styles.tagRow}>
           {tags.map((tag, i) => (
-            <Text key={i} style={styles.tagPreview}>
+            <Text key={i} style={[styles.tagPreview, {color: c.accent}]}>
               {tag}
             </Text>
           ))}
@@ -111,13 +110,13 @@ export default function PostComposer({onSubmit, loading}: Props) {
           <Icon
             name="image-outline"
             size={24}
-            color={isDark ? '#6b7280' : '#9ca3af'}
+            color={c.textMuted}
           />
         </TouchableOpacity>
         <Text
           style={[
             styles.charCount,
-            {color: isOverLimit ? '#ef4444' : isDark ? '#6b7280' : '#9ca3af'},
+            {color: isOverLimit ? '#ef4444' : c.textMuted},
           ]}>
           {charCount}/{MAX_POST_LENGTH}
         </Text>
@@ -166,7 +165,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   tagPreview: {
-    color: '#3b82f6',
+    color: '#0a0a0a',
     fontSize: 13,
     fontWeight: '600',
   },

@@ -2,7 +2,7 @@ import React from 'react';
 import {TouchableOpacity, Text, StyleSheet} from 'react-native';
 import type {Tag} from '../../types';
 import {formatCount} from '../../utils/format';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 
 interface Props {
   tag: Tag;
@@ -10,23 +10,22 @@ interface Props {
 }
 
 export default function TrendingTagCard({tag, onPress}: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
 
   return (
     <TouchableOpacity
       style={[
         styles.card,
-        {backgroundColor: isDark ? '#1f2937' : '#f9fafb'},
+        {backgroundColor: c.bgElevated},
       ]}
       onPress={onPress}
       activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={`Tag ${tag.name}, ${tag.post_count} posts`}>
-      <Text style={[styles.name, {color: isDark ? '#f3f4f6' : '#111827'}]}>
+      <Text style={[styles.name, {color: c.textPrimary}]}>
         #{tag.name}
       </Text>
-      <Text style={[styles.count, {color: isDark ? '#6b7280' : '#9ca3af'}]}>
+      <Text style={[styles.count, {color: c.textTertiary}]}>
         {formatCount(tag.post_count)} posts
       </Text>
     </TouchableOpacity>

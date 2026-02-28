@@ -7,20 +7,19 @@ import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import FollowersScreen from '../screens/profile/FollowersScreen';
 import FollowingScreen from '../screens/profile/FollowingScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
-import {useThemeStore} from '../stores/themeStore';
+import {useColors} from '../theme';
 import type {ProfileStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
 export default function ProfileStack() {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
 
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: {backgroundColor: isDark ? '#111827' : '#ffffff'},
-        headerTintColor: isDark ? '#f3f4f6' : '#111827',
+        headerStyle: {backgroundColor: c.bgPrimary},
+        headerTintColor: c.textPrimary,
         headerShadowVisible: false,
       }}>
       <Stack.Screen
@@ -35,7 +34,7 @@ export default function ProfileStack() {
               <Icon
                 name="cog-outline"
                 size={24}
-                color={isDark ? '#f3f4f6' : '#111827'}
+                color={c.textPrimary}
               />
             </TouchableOpacity>
           ),

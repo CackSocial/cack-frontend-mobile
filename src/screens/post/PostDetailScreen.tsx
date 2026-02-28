@@ -20,7 +20,7 @@ import {deletePost} from '../../api/posts';
 import {likePost, unlikePost} from '../../api/likes';
 import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import type {Comment} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {HomeStackParamList} from '../../navigation/types';
@@ -29,8 +29,7 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'PostDetail'>;
 
 export default function PostDetailScreen({route, navigation}: Props) {
   const {postId} = route.params;
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
   const currentUser = useAuthStore(s => s.user);
   const toggleTimelineLike = usePostsStore(s => s.toggleLike);
   const removeFromTimeline = usePostsStore(s => s.removePost);
@@ -163,7 +162,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
 
   if (loading && !post) {
     return (
-      <View style={[styles.center, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}>
+      <View style={[styles.center, {backgroundColor: c.bgPrimary}]}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -171,7 +170,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.flex, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}
+      style={[styles.flex, {backgroundColor: c.bgPrimary}]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={88}>
       <FlatList
@@ -199,17 +198,17 @@ export default function PostDetailScreen({route, navigation}: Props) {
         style={[
           styles.inputBar,
           {
-            backgroundColor: isDark ? '#1f2937' : '#f9fafb',
-            borderTopColor: isDark ? '#374151' : '#e5e7eb',
+            backgroundColor: c.bgSecondary,
+            borderTopColor: c.border,
           },
         ]}>
         <TextInput
           style={[
             styles.commentInput,
-            {color: isDark ? '#f3f4f6' : '#111827'},
+            {color: c.textPrimary},
           ]}
           placeholder="Write a comment..."
-          placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+          placeholderTextColor={c.textMuted}
           value={commentText}
           onChangeText={setCommentText}
           multiline
@@ -224,7 +223,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
           <Icon
             name="send"
             size={24}
-            color={commentText.trim() ? '#3b82f6' : isDark ? '#4b5563' : '#d1d5db'}
+            color={commentText.trim() ? c.accent : c.textMuted}
           />
         </TouchableOpacity>
       </View>

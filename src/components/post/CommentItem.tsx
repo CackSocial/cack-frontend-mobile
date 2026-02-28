@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {Comment} from '../../types';
 import Avatar from '../common/Avatar';
 import {formatRelativeTime} from '../../utils/format';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import {useAuthStore} from '../../stores/authStore';
 
 interface Props {
@@ -14,16 +14,15 @@ interface Props {
 }
 
 export default function CommentItem({comment, onAuthorPress, onDelete}: Props) {
-  const theme = useThemeStore(s => s.theme);
+  const c = useColors();
   const currentUser = useAuthStore(s => s.user);
-  const isDark = theme === 'dark';
   const isOwn = currentUser?.id === comment.author.id;
 
   return (
     <View
       style={[
         styles.container,
-        {borderBottomColor: isDark ? '#374151' : '#f3f4f6'},
+        {borderBottomColor: c.border},
       ]}>
       <TouchableOpacity onPress={onAuthorPress}>
         <Avatar
@@ -38,12 +37,12 @@ export default function CommentItem({comment, onAuthorPress, onDelete}: Props) {
             <Text
               style={[
                 styles.name,
-                {color: isDark ? '#f3f4f6' : '#111827'},
+                {color: c.textPrimary},
               ]}>
               {comment.author.display_name}
             </Text>
           </TouchableOpacity>
-          <Text style={[styles.time, {color: isDark ? '#6b7280' : '#9ca3af'}]}>
+          <Text style={[styles.time, {color: c.textTertiary}]}>
             {formatRelativeTime(comment.created_at)}
           </Text>
           {isOwn && onDelete && (
@@ -55,7 +54,7 @@ export default function CommentItem({comment, onAuthorPress, onDelete}: Props) {
             </TouchableOpacity>
           )}
         </View>
-        <Text style={[styles.content, {color: isDark ? '#d1d5db' : '#374151'}]}>
+        <Text style={[styles.content, {color: c.textSecondary}]}>
           {comment.content}
         </Text>
       </View>

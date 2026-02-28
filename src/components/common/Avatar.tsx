@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, Image, Text, StyleSheet} from 'react-native';
 import {UPLOADS_URL} from '../../config';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 
 interface Props {
   uri?: string;
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function Avatar({uri, name, size = 40}: Props) {
-  const theme = useThemeStore(s => s.theme);
+  const c = useColors();
   const resolvedUri =
     uri && uri.startsWith('http') ? uri : uri ? `${UPLOADS_URL}/${uri}` : null;
 
@@ -33,14 +33,14 @@ export default function Avatar({uri, name, size = 40}: Props) {
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: theme === 'dark' ? '#374151' : '#e5e7eb',
+          backgroundColor: c.accent,
         },
       ]}
       accessibilityLabel={`${name || 'User'}'s avatar`}>
       <Text
         style={[
           styles.initial,
-          {fontSize: size * 0.4, color: theme === 'dark' ? '#d1d5db' : '#6b7280'},
+          {fontSize: size * 0.4, color: c.accentText},
         ]}>
         {initial}
       </Text>

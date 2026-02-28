@@ -3,7 +3,7 @@ import {View, FlatList, ActivityIndicator, RefreshControl, StyleSheet} from 'rea
 import ConversationItem from '../../components/messages/ConversationItem';
 import EmptyState from '../../components/common/EmptyState';
 import {useMessagesStore} from '../../stores/messagesStore';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import type {ConversationListItem} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {MessagesStackParamList} from '../../navigation/types';
@@ -11,8 +11,7 @@ import type {MessagesStackParamList} from '../../navigation/types';
 type Props = NativeStackScreenProps<MessagesStackParamList, 'Messages'>;
 
 export default function MessagesScreen({navigation}: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
   const {conversations, isLoading, fetchConversations} = useMessagesStore();
 
   useEffect(() => {
@@ -33,7 +32,7 @@ export default function MessagesScreen({navigation}: Props) {
   );
 
   return (
-    <View style={[styles.container, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}>
+    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
       <FlatList
         data={conversations}
         keyExtractor={item => item.user.id}

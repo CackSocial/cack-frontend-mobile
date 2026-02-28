@@ -11,15 +11,14 @@ import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import {updateMe} from '../../api/users';
 import {useAuthStore} from '../../stores/authStore';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ProfileStackParamList} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'EditProfile'>;
 
 export default function EditProfileScreen({navigation}: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
   const user = useAuthStore(s => s.user);
   const updateUser = useAuthStore(s => s.updateUser);
 
@@ -41,7 +40,7 @@ export default function EditProfileScreen({navigation}: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}
+      style={[styles.container, {backgroundColor: c.bgPrimary}]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         contentContainerStyle={styles.content}

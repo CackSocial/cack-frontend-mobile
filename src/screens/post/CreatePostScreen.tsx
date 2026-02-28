@@ -8,7 +8,7 @@ import {
 import PostComposer from '../../components/post/PostComposer';
 import {createPost} from '../../api/posts';
 import {usePostsStore} from '../../stores/postsStore';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import type {ImageAsset} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {HomeStackParamList} from '../../navigation/types';
@@ -16,8 +16,7 @@ import type {HomeStackParamList} from '../../navigation/types';
 type Props = NativeStackScreenProps<HomeStackParamList, 'CreatePost'>;
 
 export default function CreatePostScreen({navigation}: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
   const prependPost = usePostsStore(s => s.prependPost);
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +34,7 @@ export default function CreatePostScreen({navigation}: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}
+      style={[styles.container, {backgroundColor: c.bgPrimary}]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <PostComposer onSubmit={handleSubmit} loading={loading} />
     </KeyboardAvoidingView>

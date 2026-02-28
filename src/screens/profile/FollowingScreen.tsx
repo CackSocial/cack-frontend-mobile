@@ -4,7 +4,7 @@ import UserListItem from '../../components/user/UserListItem';
 import EmptyState from '../../components/common/EmptyState';
 import {getFollowing} from '../../api/users';
 import {followUser, unfollowUser} from '../../api/follows';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import {PAGINATION_LIMIT} from '../../config';
 import type {UserProfile} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -14,8 +14,7 @@ type Props = NativeStackScreenProps<ProfileStackParamList, 'Following'>;
 
 export default function FollowingScreen({route, navigation}: Props) {
   const {username} = route.params;
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [page, setPage] = useState(1);
@@ -61,7 +60,7 @@ export default function FollowingScreen({route, navigation}: Props) {
   };
 
   return (
-    <View style={[styles.container, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}>
+    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
       <FlatList
         data={users}
         keyExtractor={item => item.id}

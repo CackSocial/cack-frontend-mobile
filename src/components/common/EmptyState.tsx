@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 
 interface Props {
   icon?: string;
@@ -10,21 +10,20 @@ interface Props {
 }
 
 export default function EmptyState({icon = 'inbox-outline', title, subtitle}: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
 
   return (
     <View style={styles.container}>
       <Icon
         name={icon}
         size={56}
-        color={isDark ? '#4b5563' : '#9ca3af'}
+        color={c.textMuted}
       />
-      <Text style={[styles.title, {color: isDark ? '#d1d5db' : '#374151'}]}>
+      <Text style={[styles.title, {color: c.textSecondary}]}>
         {title}
       </Text>
       {subtitle && (
-        <Text style={[styles.subtitle, {color: isDark ? '#6b7280' : '#9ca3af'}]}>
+        <Text style={[styles.subtitle, {color: c.textTertiary}]}>
           {subtitle}
         </Text>
       )}

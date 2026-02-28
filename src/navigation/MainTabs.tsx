@@ -7,14 +7,13 @@ import MessagesStack from './MessagesStack';
 import ProfileStack from './ProfileStack';
 import Badge from '../components/common/Badge';
 import {useMessagesStore} from '../stores/messagesStore';
-import {useThemeStore} from '../stores/themeStore';
+import {useColors} from '../theme';
 import type {MainTabParamList} from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabs() {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
   const getUnreadTotal = useMessagesStore(s => s.getUnreadTotal);
 
   return (
@@ -22,11 +21,11 @@ export default function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: isDark ? '#111827' : '#ffffff',
-          borderTopColor: isDark ? '#374151' : '#e5e7eb',
+          backgroundColor: c.bgPrimary,
+          borderTopColor: c.border,
         },
-        tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: isDark ? '#6b7280' : '#9ca3af',
+        tabBarActiveTintColor: c.accent,
+        tabBarInactiveTintColor: c.textMuted,
       }}>
       <Tab.Screen
         name="HomeTab"

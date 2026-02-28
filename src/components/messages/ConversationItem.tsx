@@ -4,7 +4,7 @@ import type {ConversationListItem} from '../../types';
 import Avatar from '../common/Avatar';
 import Badge from '../common/Badge';
 import {formatMessageTime} from '../../utils/format';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 
 interface Props {
   conversation: ConversationListItem;
@@ -12,8 +12,7 @@ interface Props {
 }
 
 export default function ConversationItem({conversation, onPress}: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
   const {user, last_message, unread_count} = conversation;
 
   const snippet = last_message?.image_url
@@ -24,7 +23,7 @@ export default function ConversationItem({conversation, onPress}: Props) {
     <TouchableOpacity
       style={[
         styles.container,
-        {borderBottomColor: isDark ? '#374151' : '#f3f4f6'},
+        {borderBottomColor: c.border},
       ]}
       onPress={onPress}
       activeOpacity={0.7}
@@ -36,13 +35,13 @@ export default function ConversationItem({conversation, onPress}: Props) {
           <Text
             style={[
               styles.name,
-              {color: isDark ? '#f3f4f6' : '#111827'},
+              {color: c.textPrimary},
             ]}
             numberOfLines={1}>
             {user.display_name}
           </Text>
           {last_message && (
-            <Text style={[styles.time, {color: isDark ? '#6b7280' : '#9ca3af'}]}>
+            <Text style={[styles.time, {color: c.textTertiary}]}>
               {formatMessageTime(last_message.created_at)}
             </Text>
           )}
@@ -52,7 +51,7 @@ export default function ConversationItem({conversation, onPress}: Props) {
             style={[
               styles.snippet,
               {
-                color: isDark ? '#9ca3af' : '#6b7280',
+                color: c.textSecondary,
                 fontWeight: unread_count > 0 ? '600' : '400',
               },
             ]}

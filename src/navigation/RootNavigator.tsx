@@ -6,6 +6,7 @@ import AuthStack from './AuthStack';
 import MainTabs from './MainTabs';
 import {useAuthStore} from '../stores/authStore';
 import {useWebSocket} from '../hooks/useWebSocket';
+import {useColors} from '../theme';
 import type {RootStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -28,6 +29,7 @@ function NavigationContent() {
 export default function RootNavigator() {
   const isLoading = useAuthStore(s => s.isLoading);
   const hydrate = useAuthStore(s => s.hydrate);
+  const c = useColors();
 
   useEffect(() => {
     hydrate();
@@ -36,7 +38,7 @@ export default function RootNavigator() {
   if (isLoading) {
     return (
       <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={c.accent} />
       </View>
     );
   }

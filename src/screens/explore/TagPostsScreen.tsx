@@ -9,7 +9,7 @@ import PostCard from '../../components/post/PostCard';
 import EmptyState from '../../components/common/EmptyState';
 import {getTagPosts} from '../../api/tags';
 import {likePost, unlikePost} from '../../api/likes';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import {PAGINATION_LIMIT} from '../../config';
 import type {Post} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -19,8 +19,7 @@ type Props = NativeStackScreenProps<ExploreStackParamList, 'TagPosts'>;
 
 export default function TagPostsScreen({route, navigation}: Props) {
   const {tagName} = route.params;
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(1);
@@ -73,7 +72,7 @@ export default function TagPostsScreen({route, navigation}: Props) {
   };
 
   return (
-    <View style={[styles.container, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}>
+    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
       <FlatList
         data={posts}
         keyExtractor={item => item.id}

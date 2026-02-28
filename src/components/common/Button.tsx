@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import type {ViewStyle, TextStyle} from 'react-native';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 
 interface Props {
   title: string;
@@ -31,21 +31,27 @@ export default function Button({
   textStyle,
   accessibilityLabel,
 }: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
 
   const bgColors = {
-    primary: '#3b82f6',
-    secondary: isDark ? '#374151' : '#e5e7eb',
-    danger: '#ef4444',
+    primary: c.accent,
+    secondary: 'transparent',
+    danger: c.danger,
     ghost: 'transparent',
   };
 
   const textColors = {
-    primary: '#ffffff',
-    secondary: isDark ? '#d1d5db' : '#374151',
+    primary: c.accentText,
+    secondary: c.textPrimary,
     danger: '#ffffff',
-    ghost: '#3b82f6',
+    ghost: c.textSecondary,
+  };
+
+  const borderColors = {
+    primary: c.accent,
+    secondary: c.borderStrong,
+    danger: c.danger,
+    ghost: 'transparent',
   };
 
   const heights = {sm: 32, md: 42, lg: 50};
@@ -63,6 +69,8 @@ export default function Button({
         styles.btn,
         {
           backgroundColor: bgColors[variant],
+          borderWidth: 1.5,
+          borderColor: borderColors[variant],
           height: heights[size],
           opacity: disabled ? 0.5 : 1,
         },

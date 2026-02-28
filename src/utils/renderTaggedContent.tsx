@@ -1,6 +1,7 @@
 import React from 'react';
 import {Text, StyleSheet} from 'react-native';
 import type {TextStyle} from 'react-native';
+import {useColors} from '../theme';
 
 const TAG_REGEX = /#(\w+)/g;
 
@@ -17,6 +18,7 @@ export default function RenderTaggedContent({
   tagStyle,
   onTagPress,
 }: Props) {
+  const c = useColors();
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -34,7 +36,7 @@ export default function RenderTaggedContent({
     parts.push(
       <Text
         key={`tag-${match.index}`}
-        style={[styles.tag, tagStyle]}
+        style={[styles.tag, {color: c.accent}, tagStyle]}
         onPress={() => onTagPress?.(tag)}>
         #{tag}
       </Text>,
@@ -55,7 +57,6 @@ export default function RenderTaggedContent({
 
 const styles = StyleSheet.create({
   tag: {
-    color: '#3b82f6',
     fontWeight: '600',
   },
 });

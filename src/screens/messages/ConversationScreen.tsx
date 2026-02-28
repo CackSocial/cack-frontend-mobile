@@ -17,7 +17,7 @@ import MessageBubble from '../../components/messages/MessageBubble';
 import {useConversation} from '../../hooks/useConversation';
 import {useMessagesStore} from '../../stores/messagesStore';
 import {useAuthStore} from '../../stores/authStore';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import {sendMessage as sendMessageApi} from '../../api/messages';
 import {MAX_IMAGE_SIZE_MB} from '../../config';
 import type {Message, ImageAsset} from '../../types';
@@ -28,8 +28,7 @@ type Props = NativeStackScreenProps<MessagesStackParamList, 'Conversation'>;
 
 export default function ConversationScreen({route}: Props) {
   const {username, userId} = route.params;
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
   const currentUser = useAuthStore(s => s.user);
   const wsSend = useMessagesStore(s => s.sendMessage);
   const ws = useMessagesStore(s => s.ws);
@@ -124,7 +123,7 @@ export default function ConversationScreen({route}: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.flex, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}
+      style={[styles.flex, {backgroundColor: c.bgPrimary}]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={88}>
       <FlatList
@@ -160,8 +159,8 @@ export default function ConversationScreen({route}: Props) {
         style={[
           styles.inputBar,
           {
-            backgroundColor: isDark ? '#1f2937' : '#f9fafb',
-            borderTopColor: isDark ? '#374151' : '#e5e7eb',
+            backgroundColor: c.bgSecondary,
+            borderTopColor: c.border,
           },
         ]}>
         <TouchableOpacity
@@ -171,16 +170,16 @@ export default function ConversationScreen({route}: Props) {
           <Icon
             name="image-outline"
             size={24}
-            color={isDark ? '#6b7280' : '#9ca3af'}
+            color={c.textMuted}
           />
         </TouchableOpacity>
         <TextInput
           style={[
             styles.textInput,
-            {color: isDark ? '#f3f4f6' : '#111827'},
+            {color: c.textPrimary},
           ]}
           placeholder="Type a message..."
-          placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+          placeholderTextColor={c.textMuted}
           value={text}
           onChangeText={setText}
           multiline
@@ -193,17 +192,15 @@ export default function ConversationScreen({route}: Props) {
           accessibilityRole="button"
           accessibilityLabel="Send message">
           {sending ? (
-            <ActivityIndicator size="small" color="#3b82f6" />
+            <ActivityIndicator size="small" color={c.accent} />
           ) : (
             <Icon
               name="send"
               size={24}
               color={
                 text.trim() || imagePreview
-                  ? '#3b82f6'
-                  : isDark
-                  ? '#4b5563'
-                  : '#d1d5db'
+                  ? c.accent
+                  : c.textMuted
               }
             />
           )}

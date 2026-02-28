@@ -11,7 +11,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import PostCard from '../../components/post/PostCard';
 import EmptyState from '../../components/common/EmptyState';
 import {usePostsStore} from '../../stores/postsStore';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import type {Post} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {HomeStackParamList} from '../../navigation/types';
@@ -19,8 +19,7 @@ import type {HomeStackParamList} from '../../navigation/types';
 type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
 
 export default function HomeScreen({navigation}: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
   const {timeline, isLoading, timelineHasMore, fetchTimeline} =
     usePostsStore();
   const toggleLike = usePostsStore(s => s.toggleLike);
@@ -64,7 +63,7 @@ export default function HomeScreen({navigation}: Props) {
   );
 
   return (
-    <View style={[styles.container, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}>
+    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
       <FlatList
         data={timeline}
         keyExtractor={item => item.id}
@@ -92,12 +91,12 @@ export default function HomeScreen({navigation}: Props) {
 
       {/* FAB */}
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, {backgroundColor: c.accent}]}
         onPress={() => navigation.navigate('CreatePost')}
         activeOpacity={0.8}
         accessibilityRole="button"
         accessibilityLabel="Create new post">
-        <Icon name="plus" size={28} color="#ffffff" />
+        <Icon name="plus" size={28} color={c.accentText} />
       </TouchableOpacity>
     </View>
   );
@@ -117,7 +116,6 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#3b82f6',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 6,

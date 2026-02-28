@@ -11,15 +11,14 @@ import {
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import {useAuthStore} from '../../stores/authStore';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {AuthStackParamList} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
 export default function RegisterScreen({navigation}: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
   const register = useAuthStore(s => s.register);
   const error = useAuthStore(s => s.error);
   const clearError = useAuthStore(s => s.clearError);
@@ -56,17 +55,17 @@ export default function RegisterScreen({navigation}: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.flex, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}
+      style={[styles.flex, {backgroundColor: c.bgPrimary}]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={[styles.title, {color: isDark ? '#f3f4f6' : '#111827'}]}>
+          <Text style={[styles.title, {color: c.textPrimary}]}>
             Create Account
           </Text>
-          <Text style={[styles.subtitle, {color: isDark ? '#6b7280' : '#9ca3af'}]}>
-            Join SocialConnect
+          <Text style={[styles.subtitle, {color: c.textTertiary}]}>
+            Join Cack
           </Text>
         </View>
 
@@ -136,7 +135,7 @@ export default function RegisterScreen({navigation}: Props) {
           style={styles.linkRow}
           accessibilityRole="link"
           accessibilityLabel="Go to login">
-          <Text style={[styles.linkText, {color: isDark ? '#6b7280' : '#9ca3af'}]}>
+          <Text style={[styles.linkText, {color: c.textTertiary}]}>
             Already have an account?{' '}
           </Text>
           <Text style={styles.link}>Sign In</Text>
@@ -188,7 +187,7 @@ const styles = StyleSheet.create({
   },
   link: {
     fontSize: 14,
-    color: '#3b82f6',
+    color: '#525252',
     fontWeight: '600',
   },
 });

@@ -4,13 +4,14 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useAuthStore} from '../../stores/authStore';
 import {useThemeStore} from '../../stores/themeStore';
 import {useMessagesStore} from '../../stores/messagesStore';
+import {useColors} from '../../theme';
 
 export default function SettingsScreen() {
   const theme = useThemeStore(s => s.theme);
   const toggleTheme = useThemeStore(s => s.toggleTheme);
   const logout = useAuthStore(s => s.logout);
   const disconnectWS = useMessagesStore(s => s.disconnectWS);
-  const isDark = theme === 'dark';
+  const c = useColors();
 
   const handleLogout = () => {
     disconnectWS();
@@ -18,27 +19,27 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={[styles.container, {backgroundColor: isDark ? '#111827' : '#ffffff'}]}>
+    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
       {/* Theme toggle */}
       <View
         style={[
           styles.row,
-          {borderBottomColor: isDark ? '#374151' : '#f3f4f6'},
+          {borderBottomColor: c.border},
         ]}>
         <View style={styles.rowLeft}>
           <Icon
-            name={isDark ? 'weather-night' : 'white-balance-sunny'}
+            name={theme === 'dark' ? 'weather-night' : 'white-balance-sunny'}
             size={22}
-            color={isDark ? '#f3f4f6' : '#111827'}
+            color={c.textPrimary}
           />
-          <Text style={[styles.rowLabel, {color: isDark ? '#f3f4f6' : '#111827'}]}>
+          <Text style={[styles.rowLabel, {color: c.textPrimary}]}>
             Dark Mode
           </Text>
         </View>
         <Switch
-          value={isDark}
+          value={theme === 'dark'}
           onValueChange={toggleTheme}
-          trackColor={{false: '#d1d5db', true: '#3b82f6'}}
+          trackColor={{false: c.borderStrong, true: c.accent}}
           thumbColor="#ffffff"
           accessibilityLabel="Toggle dark mode"
         />
@@ -46,7 +47,7 @@ export default function SettingsScreen() {
 
       {/* Logout */}
       <TouchableOpacity
-        style={[styles.row, {borderBottomColor: isDark ? '#374151' : '#f3f4f6'}]}
+        style={[styles.row, {borderBottomColor: c.border}]}
         onPress={handleLogout}
         accessibilityRole="button"
         accessibilityLabel="Log out">

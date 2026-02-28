@@ -4,26 +4,25 @@ import HomeScreen from '../screens/home/HomeScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
 import CreatePostScreen from '../screens/post/CreatePostScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
-import {useThemeStore} from '../stores/themeStore';
+import {useColors} from '../theme';
 import type {HomeStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
 
 export default function HomeStack() {
-  const theme = useThemeStore(s => s.theme);
-  const isDark = theme === 'dark';
+  const c = useColors();
 
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: {backgroundColor: isDark ? '#111827' : '#ffffff'},
-        headerTintColor: isDark ? '#f3f4f6' : '#111827',
+        headerStyle: {backgroundColor: c.bgPrimary},
+        headerTintColor: c.textPrimary,
         headerShadowVisible: false,
       }}>
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{title: 'SocialConnect'}}
+        options={{title: 'Cack'}}
       />
       <Stack.Screen
         name="PostDetail"

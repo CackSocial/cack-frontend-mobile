@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, StyleSheet} from 'react-native';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 
 interface Props {
   width?: number | string;
@@ -15,8 +15,8 @@ export default function Skeleton({
   borderRadius = 4,
   style,
 }: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const bg = theme === 'dark' ? '#374151' : '#e5e7eb';
+  const c = useColors();
+  const bg = c.bgTertiary;
 
   return (
     <View

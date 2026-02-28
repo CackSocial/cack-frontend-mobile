@@ -6,7 +6,7 @@ import Avatar from '../common/Avatar';
 import RenderTaggedContent from '../../utils/renderTaggedContent';
 import {formatRelativeTime, formatCount} from '../../utils/format';
 import {UPLOADS_URL} from '../../config';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import {useAuthStore} from '../../stores/authStore';
 
 interface Props {
@@ -28,9 +28,8 @@ export default function PostCard({
   onDelete,
   onTagPress,
 }: Props) {
-  const theme = useThemeStore(s => s.theme);
+  const c = useColors();
   const currentUser = useAuthStore(s => s.user);
-  const isDark = theme === 'dark';
 
   const imageUri = post.image_url
     ? post.image_url.startsWith('http')
@@ -47,8 +46,8 @@ export default function PostCard({
       style={[
         styles.card,
         {
-          backgroundColor: isDark ? '#1f2937' : '#ffffff',
-          borderBottomColor: isDark ? '#374151' : '#e5e7eb',
+          backgroundColor: c.bgElevated,
+          borderBottomColor: c.border,
         },
       ]}
       accessibilityRole="button"
@@ -68,11 +67,11 @@ export default function PostCard({
             <Text
               style={[
                 styles.displayName,
-                {color: isDark ? '#f3f4f6' : '#111827'},
+                {color: c.textPrimary},
               ]}>
               {post.author.display_name}
             </Text>
-            <Text style={[styles.username, {color: isDark ? '#6b7280' : '#9ca3af'}]}>
+            <Text style={[styles.username, {color: c.textTertiary}]}>
               @{post.author.username} · {formatRelativeTime(post.created_at)}
             </Text>
           </View>
@@ -91,8 +90,8 @@ export default function PostCard({
       <View style={styles.content}>
         <RenderTaggedContent
           content={post.content}
-          style={{color: isDark ? '#d1d5db' : '#374151', fontSize: 15, lineHeight: 22}}
-          tagStyle={{color: '#3b82f6'}}
+          style={{color: c.textPrimary, fontSize: 15, lineHeight: 22}}
+          tagStyle={{color: c.accent}}
           onTagPress={onTagPress}
         />
       </View>
@@ -117,13 +116,13 @@ export default function PostCard({
           <Icon
             name={post.is_liked ? 'heart' : 'heart-outline'}
             size={20}
-            color={post.is_liked ? '#ef4444' : isDark ? '#6b7280' : '#9ca3af'}
+            color={post.is_liked ? '#ef4444' : c.textMuted}
           />
           {post.like_count > 0 && (
             <Text
               style={[
                 styles.actionCount,
-                {color: post.is_liked ? '#ef4444' : isDark ? '#6b7280' : '#9ca3af'},
+                {color: post.is_liked ? '#ef4444' : c.textMuted},
               ]}>
               {formatCount(post.like_count)}
             </Text>
@@ -138,13 +137,13 @@ export default function PostCard({
           <Icon
             name="comment-outline"
             size={20}
-            color={isDark ? '#6b7280' : '#9ca3af'}
+            color={c.textMuted}
           />
           {post.comment_count > 0 && (
             <Text
               style={[
                 styles.actionCount,
-                {color: isDark ? '#6b7280' : '#9ca3af'},
+                {color: c.textMuted},
               ]}>
               {formatCount(post.comment_count)}
             </Text>

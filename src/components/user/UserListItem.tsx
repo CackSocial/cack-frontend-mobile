@@ -3,7 +3,7 @@ import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import type {UserProfile} from '../../types';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
-import {useThemeStore} from '../../stores/themeStore';
+import {useColors} from '../../theme';
 import {useAuthStore} from '../../stores/authStore';
 
 interface Props {
@@ -13,16 +13,15 @@ interface Props {
 }
 
 export default function UserListItem({user, onPress, onFollowToggle}: Props) {
-  const theme = useThemeStore(s => s.theme);
+  const c = useColors();
   const currentUser = useAuthStore(s => s.user);
-  const isDark = theme === 'dark';
   const isOwnProfile = currentUser?.id === user.id;
 
   return (
     <TouchableOpacity
       style={[
         styles.container,
-        {borderBottomColor: isDark ? '#374151' : '#f3f4f6'},
+        {borderBottomColor: c.border},
       ]}
       onPress={onPress}
       activeOpacity={0.7}
@@ -30,10 +29,10 @@ export default function UserListItem({user, onPress, onFollowToggle}: Props) {
       accessibilityLabel={`${user.display_name} @${user.username}`}>
       <Avatar uri={user.avatar_url} name={user.display_name} size={44} />
       <View style={styles.info}>
-        <Text style={[styles.name, {color: isDark ? '#f3f4f6' : '#111827'}]}>
+        <Text style={[styles.name, {color: c.textPrimary}]}>
           {user.display_name}
         </Text>
-        <Text style={[styles.username, {color: isDark ? '#6b7280' : '#9ca3af'}]}>
+        <Text style={[styles.username, {color: c.textTertiary}]}>
           @{user.username}
         </Text>
       </View>
