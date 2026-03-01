@@ -44,16 +44,6 @@ export async function setTheme(theme: 'light' | 'dark'): Promise<void> {
   await AsyncStorage.setItem(THEME_KEY, theme);
 }
 
-const CSRF_KEY = 'sc-csrf';
-
-export async function getCsrf(): Promise<string | null> {
-  return AsyncStorage.getItem(CSRF_KEY);
-}
-
-export async function setCsrf(token: string): Promise<void> {
-  await AsyncStorage.setItem(CSRF_KEY, token);
-}
-
 export async function clearAll(): Promise<void> {
-  await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY, CSRF_KEY]);
+  await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
 }

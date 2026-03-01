@@ -1,7 +1,7 @@
 import {create} from 'zustand';
 import type {UserProfile} from '../types';
 import * as api from '../api';
-import {setClientToken, setCsrfToken, refreshCsrfToken} from '../api/client';
+import {setClientToken} from '../api/client';
 import * as storage from '../utils/storage';
 import {logError} from '../utils/log';
 
@@ -35,14 +35,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await api.login(username, password);
       setClientToken(res.token);
-      // Read CSRF cookie set by backend from native cookie jar
-      const csrf = await refreshCsrfToken();
-      const saves: Promise<void>[] = [
+      await Promise.all([
         storage.setToken(res.token),
         storage.setUser(res.user),
-      ];
-      if (csrf) saves.push(storage.setCsrf(csrf));
-      await Promise.all(saves);
+      ]);
       set({
         user: res.user,
         token: res.token,
@@ -60,13 +56,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await api.register(username, password, displayName);
       setClientToken(res.token);
-      const csrf = await refreshCsrfToken();
-      const saves: Promise<void>[] = [
+      await Promise.all([
         storage.setToken(res.token),
         storage.setUser(res.user),
-      ];
-      if (csrf) saves.push(storage.setCsrf(csrf));
-      await Promise.all(saves);
+      ]);
       set({
         user: res.user,
         token: res.token,
@@ -81,7 +74,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout() {
     setClientToken(null);
-    setCsrfToken(null);
     storage.clearAll();
     set({
       user: null,
@@ -103,16 +95,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async hydrate() {
     try {
-      const [token, user, storedCsrf] = await Promise.all([
+      const [token, user] = await Promise.all([
         storage.getToken(),
         storage.getUser(),
-        storage.getCsrf(),
       ]);
       if (token && user) {
         setClientToken(token);
-        // Try native cookie jar first, fall back to AsyncStorage
-        const csrf = await refreshCsrfToken() ?? storedCsrf;
-        if (csrf) setCsrfToken(csrf);
         set({
           token,
           user,

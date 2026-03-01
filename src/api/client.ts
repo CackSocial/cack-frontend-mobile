@@ -1,53 +1,43 @@
 import axios from 'axios';
-import CookieManager from '@react-native-cookies/cookies';
 import {BASE_URL} from '../config';
 import type {ImageAsset} from '../types';
-
-// Base URL without the /api/v1 path, used for cookie domain lookups
-const COOKIE_URL = BASE_URL.replace(/\/api\/v\d+$/, '');
 
 const client = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
   headers: {'Content-Type': 'application/json'},
-  withCredentials: true,
 });
 
 // Token will be set by auth store after login/hydration
 let authToken: string | null = null;
-let csrfToken: string | null = null;
+
+// Client-generated CSRF token for the double-submit cookie pattern.
+// The backend only checks that the Cookie value matches the header value;
+// it does NOT verify against a server-stored token. So we generate our own
+// and send it as both `Cookie: sc-csrf=TOKEN` and `X-CSRF-Token: TOKEN`.
+const csrfToken = generateCsrfToken();
+
+function generateCsrfToken(): string {
+  const chars = '0123456789abcdef';
+  let result = '';
+  for (let i = 0; i < 64; i++) {
+    result += chars[Math.floor(Math.random() * 16)];
+  }
+  return result;
+}
 
 export function setClientToken(token: string | null) {
   authToken = token;
-}
-
-export function setCsrfToken(token: string | null) {
-  csrfToken = token;
-}
-
-export function getCsrfToken(): string | null {
-  return csrfToken;
-}
-
-/** Read sc-csrf cookie from native cookie jar and cache it in memory */
-export async function refreshCsrfToken(): Promise<string | null> {
-  try {
-    const cookies = await CookieManager.get(COOKIE_URL);
-    const csrf = cookies['sc-csrf']?.value ?? null;
-    if (csrf) csrfToken = csrf;
-    return csrf;
-  } catch {
-    return null;
-  }
 }
 
 client.interceptors.request.use(config => {
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
   }
-  // Attach CSRF token on state-changing requests
-  if (csrfToken && config.method && config.method !== 'get') {
+  // Double-submit CSRF: send matching cookie + header on state-changing requests
+  if (config.method && config.method !== 'get') {
     config.headers['X-CSRF-Token'] = csrfToken;
+    config.headers.Cookie = `sc-csrf=${csrfToken}`;
   }
   return config;
 });
