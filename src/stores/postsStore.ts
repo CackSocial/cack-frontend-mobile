@@ -60,8 +60,11 @@ export const usePostsStore = create<PostsState>((set, get) => ({
           repost_count: p.repost_count,
         };
       });
+      const existing = reset ? [] : state.timeline;
+      const existingIds = new Set(existing.map(p => p.id));
+      const deduped = posts.filter(p => !existingIds.has(p.id));
       set({
-        timeline: reset ? posts : [...state.timeline, ...posts],
+        timeline: reset ? posts : [...existing, ...deduped],
         timelinePage: page + 1,
         timelineHasMore: posts.length === PAGINATION_LIMIT,
         isLoading: false,
@@ -75,7 +78,9 @@ export const usePostsStore = create<PostsState>((set, get) => ({
 
   prependPost(post: Post) {
     set(s => ({
-      timeline: [post, ...s.timeline],
+      timeline: s.timeline.some(p => p.id === post.id)
+        ? s.timeline
+        : [post, ...s.timeline],
       postCache: {
         ...s.postCache,
         [post.id]: {
