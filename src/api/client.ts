@@ -10,21 +10,52 @@ const client = axios.create({
 
 // Token will be set by auth store after login/hydration
 let authToken: string | null = null;
+let csrfToken: string | null = null;
 
 export function setClientToken(token: string | null) {
   authToken = token;
+}
+
+export function setCsrfToken(token: string | null) {
+  csrfToken = token;
+}
+
+export function getCsrfToken(): string | null {
+  return csrfToken;
 }
 
 client.interceptors.request.use(config => {
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
   }
+  // Attach CSRF token on state-changing requests
+  if (csrfToken && config.method && config.method !== 'get') {
+    config.headers['X-CSRF-Token'] = csrfToken;
+  }
   return config;
 });
 
-// Unwrap { success, data } envelope; reject on failure
+// Extract sc-csrf cookie from Set-Cookie response headers
+function extractCsrfFromHeaders(headers: any): string | null {
+  const setCookie = headers?.['set-cookie'];
+  if (!setCookie) return null;
+  const cookies: string[] = Array.isArray(setCookie) ? setCookie : [setCookie];
+  for (const cookie of cookies) {
+    const match = cookie.match(/sc-csrf=([^;]+)/);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+// Unwrap { success, data } envelope; capture CSRF token from auth responses
 client.interceptors.response.use(
   response => {
+    // Capture CSRF token from Set-Cookie header (login/register)
+    const csrf = extractCsrfFromHeaders(response.headers);
+    if (csrf) {
+      csrfToken = csrf;
+    }
+
     const body = response.data;
     if (body && typeof body === 'object' && 'success' in body) {
       if (!body.success) {

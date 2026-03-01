@@ -1,7 +1,7 @@
 import {create} from 'zustand';
 import type {UserProfile} from '../types';
 import * as api from '../api';
-import {setClientToken} from '../api/client';
+import {setClientToken, setCsrfToken, getCsrfToken} from '../api/client';
 import * as storage from '../utils/storage';
 import {logError} from '../utils/log';
 
@@ -35,10 +35,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await api.login(username, password);
       setClientToken(res.token);
-      await Promise.all([
+      const csrf = getCsrfToken();
+      const saves: Promise<void>[] = [
         storage.setToken(res.token),
         storage.setUser(res.user),
-      ]);
+      ];
+      if (csrf) saves.push(storage.setCsrf(csrf));
+      await Promise.all(saves);
       set({
         user: res.user,
         token: res.token,
@@ -56,10 +59,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await api.register(username, password, displayName);
       setClientToken(res.token);
-      await Promise.all([
+      const csrf = getCsrfToken();
+      const saves: Promise<void>[] = [
         storage.setToken(res.token),
         storage.setUser(res.user),
-      ]);
+      ];
+      if (csrf) saves.push(storage.setCsrf(csrf));
+      await Promise.all(saves);
       set({
         user: res.user,
         token: res.token,
@@ -74,6 +80,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout() {
     setClientToken(null);
+    setCsrfToken(null);
     storage.clearAll();
     set({
       user: null,
@@ -95,12 +102,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async hydrate() {
     try {
-      const [token, user] = await Promise.all([
+      const [token, user, csrf] = await Promise.all([
         storage.getToken(),
         storage.getUser(),
+        storage.getCsrf(),
       ]);
       if (token && user) {
         setClientToken(token);
+        if (csrf) setCsrfToken(csrf);
         set({
           token,
           user,
