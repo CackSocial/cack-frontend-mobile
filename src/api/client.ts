@@ -2,6 +2,19 @@ import axios from 'axios';
 import {BASE_URL} from '../config';
 import type {ImageAsset} from '../types';
 
+// React Native's native networking module — used to clear the OkHttp cookie jar
+// so it doesn't overwrite our manual CSRF Cookie header.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const RCTNetworking = require('react-native/Libraries/Network/RCTNetworking');
+
+function clearNativeCookies(): Promise<boolean> {
+  return new Promise(resolve => {
+    RCTNetworking.default
+      ? RCTNetworking.default.clearCookies(resolve)
+      : RCTNetworking.clearCookies(resolve);
+  });
+}
+
 const client = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
@@ -15,9 +28,7 @@ let authToken: string | null = null;
 // The backend only checks that the Cookie value matches the header value;
 // it does NOT verify against a server-stored token. So we generate our own
 // and send it as both `Cookie: sc-csrf=TOKEN` and `X-CSRF-Token: TOKEN`.
-// If the server sets a new CSRF cookie (e.g. on login), we adopt it so the
-// native cookie store and our manual header stay in sync.
-let csrfToken = generateCsrfToken();
+const csrfToken = generateCsrfToken();
 
 function generateCsrfToken(): string {
   const chars = '0123456789abcdef';
@@ -32,12 +43,19 @@ export function setClientToken(token: string | null) {
   authToken = token;
 }
 
-client.interceptors.request.use(config => {
+// Clear stale cookies from any previous session on module load
+clearNativeCookies();
+
+// On state-changing requests, clear the native cookie jar BEFORE the request
+// is sent. OkHttp's BridgeInterceptor loads cookies from the jar and REPLACES
+// any manual Cookie header. By clearing the jar first, our manual
+// Cookie: sc-csrf=TOKEN survives and matches X-CSRF-Token.
+client.interceptors.request.use(async config => {
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
   }
-  // Double-submit CSRF: send matching cookie + header on state-changing requests
   if (config.method && config.method !== 'get') {
+    await clearNativeCookies();
     config.headers['X-CSRF-Token'] = csrfToken;
     config.headers.Cookie = `sc-csrf=${csrfToken}`;
   }
@@ -47,17 +65,6 @@ client.interceptors.request.use(config => {
 // Unwrap { success, data } envelope
 client.interceptors.response.use(
   response => {
-    // If the server set a new sc-csrf cookie, adopt it so the native cookie
-    // store and our manual X-CSRF-Token header stay in sync.
-    const setCookie = response.headers?.['set-cookie'];
-    if (setCookie) {
-      const raw = Array.isArray(setCookie) ? setCookie.join('; ') : setCookie;
-      const match = raw.match(/sc-csrf=([^;]+)/);
-      if (match) {
-        csrfToken = match[1];
-      }
-    }
-
     const body = response.data;
     if (body && typeof body === 'object' && 'success' in body) {
       if (!body.success) {
