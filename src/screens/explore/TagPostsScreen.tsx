@@ -24,6 +24,8 @@ export default function TagPostsScreen({route, navigation}: Props) {
   const {tagName} = route.params;
   const c = useColors();
   const cachePost = usePostsStore(s => s.cachePost);
+  const toggleBookmark = usePostsStore(s => s.toggleBookmark);
+  const toggleRepost = usePostsStore(s => s.toggleRepost);
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(1);
@@ -98,6 +100,16 @@ export default function TagPostsScreen({route, navigation}: Props) {
             onLike={() => toggleLike(item)}
             onComment={() =>
               navigation.navigate('PostDetail', {postId: item.id})
+            }
+            onBookmark={() => toggleBookmark(item.id)}
+            onRepost={() => toggleRepost(item.id)}
+            onMentionPress={username =>
+              navigation.navigate('Profile', {username})
+            }
+            onOriginalPostPress={
+              item.original_post
+                ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
+                : undefined
             }
           />
         )}

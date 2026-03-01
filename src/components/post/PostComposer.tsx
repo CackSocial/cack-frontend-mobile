@@ -18,9 +18,10 @@ import {useColors, fonts} from '../../theme';
 interface Props {
   onSubmit: (content: string, image?: ImageAsset) => Promise<void>;
   loading?: boolean;
+  placeholder?: string;
 }
 
-export default function PostComposer({onSubmit, loading}: Props) {
+export default function PostComposer({onSubmit, loading, placeholder}: Props) {
   const c = useColors();
   const [content, setContent] = useState('');
   const [image, setImage] = useState<ImageAsset | null>(null);
@@ -71,7 +72,7 @@ export default function PostComposer({onSubmit, loading}: Props) {
             backgroundColor: c.bgSecondary,
           },
         ]}
-        placeholder="What's on your mind?"
+        placeholder={placeholder || "What's on your mind?"}
         placeholderTextColor={c.textMuted}
         multiline
         maxLength={MAX_POST_LENGTH + 100}

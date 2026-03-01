@@ -4,9 +4,11 @@ import {getFocusedRouteNameFromRoute} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import HomeStack from './HomeStack';
 import ExploreStack from './ExploreStack';
+import NotificationsStack from './NotificationsStack';
 import MessagesStack from './MessagesStack';
 import ProfileStack from './ProfileStack';
 import {useMessagesStore} from '../stores/messagesStore';
+import {useNotificationsStore} from '../stores/notificationsStore';
 import {useColors, fonts} from '../theme';
 import type {ConversationListItem} from '../types';
 import type {MainTabParamList} from './types';
@@ -16,6 +18,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const TAB_ROOT: Record<string, string> = {
   HomeTab: 'Home',
   ExploreTab: 'Explore',
+  NotificationsTab: 'Notifications',
   MessagesTab: 'Messages',
   ProfileTab: 'Profile',
 };
@@ -27,6 +30,7 @@ export default function MainTabs() {
     () => conversations.reduce((sum: number, c: ConversationListItem) => sum + c.unread_count, 0),
     [conversations],
   );
+  const notifUnread = useNotificationsStore(s => s.unreadCount);
 
   const baseTabBarStyle = useMemo(
     () => ({
@@ -106,6 +110,19 @@ export default function MainTabs() {
             <Icon name="compass-outline" size={size} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route, 'ExploreTab'),
+        })}
+      />
+      <Tab.Screen
+        name="NotificationsTab"
+        component={NotificationsStack}
+        options={({route}) => ({
+          tabBarLabel: 'Alerts',
+          tabBarIcon: ({color, size}) => (
+            <Icon name="bell-outline" size={size} color={color} />
+          ),
+          tabBarBadge:
+            notifUnread > 0 ? notifUnread : undefined,
+          tabBarStyle: getTabBarStyle(route, 'NotificationsTab'),
         })}
       />
       <Tab.Screen

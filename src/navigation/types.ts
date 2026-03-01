@@ -1,4 +1,5 @@
 import type {NavigatorScreenParams} from '@react-navigation/native';
+import type {Post} from '../types';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -10,6 +11,7 @@ export type HomeStackParamList = {
   PostDetail: {postId: string};
   Profile: {username: string};
   CreatePost: undefined;
+  QuotePost: {post: Post};
   Followers: {username: string};
   Following: {username: string};
   EditProfile: undefined;
@@ -31,18 +33,26 @@ export type MessagesStackParamList = {
   Conversation: {username: string; userId: string; displayName: string};
 };
 
+export type NotificationsStackParamList = {
+  Notifications: undefined;
+  Profile: {username: string};
+  PostDetail: {postId: string};
+};
+
 export type ProfileStackParamList = {
   Profile: {username?: string} | undefined;
   EditProfile: undefined;
   Followers: {username: string};
   Following: {username: string};
   Settings: undefined;
+  Bookmarks: undefined;
   PostDetail: {postId: string};
 };
 
 export type MainTabParamList = {
   HomeTab: NavigatorScreenParams<HomeStackParamList>;
   ExploreTab: NavigatorScreenParams<ExploreStackParamList>;
+  NotificationsTab: NavigatorScreenParams<NotificationsStackParamList>;
   MessagesTab: NavigatorScreenParams<MessagesStackParamList>;
   ProfileTab: NavigatorScreenParams<ProfileStackParamList>;
 };

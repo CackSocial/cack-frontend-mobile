@@ -14,7 +14,17 @@ interface Props {
   onAuthorPress?: () => void;
   onLike?: () => void;
   onComment?: () => void;
+  onBookmark?: () => void;
+  onRepost?: () => void;
+  onQuote?: () => void;
   onTagPress?: (tag: string) => void;
+  onMentionPress?: (username: string) => void;
+  onOriginalPostPress?: () => void;
+}
+
+function resolveImageUri(url: string | undefined): string | null {
+  if (!url) return null;
+  return url.startsWith('http') ? url : `${UPLOADS_URL}/${url}`;
 }
 
 export default function PostCard({
@@ -23,19 +33,26 @@ export default function PostCard({
   onAuthorPress,
   onLike,
   onComment,
+  onBookmark,
+  onRepost,
+  onQuote,
   onTagPress,
+  onMentionPress,
+  onOriginalPostPress,
 }: Props) {
   const c = useColors();
-
-  const imageUri = post.image_url
-    ? post.image_url.startsWith('http')
-      ? post.image_url
-      : `${UPLOADS_URL}/${post.image_url}`
-    : null;
+  const imageUri = resolveImageUri(post.image_url);
 
   const handleShare = () => {
     Share.share({message: post.content});
   };
+
+  const isRepost = post.post_type === 'repost';
+  const isQuote = post.post_type === 'quote';
+
+  // For reposts, display the original post content
+  const displayPost = isRepost && post.original_post ? post.original_post : post;
+  const displayImage = resolveImageUri(displayPost.image_url);
 
   return (
     <TouchableOpacity
@@ -49,12 +66,22 @@ export default function PostCard({
         },
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`Post by ${post.author.display_name}`}>
+      accessibilityLabel={`Post by ${displayPost.author.display_name}`}>
+      {/* Repost label */}
+      {isRepost && (
+        <View style={styles.repostLabel}>
+          <Icon name="repeat" size={14} color={c.textTertiary} />
+          <Text style={[styles.repostLabelText, {color: c.textTertiary}]}>
+            {post.author.display_name} reposted
+          </Text>
+        </View>
+      )}
+
       <View style={styles.row}>
-        <TouchableOpacity onPress={onAuthorPress}>
+        <TouchableOpacity onPress={isRepost ? onOriginalPostPress : onAuthorPress}>
           <Avatar
-            uri={post.author.avatar_url}
-            name={post.author.display_name}
+            uri={displayPost.author.avatar_url}
+            name={displayPost.author.display_name}
             size={40}
           />
         </TouchableOpacity>
@@ -62,39 +89,78 @@ export default function PostCard({
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity
-              onPress={onAuthorPress}
+              onPress={isRepost ? onOriginalPostPress : onAuthorPress}
               style={styles.authorRow}
-              accessibilityLabel={`View ${post.author.display_name}'s profile`}>
+              accessibilityLabel={`View ${displayPost.author.display_name}'s profile`}>
               <Text style={[styles.displayName, {color: c.textPrimary}]}>
-                {post.author.display_name}
+                {displayPost.author.display_name}
               </Text>
               <Text style={[styles.meta, {color: c.textTertiary}]}>
-                @{post.author.username} · {formatRelativeTime(post.created_at)}
+                @{displayPost.author.username} · {formatRelativeTime(displayPost.created_at)}
               </Text>
             </TouchableOpacity>
           </View>
 
           {/* Content */}
-          <View style={styles.content}>
-            <RenderTaggedContent
-              content={post.content}
-              style={{color: c.textPrimary, fontSize: 15, lineHeight: 24, fontFamily: fonts.body}}
-              tagStyle={{color: c.accent, fontFamily: fonts.bodySemiBold}}
-              onTagPress={onTagPress}
-            />
-          </View>
+          {displayPost.content ? (
+            <View style={styles.content}>
+              <RenderTaggedContent
+                content={displayPost.content}
+                style={{color: c.textPrimary, fontSize: 15, lineHeight: 24, fontFamily: fonts.body}}
+                tagStyle={{color: c.accent, fontFamily: fonts.bodySemiBold}}
+                onTagPress={onTagPress}
+                onMentionPress={onMentionPress}
+              />
+            </View>
+          ) : null}
 
           {/* Image */}
-          {imageUri && (
+          {displayImage && (
             <Image
-              source={{uri: imageUri}}
+              source={{uri: displayImage}}
               style={styles.postImage}
               resizeMode="cover"
               accessibilityLabel="Post image"
             />
           )}
 
-          {/* Actions — 3 buttons evenly spaced */}
+          {/* Quoted post embed */}
+          {isQuote && post.original_post && (
+            <TouchableOpacity
+              style={[styles.quotedPost, {borderColor: c.border, backgroundColor: c.bgSecondary}]}
+              onPress={onOriginalPostPress}
+              activeOpacity={0.8}>
+              <View style={styles.quotedHeader}>
+                <Avatar
+                  uri={post.original_post.author.avatar_url}
+                  name={post.original_post.author.display_name}
+                  size={20}
+                />
+                <Text style={[styles.quotedName, {color: c.textPrimary}]}>
+                  {post.original_post.author.display_name}
+                </Text>
+                <Text style={[styles.quotedMeta, {color: c.textTertiary}]}>
+                  @{post.original_post.author.username}
+                </Text>
+              </View>
+              {post.original_post.content ? (
+                <Text
+                  style={[styles.quotedContent, {color: c.textSecondary}]}
+                  numberOfLines={3}>
+                  {post.original_post.content}
+                </Text>
+              ) : null}
+              {post.original_post.image_url ? (
+                <Image
+                  source={{uri: resolveImageUri(post.original_post.image_url)!}}
+                  style={styles.quotedImage}
+                  resizeMode="cover"
+                />
+              ) : null}
+            </TouchableOpacity>
+          )}
+
+          {/* Actions — 5 buttons */}
           <View style={styles.actions}>
             <TouchableOpacity
               style={styles.actionBtn}
@@ -128,6 +194,37 @@ export default function PostCard({
 
             <TouchableOpacity
               style={styles.actionBtn}
+              onPress={onRepost}
+              accessibilityRole="button"
+              accessibilityLabel={post.is_reposted ? 'Undo repost' : 'Repost'}>
+              <Icon
+                name="repeat"
+                size={18}
+                color={post.is_reposted ? '#16a34a' : c.textMuted}
+              />
+              <Text
+                style={[
+                  styles.actionCount,
+                  {color: post.is_reposted ? '#16a34a' : c.textMuted},
+                ]}>
+                {post.repost_count > 0 ? formatCount(post.repost_count) : ' '}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={onBookmark}
+              accessibilityRole="button"
+              accessibilityLabel={post.is_bookmarked ? 'Remove bookmark' : 'Bookmark'}>
+              <Icon
+                name={post.is_bookmarked ? 'bookmark' : 'bookmark-outline'}
+                size={18}
+                color={post.is_bookmarked ? c.accent : c.textMuted}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionBtn}
               onPress={handleShare}
               accessibilityRole="button"
               accessibilityLabel="Share post">
@@ -145,6 +242,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
+  },
+  repostLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingLeft: 52,
+    marginBottom: 4,
+  },
+  repostLabelText: {
+    fontSize: 13,
+    fontFamily: fonts.bodySemiBold,
   },
   row: {
     flexDirection: 'row',
@@ -181,6 +289,37 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 10,
   },
+  quotedPost: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 10,
+  },
+  quotedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  quotedName: {
+    fontSize: 13,
+    fontFamily: fonts.bodySemiBold,
+  },
+  quotedMeta: {
+    fontSize: 12,
+    fontFamily: fonts.body,
+  },
+  quotedContent: {
+    fontSize: 14,
+    fontFamily: fonts.body,
+    lineHeight: 20,
+  },
+  quotedImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 8,
+    marginTop: 8,
+  },
   actions: {
     flexDirection: 'row',
     marginTop: 12,
@@ -191,7 +330,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     paddingVertical: 2,
-    minWidth: 54,
+    minWidth: 42,
   },
   actionCount: {
     fontSize: 13,

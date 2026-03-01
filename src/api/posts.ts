@@ -33,3 +33,24 @@ export async function getUserPosts(
   );
   return data;
 }
+
+export async function repost(postId: string): Promise<Post> {
+  const {data} = await client.post<Post>(`/posts/${postId}/repost`);
+  return data;
+}
+
+export async function deleteRepost(postId: string): Promise<void> {
+  await client.delete(`/posts/${postId}/repost`);
+}
+
+export async function quotePost(
+  postId: string,
+  content: string,
+  image?: ImageAsset,
+): Promise<Post> {
+  const form = buildFormData({content}, image);
+  const {data} = await client.post<Post>(`/posts/${postId}/quote`, form, {
+    headers: {'Content-Type': 'multipart/form-data'},
+  });
+  return data;
+}

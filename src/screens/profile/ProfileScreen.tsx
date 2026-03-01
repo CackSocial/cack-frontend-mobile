@@ -34,6 +34,8 @@ export default function ProfileScreen({route, navigation}: Props) {
   const c = useColors();
   const currentUser = useAuthStore(s => s.user);
   const cachePost = usePostsStore(s => s.cachePost);
+  const toggleBookmark = usePostsStore(s => s.toggleBookmark);
+  const toggleRepost = usePostsStore(s => s.toggleRepost);
 
   const username = paramUsername || currentUser?.username || '';
   const isOwnProfile = !paramUsername || paramUsername === currentUser?.username;
@@ -280,9 +282,19 @@ export default function ProfileScreen({route, navigation}: Props) {
         onComment={() =>
           navigation.navigate('PostDetail', {postId: item.id})
         }
+        onBookmark={() => toggleBookmark(item.id)}
+        onRepost={() => toggleRepost(item.id)}
+        onMentionPress={username =>
+          navigation.push('Profile', {username})
+        }
+        onOriginalPostPress={
+          item.original_post
+            ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
+            : undefined
+        }
       />
     ),
-    [navigation, handleToggleLike],
+    [navigation, handleToggleLike, toggleBookmark, toggleRepost],
   );
 
   const handleEndReached = useCallback(() => {

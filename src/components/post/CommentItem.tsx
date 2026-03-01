@@ -2,15 +2,18 @@ import React from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import type {Comment} from '../../types';
 import Avatar from '../common/Avatar';
+import RenderTaggedContent from '../../utils/renderTaggedContent';
 import {formatRelativeTime} from '../../utils/format';
 import {useColors, fonts} from '../../theme';
 
 interface Props {
   comment: Comment;
   onAuthorPress?: () => void;
+  onMentionPress?: (username: string) => void;
+  onTagPress?: (tag: string) => void;
 }
 
-export default function CommentItem({comment, onAuthorPress}: Props) {
+export default function CommentItem({comment, onAuthorPress, onMentionPress, onTagPress}: Props) {
   const c = useColors();
 
   return (
@@ -41,9 +44,13 @@ export default function CommentItem({comment, onAuthorPress}: Props) {
             {formatRelativeTime(comment.created_at)}
           </Text>
         </View>
-        <Text style={[styles.content, {color: c.textSecondary}]}>
-          {comment.content}
-        </Text>
+        <RenderTaggedContent
+          content={comment.content}
+          style={{color: c.textSecondary, fontSize: 14, lineHeight: 20, fontFamily: fonts.body}}
+          tagStyle={{color: c.accent, fontFamily: fonts.bodySemiBold}}
+          onMentionPress={onMentionPress}
+          onTagPress={onTagPress}
+        />
       </View>
     </View>
   );
@@ -71,10 +78,5 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 12,
     flex: 1,
-  },
-  content: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 2,
   },
 });

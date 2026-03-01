@@ -45,6 +45,10 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
         const data = JSON.parse(event.data);
         if (data.type === 'message') {
           get().receiveMessage(data as Message);
+        } else if (data.type === 'notification') {
+          // Forward to notifications store
+          const {useNotificationsStore} = require('./notificationsStore');
+          useNotificationsStore.getState().addNotification(data);
         }
       } catch (e) {
         logError('ws:onmessage', e);

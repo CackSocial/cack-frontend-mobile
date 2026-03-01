@@ -35,14 +35,12 @@ export function useSyncPostLike(
           cached &&
           (cached.is_liked !== prev.is_liked ||
             cached.like_count !== prev.like_count ||
-            cached.comment_count !== prev.comment_count)
+            cached.comment_count !== prev.comment_count ||
+            cached.is_bookmarked !== prev.is_bookmarked ||
+            cached.is_reposted !== prev.is_reposted ||
+            cached.repost_count !== prev.repost_count)
         ) {
-          return {
-            ...prev,
-            is_liked: cached.is_liked,
-            like_count: cached.like_count,
-            comment_count: cached.comment_count,
-          };
+          return {...prev, ...cached};
         }
         return prev;
       });

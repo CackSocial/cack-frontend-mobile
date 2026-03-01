@@ -99,6 +99,8 @@ export default function PostDetailScreen({route, navigation}: Props) {
   const {postId} = route.params;
   const c = useColors();
   const cachePost = usePostsStore(s => s.cachePost);
+  const toggleBookmark = usePostsStore(s => s.toggleBookmark);
+  const toggleRepost = usePostsStore(s => s.toggleRepost);
 
   const {
     post,
@@ -158,12 +160,21 @@ export default function PostDetailScreen({route, navigation}: Props) {
           post={post}
           onAuthorPress={() => navigateToProfile(post.author.username)}
           onLike={handleLike}
+          onBookmark={() => toggleBookmark(post.id)}
+          onRepost={() => toggleRepost(post.id)}
+          onQuote={() => navigation.navigate('QuotePost', {post})}
           onTagPress={tag =>
             navigation.getParent()?.navigate('ExploreTab', {
               screen: 'TagPosts',
               params: {tagName: tag},
               initial: false,
             })
+          }
+          onMentionPress={username => navigateToProfile(username)}
+          onOriginalPostPress={
+            post.original_post
+              ? () => navigation.push('PostDetail', {postId: post.original_post!.id})
+              : undefined
           }
         />
         <ReplyBar onSubmit={handleSubmitComment} />
@@ -176,12 +187,20 @@ export default function PostDetailScreen({route, navigation}: Props) {
         )}
       </View>
     ) : null,
-  [post, comments.length, handleLike, handleSubmitComment, c, navigation]);
+  [post, comments.length, handleLike, handleSubmitComment, c, navigation, toggleBookmark, toggleRepost]);
 
   const renderComment = ({item}: {item: Comment}) => (
     <CommentItem
       comment={item}
       onAuthorPress={() => navigateToProfile(item.author.username)}
+      onMentionPress={username => navigateToProfile(username)}
+      onTagPress={tag =>
+        navigation.getParent()?.navigate('ExploreTab', {
+          screen: 'TagPosts',
+          params: {tagName: tag},
+          initial: false,
+        })
+      }
     />
   );
 

@@ -5,6 +5,7 @@ import {ActivityIndicator, View} from 'react-native';
 import AuthStack from './AuthStack';
 import MainTabs from './MainTabs';
 import {useAuthStore} from '../stores/authStore';
+import {useNotificationsStore} from '../stores/notificationsStore';
 import {useWebSocket} from '../hooks/useWebSocket';
 import {useColors} from '../theme';
 import type {RootStackParamList} from './types';
@@ -13,7 +14,14 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function NavigationContent() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  const fetchUnreadCount = useNotificationsStore(s => s.fetchUnreadCount);
   useWebSocket();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+    }
+  }, [isAuthenticated, fetchUnreadCount]);
 
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>

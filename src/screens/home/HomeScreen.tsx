@@ -26,6 +26,8 @@ export default function HomeScreen({navigation}: Props) {
   const {timeline, isLoading, timelineHasMore, fetchTimeline} =
     usePostsStore();
   const toggleLike = usePostsStore(s => s.toggleLike);
+  const toggleBookmark = usePostsStore(s => s.toggleBookmark);
+  const toggleRepost = usePostsStore(s => s.toggleRepost);
 
   useEffect(() => {
     fetchTimeline(true);
@@ -64,9 +66,18 @@ export default function HomeScreen({navigation}: Props) {
       onAuthorPress={() => navigateToProfile(item.author.username)}
       onLike={() => toggleLike(item.id)}
       onComment={() => navigateToPost(item)}
+      onBookmark={() => toggleBookmark(item.id)}
+      onRepost={() => toggleRepost(item.id)}
+      onQuote={() => navigation.navigate('QuotePost', {post: item})}
       onTagPress={handleTagPress}
+      onMentionPress={username => navigateToProfile(username)}
+      onOriginalPostPress={
+        item.original_post
+          ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
+          : undefined
+      }
     />
-  ), [navigateToPost, navigateToProfile, toggleLike, handleTagPress]);
+  ), [navigateToPost, navigateToProfile, toggleLike, toggleBookmark, toggleRepost, handleTagPress, navigation]);
 
   const renderHeader = useCallback(() => (
     <TouchableOpacity

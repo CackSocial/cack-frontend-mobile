@@ -3,6 +3,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import HomeScreen from '../screens/home/HomeScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
 import CreatePostScreen from '../screens/post/CreatePostScreen';
+import QuotePostScreen from '../screens/post/QuotePostScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import FollowersScreen from '../screens/profile/FollowersScreen';
 import FollowingScreen from '../screens/profile/FollowingScreen';
@@ -37,6 +38,11 @@ export default function HomeStack() {
         name="CreatePost"
         component={CreatePostScreen}
         options={{title: 'New Post', presentation: 'modal'}}
+      />
+      <Stack.Screen
+        name="QuotePost"
+        component={QuotePostScreen}
+        options={{title: 'Quote Post', presentation: 'modal'}}
       />
       <Stack.Screen
         name="Profile"

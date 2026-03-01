@@ -15,9 +15,24 @@ export interface Post {
   image_url: string;
   author: UserProfile;
   tags: string[];
+  post_type: 'original' | 'repost' | 'quote';
+  original_post?: Post;
+  repost_count: number;
+  is_reposted: boolean;
   like_count: number;
   comment_count: number;
   is_liked: boolean;
+  is_bookmarked: boolean;
+  created_at: string;
+}
+
+export interface Notification {
+  id: string;
+  actor: UserProfile;
+  type: 'like' | 'comment' | 'follow' | 'mention' | 'repost' | 'quote';
+  reference_id: string;
+  reference_type: string;
+  is_read: boolean;
   created_at: string;
 }
 

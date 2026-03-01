@@ -8,3 +8,5 @@ export * from './follows';
 export * from './comments';
 export * from './tags';
 export * from './messages';
+export * from './bookmarks';
+export * from './notifications';
