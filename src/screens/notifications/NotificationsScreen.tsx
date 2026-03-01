@@ -21,12 +21,12 @@ import type {NotificationsStackParamList} from '../../navigation/types';
 type Props = NativeStackScreenProps<NotificationsStackParamList, 'Notifications'>;
 
 const NOTIFICATION_ICONS: Record<string, {icon: string; color: string}> = {
-  like: {icon: 'heart', color: '#ef4444'},
-  comment: {icon: 'comment-outline', color: '#3b82f6'},
-  follow: {icon: 'account-plus-outline', color: '#8b5cf6'},
-  mention: {icon: 'at', color: '#f59e0b'},
-  repost: {icon: 'repeat', color: '#16a34a'},
-  quote: {icon: 'format-quote-close', color: '#06b6d4'},
+  like: {icon: 'heart', color: '#f91880'},
+  comment: {icon: 'comment-outline', color: '#1d9bf0'},
+  follow: {icon: 'account-plus-outline', color: '#7856ff'},
+  mention: {icon: 'at', color: '#ff7a00'},
+  repost: {icon: 'repeat', color: '#00ba7c'},
+  quote: {icon: 'format-quote-close', color: '#1d9bf0'},
 };
 
 function getNotificationText(type: string): string {
@@ -115,7 +115,7 @@ export default function NotificationsScreen({navigation}: Props) {
             <View
               style={[
                 styles.typeIcon,
-                {backgroundColor: iconInfo.color},
+                {backgroundColor: iconInfo.color, borderColor: item.is_read ? c.bgElevated : c.bgSecondary},
               ]}>
               <Icon name={iconInfo.icon} size={12} color="#fff" />
             </View>
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   markAllText: {
     fontSize: 14,
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 12,
   },
   iconWrap: {
@@ -221,7 +221,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#fff',
   },
   textWrap: {
     flex: 1,

@@ -128,45 +128,61 @@ export default function ProfileScreen({route, navigation}: Props) {
     return (
       <View>
         <View style={styles.profileHeader}>
-          <Avatar
-            uri={profile.avatar_url}
-            name={profile.display_name}
-            size={80}
-          />
+          <View style={styles.topRow}>
+            <Avatar
+              uri={profile.avatar_url}
+              name={profile.display_name}
+              size={72}
+            />
+            <View style={styles.actionRow}>
+              {isOwnProfile ? (
+                <Button
+                  title="Edit profile"
+                  variant="secondary"
+                  size="sm"
+                  onPress={() => navigation.navigate('EditProfile')}
+                />
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={[styles.msgBtn, {borderColor: c.borderStrong}]}
+                    onPress={() =>
+                      navigation.getParent()?.navigate('MessagesTab', {
+                        screen: 'Conversation',
+                        params: {
+                          username: profile.username,
+                          userId: profile.id,
+                          displayName: profile.display_name,
+                        },
+                      })
+                    }
+                    accessibilityLabel="Send message">
+                    <Icon name="email-outline" size={18} color={c.textPrimary} />
+                  </TouchableOpacity>
+                  <Button
+                    title={profile.is_following ? 'Following' : 'Follow'}
+                    variant={profile.is_following ? 'secondary' : 'primary'}
+                    size="sm"
+                    loading={followLoading}
+                    onPress={handleFollowToggle}
+                  />
+                </>
+              )}
+            </View>
+          </View>
           <Text style={[styles.displayName, {color: c.textPrimary}]}>
             {profile.display_name}
           </Text>
-          <Text style={[styles.username, {color: c.textTertiary}]}>
+          <Text style={[styles.username, {color: c.textSecondary}]}>
             @{profile.username}
           </Text>
           {profile.bio ? (
-            <Text style={[styles.bio, {color: c.textSecondary}]}>
+            <Text style={[styles.bio, {color: c.textPrimary}]}>
               {profile.bio}
             </Text>
           ) : null}
 
           <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <Text style={[styles.statNum, {color: c.textPrimary}]}>
-                {formatCount(posts.length)}
-              </Text>
-              <Text style={[styles.statLabel, {color: c.textTertiary}]}>
-                Posts
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.stat}
-              onPress={() =>
-                navigation.navigate('Followers', {username: profile.username})
-              }
-              accessibilityLabel={`${profile.follower_count} followers`}>
-              <Text style={[styles.statNum, {color: c.textPrimary}]}>
-                {formatCount(profile.follower_count)}
-              </Text>
-              <Text style={[styles.statLabel, {color: c.textTertiary}]}>
-                Followers
-              </Text>
-            </TouchableOpacity>
             <TouchableOpacity
               style={styles.stat}
               onPress={() =>
@@ -176,53 +192,23 @@ export default function ProfileScreen({route, navigation}: Props) {
               <Text style={[styles.statNum, {color: c.textPrimary}]}>
                 {formatCount(profile.following_count)}
               </Text>
-              <Text style={[styles.statLabel, {color: c.textTertiary}]}>
+              <Text style={[styles.statLabel, {color: c.textSecondary}]}>
                 Following
               </Text>
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.actionRow}>
-            {isOwnProfile ? (
-              <Button
-                title="Edit Profile"
-                variant="secondary"
-                onPress={() => navigation.navigate('EditProfile')}
-                style={styles.editBtn}
-              />
-            ) : (
-              <>
-                <Button
-                  title={profile.is_following ? 'Unfollow' : 'Follow'}
-                  variant={profile.is_following ? 'secondary' : 'primary'}
-                  loading={followLoading}
-                  onPress={handleFollowToggle}
-                  style={{flex: 1}}
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.msgBtn,
-                    {backgroundColor: c.bgTertiary},
-                  ]}
-                  onPress={() =>
-                    navigation.getParent()?.navigate('MessagesTab', {
-                      screen: 'Conversation',
-                      params: {
-                        username: profile.username,
-                        userId: profile.id,
-                        displayName: profile.display_name,
-                      },
-                    })
-                  }
-                  accessibilityLabel="Send message">
-                  <Icon
-                    name="message-outline"
-                    size={20}
-                    color={c.textSecondary}
-                  />
-                </TouchableOpacity>
-              </>
-            )}
+            <TouchableOpacity
+              style={styles.stat}
+              onPress={() =>
+                navigation.navigate('Followers', {username: profile.username})
+              }
+              accessibilityLabel={`${profile.follower_count} followers`}>
+              <Text style={[styles.statNum, {color: c.textPrimary}]}>
+                {formatCount(profile.follower_count)}
+              </Text>
+              <Text style={[styles.statLabel, {color: c.textSecondary}]}>
+                Followers
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -342,64 +328,68 @@ const styles = StyleSheet.create({
   container: {flex: 1},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   profileHeader: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 10,
   },
   displayName: {
     fontSize: 22,
-    fontFamily: fonts.displayBold,
-    marginTop: 12,
+    fontFamily: fonts.bodyBold,
   },
   username: {
     fontSize: 15,
     fontFamily: fonts.body,
-    marginTop: 2,
+    marginTop: 1,
   },
   bio: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: fonts.body,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
+    marginTop: 10,
+    lineHeight: 21,
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 32,
-    marginTop: 16,
+    gap: 20,
+    marginTop: 14,
   },
   stat: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
   statNum: {
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: fonts.bodyBold,
   },
   statLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: fonts.body,
   },
   actionRow: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 16,
-    width: '100%',
-    paddingHorizontal: 20,
-    justifyContent: 'center',
+    marginTop: 14,
   },
   editBtn: {
-    minWidth: 160,
+    flex: 1,
   },
   msgBtn: {
     width: 42,
     height: 42,
-    borderRadius: 8,
+    borderRadius: 9999,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabBar: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   tab: {
     flex: 1,
@@ -414,8 +404,8 @@ const styles = StyleSheet.create({
   tabIndicator: {
     position: 'absolute',
     bottom: 0,
-    height: 2.5,
-    width: 48,
-    borderRadius: 2,
+    height: 3,
+    width: 56,
+    borderRadius: 3,
   },
 });

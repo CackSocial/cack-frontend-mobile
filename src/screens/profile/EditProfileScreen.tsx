@@ -94,7 +94,7 @@ export default function EditProfileScreen({navigation}: Props) {
               size={96}
             />
           )}
-          <View style={[styles.cameraIcon, {backgroundColor: c.accent}]}>
+          <View style={[styles.cameraIcon, {backgroundColor: c.accent, borderColor: c.bgPrimary}]}>
             <Icon name="camera" size={18} color={c.accentText} />
           </View>
         </TouchableOpacity>
@@ -155,6 +155,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#fff',
   },
 });

@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import {useAuthStore} from '../../stores/authStore';
@@ -47,11 +48,14 @@ export default function LoginScreen({navigation}: Props) {
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
+          <View style={[styles.logoCircle, {backgroundColor: c.accent}]}>
+            <Icon name="chat-processing-outline" size={36} color="#fff" />
+          </View>
           <Text style={[styles.title, {color: c.textPrimary}]}>
-            Cack Social
+            Welcome back
           </Text>
-          <Text style={[styles.subtitle, {color: c.textTertiary}]}>
-            Sign in to your account
+          <Text style={[styles.subtitle, {color: c.textSecondary}]}>
+            Sign in to Cack
           </Text>
         </View>
 
@@ -99,10 +103,10 @@ export default function LoginScreen({navigation}: Props) {
           style={styles.linkRow}
           accessibilityRole="link"
           accessibilityLabel="Go to register">
-          <Text style={[styles.linkText, {color: c.textTertiary}]}>
+          <Text style={[styles.linkText, {color: c.textSecondary}]}>
             Don't have an account?{' '}
           </Text>
-          <Text style={[styles.link, {color: c.textSecondary}]}>Sign Up</Text>
+          <Text style={[styles.link, {color: c.accent}]}>Sign Up</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -114,14 +118,22 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: 28,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 40,
+  },
+  logoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontFamily: fonts.displayBold,
   },
   subtitle: {
@@ -130,20 +142,21 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   errorBox: {
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
     marginBottom: 16,
   },
   errorText: {
     fontSize: 14,
+    fontFamily: fonts.body,
   },
   btn: {
-    marginTop: 8,
+    marginTop: 12,
   },
   linkRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 24,
   },
   linkText: {
     fontSize: 14,

@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   composerShell: {
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   inputBar: {
     flexDirection: 'row',
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 18,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     gap: 8,
   },
   iconBtn: {

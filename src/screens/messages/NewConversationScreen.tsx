@@ -148,8 +148,8 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1.5,
+    borderRadius: 9999,
+    borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 12,
     height: 44,
     gap: 8,
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 12,
   },
   userInfo: {

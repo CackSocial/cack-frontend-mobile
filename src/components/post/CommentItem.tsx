@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 12,
     gap: 10,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   body: {
     flex: 1,

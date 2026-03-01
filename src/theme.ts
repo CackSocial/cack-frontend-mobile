@@ -2,51 +2,51 @@ import {Platform} from 'react-native';
 import {useThemeStore} from './stores/themeStore';
 
 const light = {
-  bgPrimary: '#fafafa',
-  bgSecondary: '#f0f0f0',
-  bgTertiary: '#e5e5e5',
+  bgPrimary: '#ffffff',
+  bgSecondary: '#f7f7f7',
+  bgTertiary: '#eff3f4',
   bgElevated: '#ffffff',
 
-  textPrimary: '#0a0a0a',
-  textSecondary: '#525252',
-  textTertiary: '#737373',
-  textMuted: '#a3a3a3',
-  textInverse: '#fafafa',
+  textPrimary: '#0f1419',
+  textSecondary: '#536471',
+  textTertiary: '#536471',
+  textMuted: '#8b98a5',
+  textInverse: '#ffffff',
 
-  border: '#e5e5e5',
-  borderStrong: '#d4d4d4',
+  border: '#eff3f4',
+  borderStrong: '#cfd9de',
 
-  accent: '#0a0a0a',
-  accentText: '#fafafa',
+  accent: '#1d9bf0',
+  accentText: '#ffffff',
 
-  danger: '#dc2626',
+  danger: '#f4212e',
   dangerBg: '#fef2f2',
-  like: '#ef4444',
-  success: '#16a34a',
+  like: '#f91880',
+  success: '#00ba7c',
 };
 
 const dark: typeof light = {
-  bgPrimary: '#0a0a0a',
-  bgSecondary: '#141414',
-  bgTertiary: '#1f1f1f',
-  bgElevated: '#171717',
+  bgPrimary: '#000000',
+  bgSecondary: '#16181c',
+  bgTertiary: '#1d1f23',
+  bgElevated: '#000000',
 
-  textPrimary: '#fafafa',
-  textSecondary: '#a3a3a3',
-  textTertiary: '#737373',
-  textMuted: '#525252',
-  textInverse: '#0a0a0a',
+  textPrimary: '#e7e9ea',
+  textSecondary: '#71767b',
+  textTertiary: '#71767b',
+  textMuted: '#536471',
+  textInverse: '#0f1419',
 
-  border: '#262626',
-  borderStrong: '#404040',
+  border: '#2f3336',
+  borderStrong: '#3e4144',
 
-  accent: '#fafafa',
-  accentText: '#0a0a0a',
+  accent: '#1d9bf0',
+  accentText: '#ffffff',
 
-  danger: '#ef4444',
-  dangerBg: '#1a0a0a',
-  like: '#ef4444',
-  success: '#22c55e',
+  danger: '#f4212e',
+  dangerBg: '#1c0a0a',
+  like: '#f91880',
+  success: '#00ba7c',
 };
 
 export const colors = {light, dark};

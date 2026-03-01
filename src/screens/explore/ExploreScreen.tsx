@@ -249,10 +249,10 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    paddingHorizontal: 12,
-    height: 44,
+    borderRadius: 9999,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    height: 42,
     gap: 8,
   },
   searchInput: {
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 12,
   },
   hashBg: {
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   },
   modeTabs: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   modeTab: {
     flex: 1,
@@ -312,8 +312,8 @@ const styles = StyleSheet.create({
   modeIndicator: {
     position: 'absolute',
     bottom: 0,
-    height: 2.5,
+    height: 3,
     width: 40,
-    borderRadius: 2,
+    borderRadius: 3,
   },
 });

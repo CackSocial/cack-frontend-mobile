@@ -17,7 +17,7 @@ export default function NotificationsStack() {
         headerStyle: {backgroundColor: c.bgPrimary},
         headerTintColor: c.textPrimary,
         headerShadowVisible: false,
-        headerTitleStyle: {fontFamily: fonts.display},
+        headerTitleStyle: {fontFamily: fonts.bodySemiBold, fontSize: 18},
       }}>
       <Stack.Screen
         name="Notifications"

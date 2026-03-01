@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   rowLeft: {
     flexDirection: 'row',
@@ -206,8 +206,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalInput: {
-    borderWidth: 1,
-    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,

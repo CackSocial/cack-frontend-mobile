@@ -1,4 +1,5 @@
 import React, {useMemo, useCallback} from 'react';
+import {View, Text, StyleSheet} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {getFocusedRouteNameFromRoute} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -23,28 +24,54 @@ const TAB_ROOT: Record<string, string> = {
   ProfileTab: 'Profile',
 };
 
+function TabBadge({count, color}: {count: number; color: string}) {
+  if (count <= 0) return null;
+  return (
+    <View style={[badgeStyles.badge, {backgroundColor: color}]}>
+      <Text style={badgeStyles.text}>
+        {count > 99 ? '99+' : count}
+      </Text>
+    </View>
+  );
+}
+
+const badgeStyles = StyleSheet.create({
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  text: {
+    color: '#fff',
+    fontSize: 11,
+    fontFamily: fonts.bodySemiBold,
+    lineHeight: 14,
+  },
+});
+
 export default function MainTabs() {
   const c = useColors();
   const conversations = useMessagesStore(s => s.conversations);
   const unreadTotal = useMemo(
-    () => conversations.reduce((sum: number, c: ConversationListItem) => sum + c.unread_count, 0),
+    () => conversations.reduce((sum: number, cv: ConversationListItem) => sum + cv.unread_count, 0),
     [conversations],
   );
   const notifUnread = useNotificationsStore(s => s.unreadCount);
 
-  const baseTabBarStyle = useMemo(
+  const visibleStyle = useMemo(
     () => ({
-      position: 'absolute' as const,
-      left: 12,
-      right: 12,
-      bottom: 12,
-      height: 64,
-      borderRadius: 18,
-      backgroundColor: c.bgElevated,
+      backgroundColor: c.bgPrimary,
       borderTopColor: c.border,
-      borderTopWidth: 1,
-      paddingTop: 8,
-      paddingBottom: 8,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      height: 52,
+      elevation: 0,
+      shadowOpacity: 0,
     }),
     [c],
   );
@@ -52,14 +79,12 @@ export default function MainTabs() {
   const getTabBarStyle = useCallback(
     (route: any, tabName: string) => {
       const routeName = getFocusedRouteNameFromRoute(route);
-      // undefined or root screen name → show tab bar
       if (!routeName || routeName === TAB_ROOT[tabName]) {
-        return baseTabBarStyle;
+        return visibleStyle;
       }
-      // Nested screen → hide tab bar
       return {display: 'none' as const};
     },
-    [baseTabBarStyle],
+    [visibleStyle],
   );
 
   return (
@@ -67,23 +92,12 @@ export default function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarHideOnKeyboard: true,
-        tabBarItemStyle: {borderRadius: 12},
-        tabBarLabelStyle: {
-          fontFamily: fonts.bodySemiBold,
-          fontSize: 11,
-        },
-        tabBarActiveTintColor: c.accent,
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: c.textPrimary,
         tabBarInactiveTintColor: c.textMuted,
-        tabBarActiveBackgroundColor: c.bgSecondary,
-        tabBarBadgeStyle: {
-          backgroundColor: c.accent,
-          color: c.accentText,
-          fontFamily: fonts.bodySemiBold,
-        },
       }}
       screenListeners={({navigation, route}) => ({
         tabPress: () => {
-          // Pop nested stacks to their root when tab is pressed
           const root = TAB_ROOT[route.name];
           if (root) {
             navigation.navigate(route.name as any, {screen: root});
@@ -94,9 +108,8 @@ export default function MainTabs() {
         name="HomeTab"
         component={HomeStack}
         options={({route}) => ({
-          tabBarLabel: 'Home',
-          tabBarIcon: ({color, size}) => (
-            <Icon name="home-outline" size={size} color={color} />
+          tabBarIcon: ({color, focused}) => (
+            <Icon name={focused ? 'home' : 'home-outline'} size={26} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route, 'HomeTab'),
         })}
@@ -105,9 +118,8 @@ export default function MainTabs() {
         name="ExploreTab"
         component={ExploreStack}
         options={({route}) => ({
-          tabBarLabel: 'Explore',
-          tabBarIcon: ({color, size}) => (
-            <Icon name="compass-outline" size={size} color={color} />
+          tabBarIcon: ({color}) => (
+            <Icon name="magnify" size={26} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route, 'ExploreTab'),
         })}
@@ -116,12 +128,12 @@ export default function MainTabs() {
         name="NotificationsTab"
         component={NotificationsStack}
         options={({route}) => ({
-          tabBarLabel: 'Alerts',
-          tabBarIcon: ({color, size}) => (
-            <Icon name="bell-outline" size={size} color={color} />
+          tabBarIcon: ({color, focused}) => (
+            <View>
+              <Icon name={focused ? 'bell' : 'bell-outline'} size={26} color={color} />
+              <TabBadge count={notifUnread} color={c.accent} />
+            </View>
           ),
-          tabBarBadge:
-            notifUnread > 0 ? notifUnread : undefined,
           tabBarStyle: getTabBarStyle(route, 'NotificationsTab'),
         })}
       />
@@ -129,12 +141,12 @@ export default function MainTabs() {
         name="MessagesTab"
         component={MessagesStack}
         options={({route}) => ({
-          tabBarLabel: 'Messages',
-          tabBarIcon: ({color, size}) => (
-            <Icon name="message-outline" size={size} color={color} />
+          tabBarIcon: ({color, focused}) => (
+            <View>
+              <Icon name={focused ? 'email' : 'email-outline'} size={26} color={color} />
+              <TabBadge count={unreadTotal} color={c.accent} />
+            </View>
           ),
-          tabBarBadge:
-            unreadTotal > 0 ? unreadTotal : undefined,
           tabBarStyle: getTabBarStyle(route, 'MessagesTab'),
         })}
       />
@@ -142,9 +154,8 @@ export default function MainTabs() {
         name="ProfileTab"
         component={ProfileStack}
         options={({route}) => ({
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({color, size}) => (
-            <Icon name="account-outline" size={size} color={color} />
+          tabBarIcon: ({color, focused}) => (
+            <Icon name={focused ? 'account' : 'account-outline'} size={26} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route, 'ProfileTab'),
         })}

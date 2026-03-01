@@ -94,8 +94,8 @@ export default function Button({
 
 const styles = StyleSheet.create({
   btn: {
-    borderRadius: 8,
-    paddingHorizontal: 16,
+    borderRadius: 9999,
+    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',

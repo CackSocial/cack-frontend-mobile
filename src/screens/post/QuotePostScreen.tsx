@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   quotedPost: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 12,
     padding: 12,
     marginHorizontal: 16,
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   quotedImage: {
     width: '100%',
     height: 100,
-    borderRadius: 8,
+    borderRadius: 12,
     marginTop: 8,
   },
 });
