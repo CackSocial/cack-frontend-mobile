@@ -39,7 +39,7 @@ export default React.memo(function PostCard({
   const c = useColors();
 
   const handleShare = () => {
-    Share.share({message: post.content});
+    Share.share({message: post.content}).catch(() => {});
   };
 
   const isRepost = post.post_type === 'repost';

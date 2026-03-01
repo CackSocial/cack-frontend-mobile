@@ -1,17 +1,12 @@
 import axios from 'axios';
+import {NativeModules} from 'react-native';
 import {BASE_URL} from '../config';
 import type {ImageAsset} from '../types';
 
-// React Native's native networking module — used to clear the OkHttp cookie jar
-// so it doesn't overwrite our manual CSRF Cookie header.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const RCTNetworking = require('react-native/Libraries/Network/RCTNetworking');
-
+// Clear the OkHttp cookie jar so it doesn't overwrite our manual CSRF Cookie header.
 function clearNativeCookies(): Promise<boolean> {
   return new Promise(resolve => {
-    RCTNetworking.default
-      ? RCTNetworking.default.clearCookies(resolve)
-      : RCTNetworking.clearCookies(resolve);
+    NativeModules.Networking?.clearCookies?.(resolve) ?? resolve(false);
   });
 }
 
