@@ -13,24 +13,22 @@ import Avatar from '../../components/common/Avatar';
 import {quotePost} from '../../api/posts';
 import {usePostsStore} from '../../stores/postsStore';
 import {useColors, fonts} from '../../theme';
-import {UPLOADS_URL} from '../../config';
+import {getErrorMessage} from '../../utils/log';
+import {resolveImageUri} from '../../utils/resolveImageUri';
 import type {ImageAsset, Post} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {HomeStackParamList} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'QuotePost'>;
 
+// REFACTORED: Uses shared resolveImageUri utility
 export default function QuotePostScreen({route, navigation}: Props) {
   const c = useColors();
   const prependPost = usePostsStore(s => s.prependPost);
   const [loading, setLoading] = useState(false);
   const originalPost: Post = route.params.post;
 
-  const imageUri = originalPost.image_url
-    ? originalPost.image_url.startsWith('http')
-      ? originalPost.image_url
-      : `${UPLOADS_URL}/${originalPost.image_url}`
-    : null;
+  const imageUri = resolveImageUri(originalPost.image_url || undefined);
 
   const handleSubmit = async (content: string, image?: ImageAsset) => {
     setLoading(true);
@@ -38,8 +36,8 @@ export default function QuotePostScreen({route, navigation}: Props) {
       const post = await quotePost(originalPost.id, content, image);
       prependPost(post);
       navigation.goBack();
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to create quote');
+    } catch (e: unknown) {
+      Alert.alert('Error', getErrorMessage(e));
     }
     setLoading(false);
   };

@@ -3,7 +3,7 @@ import type {UserProfile} from '../types';
 import * as api from '../api';
 import {setClientToken} from '../api/client';
 import * as storage from '../utils/storage';
-import {logError} from '../utils/log';
+import {logError, getErrorMessage} from '../utils/log';
 
 interface AuthState {
   user: UserProfile | null;
@@ -45,8 +45,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch (e: any) {
-      set({isLoading: false, error: e.message || 'Login failed'});
+    } catch (e: unknown) {
+      set({isLoading: false, error: getErrorMessage(e)});
       throw e;
     }
   },
@@ -66,8 +66,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch (e: any) {
-      set({isLoading: false, error: e.message || 'Registration failed'});
+    } catch (e: unknown) {
+      set({isLoading: false, error: getErrorMessage(e)});
       throw e;
     }
   },

@@ -9,6 +9,7 @@ import PostComposer from '../../components/post/PostComposer';
 import {createPost} from '../../api/posts';
 import {usePostsStore} from '../../stores/postsStore';
 import {useColors} from '../../theme';
+import {getErrorMessage} from '../../utils/log';
 import type {ImageAsset} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {HomeStackParamList} from '../../navigation/types';
@@ -26,8 +27,8 @@ export default function CreatePostScreen({navigation}: Props) {
       const post = await createPost(content, image);
       prependPost(post);
       navigation.goBack();
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to create post');
+    } catch (e: unknown) {
+      Alert.alert('Error', getErrorMessage(e));
     }
     setLoading(false);
   };

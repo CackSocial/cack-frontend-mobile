@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, Image, Text, StyleSheet} from 'react-native';
-import {UPLOADS_URL} from '../../config';
+import {resolveImageUri} from '../../utils/resolveImageUri';
 import {useColors, fonts} from '../../theme';
 
 interface Props {
@@ -9,10 +9,10 @@ interface Props {
   size?: number;
 }
 
+// REFACTORED: Uses shared resolveImageUri utility
 export default function Avatar({uri, name, size = 40}: Props) {
   const c = useColors();
-  const resolvedUri =
-    uri && uri.startsWith('http') ? uri : uri ? `${UPLOADS_URL}/${uri}` : null;
+  const resolvedUri = resolveImageUri(uri);
 
   if (resolvedUri) {
     return (

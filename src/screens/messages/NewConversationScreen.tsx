@@ -14,6 +14,7 @@ import EmptyState from '../../components/common/EmptyState';
 import {searchUsers} from '../../api/users';
 import {useDebounce} from '../../hooks/useDebounce';
 import {useColors, fonts} from '../../theme';
+import {sharedStyles} from '../../styles/shared';
 import type {UserProfile} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {MessagesStackParamList} from '../../navigation/types';
@@ -109,7 +110,7 @@ export default function NewConversationScreen({navigation}: Props) {
       </View>
 
       {searching && (
-        <ActivityIndicator style={{paddingVertical: 16}} size="small" />
+        <ActivityIndicator style={sharedStyles.smallLoader} size="small" />
       )}
 
       <FlatList

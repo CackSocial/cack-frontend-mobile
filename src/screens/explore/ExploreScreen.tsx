@@ -17,7 +17,9 @@ import {getTrendingTags} from '../../api/tags';
 import {searchUsers} from '../../api/users';
 import {useColors, fonts} from '../../theme';
 import {useDebounce} from '../../hooks/useDebounce';
+import {getErrorMessage} from '../../utils/log';
 import {formatCount} from '../../utils/format';
+import {sharedStyles} from '../../styles/shared';
 import type {Tag, UserProfile} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ExploreStackParamList} from '../../navigation/types';
@@ -44,8 +46,8 @@ export default function ExploreScreen({navigation}: Props) {
     try {
       const data = await getTrendingTags();
       setTags(data ?? []);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load trending tags');
+    } catch (e: unknown) {
+      setError(getErrorMessage(e));
     }
     setLoading(false);
   }, []);
@@ -202,7 +204,7 @@ export default function ExploreScreen({navigation}: Props) {
             {query.trim() ? 'Search Results' : 'Trending Tags'}
           </Text>
           {loading ? (
-            <ActivityIndicator style={{paddingVertical: 24}} size="large" />
+            <ActivityIndicator style={sharedStyles.centerLoader} size="large" />
           ) : (
             <FlatList
               data={filteredTags}
@@ -217,7 +219,7 @@ export default function ExploreScreen({navigation}: Props) {
       ) : (
         <>
           {userSearching && (
-            <ActivityIndicator style={{paddingVertical: 16}} size="small" />
+            <ActivityIndicator style={sharedStyles.smallLoader} size="small" />
           )}
           <FlatList
             data={userResults}

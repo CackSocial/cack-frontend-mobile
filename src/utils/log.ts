@@ -7,3 +7,10 @@ export function logError(context: string, error: unknown): void {
     console.warn(`[${context}]`, error);
   }
 }
+
+// REFACTORED: Type-safe error message extraction to replace `(e: any) => e.message`
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return 'An unexpected error occurred';
+}

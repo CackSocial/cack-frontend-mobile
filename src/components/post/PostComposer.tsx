@@ -88,7 +88,7 @@ export default function PostComposer({onSubmit, loading, placeholder}: Props) {
             style={styles.removeImage}
             onPress={() => setImage(null)}
             accessibilityLabel="Remove image">
-            <Icon name="close-circle" size={24} color="#ef4444" />
+            <Icon name="close-circle" size={24} color={c.danger} />
           </TouchableOpacity>
         </View>
       )}
@@ -117,7 +117,7 @@ export default function PostComposer({onSubmit, loading, placeholder}: Props) {
         <Text
           style={[
             styles.charCount,
-            {color: isOverLimit ? '#ef4444' : c.textMuted},
+            {color: isOverLimit ? c.danger : c.textMuted},
           ]}>
           {charCount}/{MAX_POST_LENGTH}
         </Text>

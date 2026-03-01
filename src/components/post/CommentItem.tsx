@@ -13,7 +13,8 @@ interface Props {
   onTagPress?: (tag: string) => void;
 }
 
-export default function CommentItem({comment, onAuthorPress, onMentionPress, onTagPress}: Props) {
+// REFACTORED: Wrapped in React.memo — rendered in comment lists
+export default React.memo(function CommentItem({comment, onAuthorPress, onMentionPress, onTagPress}: Props) {
   const c = useColors();
 
   return (
@@ -54,9 +55,7 @@ export default function CommentItem({comment, onAuthorPress, onMentionPress, onT
       </View>
     </View>
   );
-}
-
-const styles = StyleSheet.create({
+});const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     padding: 12,

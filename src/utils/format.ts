@@ -24,13 +24,7 @@ export function formatMessageTime(dateStr: string): string {
   }
 }
 
-export function formatFullDate(dateStr: string): string {
-  try {
-    return format(new Date(dateStr), 'MMM d, yyyy · h:mm a');
-  } catch {
-    return '';
-  }
-}
+// REFACTORED: Removed unused formatFullDate function
 
 export function formatCount(num: number): string {
   if (num >= 1_000_000) {

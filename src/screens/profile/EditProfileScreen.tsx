@@ -17,6 +17,7 @@ import Avatar from '../../components/common/Avatar';
 import {updateMe} from '../../api/users';
 import {useAuthStore} from '../../stores/authStore';
 import {useColors} from '../../theme';
+import {getErrorMessage} from '../../utils/log';
 import {MAX_IMAGE_SIZE_MB} from '../../config';
 import type {ImageAsset} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -63,8 +64,8 @@ export default function EditProfileScreen({navigation}: Props) {
       );
       updateUser(updated);
       navigation.goBack();
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to update profile');
+    } catch (e: unknown) {
+      Alert.alert('Error', getErrorMessage(e));
     }
     setLoading(false);
   };

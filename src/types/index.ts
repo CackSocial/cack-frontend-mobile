@@ -71,11 +71,7 @@ export interface PaginatedResponse<T> {
   total: number;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
+// REFACTORED: Removed unused ApiResponse<T> interface (envelope unwrapped in client.ts interceptor)
 
 export interface AuthResponse {
   token: string;

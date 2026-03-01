@@ -11,8 +11,11 @@ import EmptyState from '../../components/common/EmptyState';
 import {getBookmarks} from '../../api/bookmarks';
 import {usePostsStore} from '../../stores/postsStore';
 import {useSyncLikes} from '../../hooks/useSyncLikes';
+import {useOptimisticLike} from '../../hooks/useOptimisticLike';
 import {useColors} from '../../theme';
 import {PAGINATION_LIMIT} from '../../config';
+import {logError} from '../../utils/log';
+import {sharedStyles} from '../../styles/shared';
 import type {Post} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ProfileStackParamList} from '../../navigation/types';
@@ -25,11 +28,13 @@ export default function BookmarksScreen({navigation}: Props) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
-  const toggleLike = usePostsStore(s => s.toggleLike);
   const toggleBookmark = usePostsStore(s => s.toggleBookmark);
   const toggleRepost = usePostsStore(s => s.toggleRepost);
 
   useSyncLikes(setPosts);
+
+  // REFACTORED: Uses shared useOptimisticLike hook instead of inline implementation
+  const handleLike = useOptimisticLike(setPosts);
 
   const fetchBookmarks = useCallback(
     async (reset = false) => {
@@ -43,7 +48,9 @@ export default function BookmarksScreen({navigation}: Props) {
         setPosts(prev => (reset ? items : [...prev, ...items]));
         setPage(p + 1);
         setHasMore(items.length === PAGINATION_LIMIT);
-      } catch {}
+      } catch (e: unknown) {
+        logError('BookmarksScreen:fetch', e);
+      }
       setLoading(false);
     },
     [page, hasMore, loading],
@@ -52,20 +59,6 @@ export default function BookmarksScreen({navigation}: Props) {
   useEffect(() => {
     fetchBookmarks(true);
   }, []);
-
-  const handleLike = useCallback(
-    (post: Post) => {
-      setPosts(prev =>
-        prev.map(p =>
-          p.id === post.id
-            ? {...p, is_liked: !p.is_liked, like_count: p.like_count + (p.is_liked ? -1 : 1)}
-            : p,
-        ),
-      );
-      toggleLike(post.id);
-    },
-    [toggleLike],
-  );
 
   const renderPost = useCallback(
     ({item}: {item: Post}) => (
@@ -120,7 +113,7 @@ export default function BookmarksScreen({navigation}: Props) {
         }
         ListFooterComponent={
           loading ? (
-            <ActivityIndicator style={{paddingVertical: 20}} size="small" />
+            <ActivityIndicator style={sharedStyles.listLoader} size="small" />
           ) : null
         }
       />

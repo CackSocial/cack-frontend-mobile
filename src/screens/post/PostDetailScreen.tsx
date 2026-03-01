@@ -16,11 +16,12 @@ import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
 import {usePostDetail} from '../../hooks/usePostDetail';
 import {useSyncPostLike} from '../../hooks/useSyncLikes';
+import {useOptimisticLike} from '../../hooks/useOptimisticLike';
 import {createComment} from '../../api/comments';
-import {likePost, unlikePost} from '../../api/likes';
 import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
 import {useColors, fonts} from '../../theme';
+import {getErrorMessage} from '../../utils/log';
 import type {Comment} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {HomeStackParamList} from '../../navigation/types';
@@ -116,25 +117,13 @@ export default function PostDetailScreen({route, navigation}: Props) {
   // Sync post state from global cache on focus
   useSyncPostLike(setPost);
 
+  // REFACTORED: Uses shared useOptimisticLike hook instead of inline implementation
+  const handleLike = useOptimisticLike(undefined, setPost);
+
   useEffect(() => {
     fetchPost();
     fetchComments(true);
   }, []);
-
-  const handleLike = useCallback(async () => {
-    if (!post) return;
-    const was = post.is_liked;
-    const newLiked = !was;
-    const newCount = post.like_count + (was ? -1 : 1);
-    setPost({...post, is_liked: newLiked, like_count: newCount});
-    cachePost(post.id, {is_liked: newLiked, like_count: newCount});
-    try {
-      was ? await unlikePost(post.id) : await likePost(post.id);
-    } catch {
-      setPost({...post, is_liked: was, like_count: post.like_count});
-      cachePost(post.id, {is_liked: was, like_count: post.like_count});
-    }
-  }, [post, setPost, cachePost]);
 
   const handleSubmitComment = useCallback(async (text: string) => {
     try {
@@ -143,8 +132,8 @@ export default function PostDetailScreen({route, navigation}: Props) {
       if (post) {
         cachePost(postId, {comment_count: post.comment_count + 1});
       }
-    } catch (e: any) {
-      Alert.alert('Error', e.message);
+    } catch (e: unknown) {
+      Alert.alert('Error', getErrorMessage(e));
       throw e; // let ReplyBar know it failed
     }
   }, [postId, post, addComment, cachePost]);
@@ -159,7 +148,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
         <PostCard
           post={post}
           onAuthorPress={() => navigateToProfile(post.author.username)}
-          onLike={handleLike}
+          onLike={() => handleLike(post)}
           onBookmark={() => toggleBookmark(post.id)}
           onRepost={() => toggleRepost(post.id)}
           onQuote={() => navigation.navigate('QuotePost', {post})}

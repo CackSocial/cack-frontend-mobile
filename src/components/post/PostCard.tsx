@@ -4,8 +4,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {Post} from '../../types';
 import Avatar from '../common/Avatar';
 import RenderTaggedContent from '../../utils/renderTaggedContent';
+import {resolveImageUri} from '../../utils/resolveImageUri';
 import {formatRelativeTime, formatCount} from '../../utils/format';
-import {UPLOADS_URL} from '../../config';
 import {useColors, fonts} from '../../theme';
 
 interface Props {
@@ -22,12 +22,8 @@ interface Props {
   onOriginalPostPress?: () => void;
 }
 
-function resolveImageUri(url: string | undefined): string | null {
-  if (!url) return null;
-  return url.startsWith('http') ? url : `${UPLOADS_URL}/${url}`;
-}
-
-export default function PostCard({
+// REFACTORED: Wrapped in React.memo — rendered in FlatList, benefits from shallow prop comparison
+export default React.memo(function PostCard({
   post,
   onPress,
   onAuthorPress,
@@ -236,7 +232,7 @@ export default function PostCard({
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

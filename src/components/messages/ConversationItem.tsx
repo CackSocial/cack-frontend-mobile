@@ -11,7 +11,8 @@ interface Props {
   onPress?: () => void;
 }
 
-export default function ConversationItem({conversation, onPress}: Props) {
+// REFACTORED: Wrapped in React.memo — rendered in conversation lists
+export default React.memo(function ConversationItem({conversation, onPress}: Props) {
   const c = useColors();
   const {user, last_message, unread_count} = conversation;
 
@@ -63,7 +64,7 @@ export default function ConversationItem({conversation, onPress}: Props) {
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

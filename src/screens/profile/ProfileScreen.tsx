@@ -16,13 +16,15 @@ import EmptyState from '../../components/common/EmptyState';
 import ErrorBanner from '../../components/common/ErrorBanner';
 import {getUser} from '../../api/users';
 import {followUser, unfollowUser} from '../../api/follows';
-import {likePost, unlikePost} from '../../api/likes';
 import {useUserPosts} from '../../hooks/useUserPosts';
 import {useSyncLikes} from '../../hooks/useSyncLikes';
+import {useOptimisticLike} from '../../hooks/useOptimisticLike';
 import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
 import {useColors, fonts} from '../../theme';
+import {getErrorMessage} from '../../utils/log';
 import {formatCount} from '../../utils/format';
+import {sharedStyles} from '../../styles/shared';
 import type {UserProfile, Post} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ProfileStackParamList} from '../../navigation/types';
@@ -33,7 +35,6 @@ export default function ProfileScreen({route, navigation}: Props) {
   const paramUsername = route.params?.username;
   const c = useColors();
   const currentUser = useAuthStore(s => s.user);
-  const cachePost = usePostsStore(s => s.cachePost);
   const toggleBookmark = usePostsStore(s => s.toggleBookmark);
   const toggleRepost = usePostsStore(s => s.toggleRepost);
 
@@ -48,6 +49,9 @@ export default function ProfileScreen({route, navigation}: Props) {
 
   const {posts, setPosts, loading: postsLoading, hasMore, refresh, loadMore} =
     useUserPosts(username);
+
+  // REFACTORED: Uses shared useOptimisticLike hook instead of inline implementation
+  const handleToggleLike = useOptimisticLike(setPosts);
 
   useEffect(() => {
     loadProfile();
@@ -64,8 +68,8 @@ export default function ProfileScreen({route, navigation}: Props) {
     try {
       const data = await getUser(username);
       setProfile(data);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load profile');
+    } catch (e: unknown) {
+      setError(getErrorMessage(e));
     }
     setLoadingProfile(false);
   }, [username]);
@@ -85,43 +89,11 @@ export default function ProfileScreen({route, navigation}: Props) {
           prev ? {...prev, is_following: true, follower_count: prev.follower_count + 1} : prev,
         );
       }
-    } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to update follow status');
+    } catch (e: unknown) {
+      Alert.alert('Error', getErrorMessage(e));
     }
     setFollowLoading(false);
   }, [profile, followLoading]);
-
-  const handleToggleLike = useCallback(
-    async (post: Post) => {
-      const was = post.is_liked;
-      const newLiked = !was;
-      const newCount = post.like_count + (was ? -1 : 1);
-      // Optimistic update on local posts
-      setPosts(prev =>
-        prev.map(p =>
-          p.id === post.id
-            ? {...p, is_liked: newLiked, like_count: newCount}
-            : p,
-        ),
-      );
-      // Update global cache + timeline
-      cachePost(post.id, {is_liked: newLiked, like_count: newCount});
-      try {
-        was ? await unlikePost(post.id) : await likePost(post.id);
-      } catch {
-        // Revert on error
-        setPosts(prev =>
-          prev.map(p =>
-            p.id === post.id
-              ? {...p, is_liked: was, like_count: post.like_count}
-              : p,
-          ),
-        );
-        cachePost(post.id, {is_liked: was, like_count: post.like_count});
-      }
-    },
-    [setPosts, cachePost],
-  );
 
   const renderHeader = useCallback(() => {
     if (!profile) return null;
@@ -316,7 +288,7 @@ export default function ProfileScreen({route, navigation}: Props) {
         onEndReachedThreshold={0.5}
         ListFooterComponent={
           postsLoading ? (
-            <ActivityIndicator style={{paddingVertical: 20}} size="small" />
+            <ActivityIndicator style={sharedStyles.listLoader} size="small" />
           ) : null
         }
       />

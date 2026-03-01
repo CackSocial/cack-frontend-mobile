@@ -2,6 +2,7 @@ import React, {useMemo, useCallback} from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {getFocusedRouteNameFromRoute} from '@react-navigation/native';
+import type {Route} from '@react-navigation/routers';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import HomeStack from './HomeStack';
 import ExploreStack from './ExploreStack';
@@ -77,7 +78,8 @@ export default function MainTabs() {
   );
 
   const getTabBarStyle = useCallback(
-    (route: any, tabName: string) => {
+    // REFACTORED: replaced `any` with proper Route type
+    (route: Partial<Route<string>>, tabName: string) => {
       const routeName = getFocusedRouteNameFromRoute(route);
       if (!routeName || routeName === TAB_ROOT[tabName]) {
         return visibleStyle;

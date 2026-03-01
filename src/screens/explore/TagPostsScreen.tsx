@@ -8,12 +8,13 @@ import {
 import PostCard from '../../components/post/PostCard';
 import EmptyState from '../../components/common/EmptyState';
 import {getTagPosts} from '../../api/tags';
-import {likePost, unlikePost} from '../../api/likes';
 import {useSyncLikes} from '../../hooks/useSyncLikes';
+import {useOptimisticLike} from '../../hooks/useOptimisticLike';
 import {usePostsStore} from '../../stores/postsStore';
 import {useColors} from '../../theme';
 import {PAGINATION_LIMIT} from '../../config';
 import {logError} from '../../utils/log';
+import {sharedStyles} from '../../styles/shared';
 import type {Post} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ExploreStackParamList} from '../../navigation/types';
@@ -23,7 +24,6 @@ type Props = NativeStackScreenProps<ExploreStackParamList, 'TagPosts'>;
 export default function TagPostsScreen({route, navigation}: Props) {
   const {tagName} = route.params;
   const c = useColors();
-  const cachePost = usePostsStore(s => s.cachePost);
   const toggleBookmark = usePostsStore(s => s.toggleBookmark);
   const toggleRepost = usePostsStore(s => s.toggleRepost);
 
@@ -34,6 +34,9 @@ export default function TagPostsScreen({route, navigation}: Props) {
 
   // Sync like states from global cache on focus
   useSyncLikes(setPosts);
+
+  // REFACTORED: Uses shared useOptimisticLike hook instead of inline implementation
+  const toggleLike = useOptimisticLike(setPosts);
 
   const fetch = useCallback(
     async (reset = false) => {
@@ -59,29 +62,6 @@ export default function TagPostsScreen({route, navigation}: Props) {
   useEffect(() => {
     fetch(true);
   }, []);
-
-  const toggleLike = useCallback(async (post: Post) => {
-    const was = post.is_liked;
-    const newLiked = !was;
-    const newCount = post.like_count + (was ? -1 : 1);
-    setPosts(prev =>
-      prev.map(p =>
-        p.id === post.id ? {...p, is_liked: newLiked, like_count: newCount} : p,
-      ),
-    );
-    cachePost(post.id, {is_liked: newLiked, like_count: newCount});
-    try {
-      was ? await unlikePost(post.id) : await likePost(post.id);
-    } catch (e) {
-      logError('TagPostsScreen:toggleLike', e);
-      setPosts(prev =>
-        prev.map(p =>
-          p.id === post.id ? {...p, is_liked: was, like_count: post.like_count} : p,
-        ),
-      );
-      cachePost(post.id, {is_liked: was, like_count: post.like_count});
-    }
-  }, [cachePost]);
 
   return (
     <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
@@ -128,7 +108,7 @@ export default function TagPostsScreen({route, navigation}: Props) {
         onEndReachedThreshold={0.5}
         ListFooterComponent={
           loading ? (
-            <ActivityIndicator style={{paddingVertical: 20}} size="small" />
+            <ActivityIndicator style={sharedStyles.listLoader} size="small" />
           ) : null
         }
       />

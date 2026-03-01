@@ -12,7 +12,8 @@ interface Props {
   onFollowToggle?: () => void;
 }
 
-export default function UserListItem({user, onPress, onFollowToggle}: Props) {
+// REFACTORED: Wrapped in React.memo — rendered in user lists
+export default React.memo(function UserListItem({user, onPress, onFollowToggle}: Props) {
   const c = useColors();
   const currentUser = useAuthStore(s => s.user);
   const isOwnProfile = currentUser?.id === user.id;
@@ -46,7 +47,7 @@ export default function UserListItem({user, onPress, onFollowToggle}: Props) {
       )}
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -54,7 +55,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     gap: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   info: {
     flex: 1,

@@ -7,6 +7,7 @@ import {useThemeStore} from '../../stores/themeStore';
 import {useMessagesStore} from '../../stores/messagesStore';
 import {deleteAccount} from '../../api/users';
 import {useColors, fonts} from '../../theme';
+import {getErrorMessage} from '../../utils/log';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ProfileStackParamList} from '../../navigation/types';
 
@@ -35,8 +36,8 @@ export default function SettingsScreen({navigation}: Props) {
       setShowDeleteModal(false);
       disconnectWS();
       logout();
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to delete account');
+    } catch (e: unknown) {
+      Alert.alert('Error', getErrorMessage(e));
     }
     setDeleteLoading(false);
   };
@@ -90,8 +91,8 @@ export default function SettingsScreen({navigation}: Props) {
         accessibilityRole="button"
         accessibilityLabel="Log out">
         <View style={styles.rowLeft}>
-          <Icon name="logout" size={22} color="#ef4444" />
-          <Text style={[styles.rowLabel, {color: '#ef4444'}]}>Log Out</Text>
+          <Icon name="logout" size={22} color={c.danger} />
+          <Text style={[styles.rowLabel, {color: c.danger}]}>Log Out</Text>
         </View>
       </TouchableOpacity>
 
@@ -106,8 +107,8 @@ export default function SettingsScreen({navigation}: Props) {
         accessibilityRole="button"
         accessibilityLabel="Delete account">
         <View style={styles.rowLeft}>
-          <Icon name="delete-outline" size={22} color="#ef4444" />
-          <Text style={[styles.rowLabel, {color: '#ef4444'}]}>
+          <Icon name="delete-outline" size={22} color={c.danger} />
+          <Text style={[styles.rowLabel, {color: c.danger}]}>
             Delete Account
           </Text>
         </View>

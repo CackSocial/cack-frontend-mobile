@@ -14,6 +14,7 @@ import EmptyState from '../../components/common/EmptyState';
 import {useNotificationsStore} from '../../stores/notificationsStore';
 import {useColors, fonts} from '../../theme';
 import {formatRelativeTime} from '../../utils/format';
+import {sharedStyles} from '../../styles/shared';
 import type {Notification} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {NotificationsStackParamList} from '../../navigation/types';
@@ -178,7 +179,7 @@ export default function NotificationsScreen({navigation}: Props) {
         }
         ListFooterComponent={
           isLoading && notifications.length > 0 ? (
-            <ActivityIndicator style={{paddingVertical: 20}} size="small" />
+            <ActivityIndicator style={sharedStyles.listLoader} size="small" />
           ) : null
         }
       />

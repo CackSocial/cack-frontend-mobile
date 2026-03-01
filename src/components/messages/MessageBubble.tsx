@@ -2,7 +2,7 @@ import React from 'react';
 import {View, Text, Image, StyleSheet} from 'react-native';
 import type {Message} from '../../types';
 import {formatMessageTime} from '../../utils/format';
-import {UPLOADS_URL} from '../../config';
+import {resolveImageUri} from '../../utils/resolveImageUri';
 import {useColors} from '../../theme';
 
 interface Props {
@@ -10,14 +10,11 @@ interface Props {
   isOwn: boolean;
 }
 
-export default function MessageBubble({message, isOwn}: Props) {
+// REFACTORED: Wrapped in React.memo — rendered in message lists
+export default React.memo(function MessageBubble({message, isOwn}: Props) {
   const c = useColors();
 
-  const imageUri = message.image_url
-    ? message.image_url.startsWith('http')
-      ? message.image_url
-      : `${UPLOADS_URL}/${message.image_url}`
-    : null;
+  const imageUri = resolveImageUri(message.image_url || undefined);
 
   const bubbleBg = isOwn ? c.accent : c.bgSecondary;
   const textColor = isOwn ? c.accentText : c.textPrimary;
@@ -71,7 +68,7 @@ export default function MessageBubble({message, isOwn}: Props) {
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrapper: {

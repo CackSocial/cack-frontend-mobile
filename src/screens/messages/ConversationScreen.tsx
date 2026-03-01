@@ -19,6 +19,8 @@ import {useConversation} from '../../hooks/useConversation';
 import {useMessagesStore} from '../../stores/messagesStore';
 import {useAuthStore} from '../../stores/authStore';
 import {useColors, fonts} from '../../theme';
+import {getErrorMessage} from '../../utils/log';
+import {sharedStyles} from '../../styles/shared';
 import {sendMessage as sendMessageApi} from '../../api/messages';
 import {MAX_IMAGE_SIZE_MB} from '../../config';
 import type {Message, ImageAsset} from '../../types';
@@ -78,8 +80,8 @@ export default function ConversationScreen({route}: Props) {
         addMessage(msg);
         setText('');
         setImagePreview(null);
-      } catch (e: any) {
-        Alert.alert('Error', e.message);
+      } catch (e: unknown) {
+        Alert.alert('Error', getErrorMessage(e));
       }
       setSending(false);
     } else {
@@ -145,7 +147,7 @@ export default function ConversationScreen({route}: Props) {
         }
         ListHeaderComponent={
           loading ? (
-            <ActivityIndicator style={{paddingVertical: 12}} size="small" />
+            <ActivityIndicator style={sharedStyles.inlineLoader} size="small" />
           ) : hasMore ? (
             <TouchableOpacity
               onPress={loadMore}
@@ -163,7 +165,7 @@ export default function ConversationScreen({route}: Props) {
         <View style={styles.imagePreviewRow}>
           <Image source={{uri: imagePreview.uri}} style={styles.previewThumb} />
           <TouchableOpacity onPress={() => setImagePreview(null)}>
-            <Icon name="close-circle" size={22} color="#ef4444" />
+            <Icon name="close-circle" size={22} color={c.danger} />
           </TouchableOpacity>
         </View>
       )}

@@ -7,6 +7,7 @@ import {followUser, unfollowUser} from '../../api/follows';
 import {useColors} from '../../theme';
 import {PAGINATION_LIMIT} from '../../config';
 import {logError} from '../../utils/log';
+import {sharedStyles} from '../../styles/shared';
 import type {UserProfile} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ProfileStackParamList} from '../../navigation/types';
@@ -84,7 +85,7 @@ export default function FollowingScreen({route, navigation}: Props) {
         }}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
-          loading ? <ActivityIndicator style={{paddingVertical: 20}} size="small" /> : null
+          loading ? <ActivityIndicator style={sharedStyles.listLoader} size="small" /> : null
         }
       />
     </View>
