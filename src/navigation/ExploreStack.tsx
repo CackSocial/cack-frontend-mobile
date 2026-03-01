@@ -4,6 +4,7 @@ import ExploreScreen from '../screens/explore/ExploreScreen';
 import TagPostsScreen from '../screens/explore/TagPostsScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
+import QuotePostScreen from '../screens/post/QuotePostScreen';
 import FollowersScreen from '../screens/profile/FollowersScreen';
 import FollowingScreen from '../screens/profile/FollowingScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
@@ -57,6 +58,11 @@ export default function ExploreStack() {
         name="EditProfile"
         component={EditProfileScreen}
         options={{title: 'Edit Profile'}}
+      />
+      <Stack.Screen
+        name="QuotePost"
+        component={QuotePostScreen}
+        options={{title: 'Quote Post', presentation: 'modal'}}
       />
     </Stack.Navigator>
   );

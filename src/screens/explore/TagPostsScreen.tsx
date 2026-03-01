@@ -103,6 +103,7 @@ export default function TagPostsScreen({route, navigation}: Props) {
             }
             onBookmark={() => toggleBookmark(item.id)}
             onRepost={() => toggleRepost(item.id)}
+            onQuote={() => navigation.navigate('QuotePost', {post: item})}
             onMentionPress={username =>
               navigation.navigate('Profile', {username})
             }

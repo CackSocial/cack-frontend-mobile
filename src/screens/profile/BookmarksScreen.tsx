@@ -25,7 +25,6 @@ export default function BookmarksScreen({navigation}: Props) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
-  const cachePost = usePostsStore(s => s.cachePost);
   const toggleLike = usePostsStore(s => s.toggleLike);
   const toggleBookmark = usePostsStore(s => s.toggleBookmark);
   const toggleRepost = usePostsStore(s => s.toggleRepost);
@@ -56,17 +55,16 @@ export default function BookmarksScreen({navigation}: Props) {
 
   const handleLike = useCallback(
     (post: Post) => {
-      const newLiked = !post.is_liked;
-      const newCount = post.like_count + (newLiked ? 1 : -1);
       setPosts(prev =>
         prev.map(p =>
-          p.id === post.id ? {...p, is_liked: newLiked, like_count: newCount} : p,
+          p.id === post.id
+            ? {...p, is_liked: !p.is_liked, like_count: p.like_count + (p.is_liked ? -1 : 1)}
+            : p,
         ),
       );
-      cachePost(post.id, {is_liked: newLiked, like_count: newCount});
       toggleLike(post.id);
     },
-    [cachePost, toggleLike],
+    [toggleLike],
   );
 
   const renderPost = useCallback(
@@ -81,8 +79,14 @@ export default function BookmarksScreen({navigation}: Props) {
         onComment={() => navigation.navigate('PostDetail', {postId: item.id})}
         onBookmark={() => toggleBookmark(item.id)}
         onRepost={() => toggleRepost(item.id)}
+        onQuote={() => navigation.navigate('QuotePost', {post: item})}
         onMentionPress={username =>
           navigation.navigate('Profile', {username})
+        }
+        onOriginalPostPress={
+          item.original_post
+            ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
+            : undefined
         }
       />
     ),

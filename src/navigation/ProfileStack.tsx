@@ -9,6 +9,7 @@ import FollowingScreen from '../screens/profile/FollowingScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
 import BookmarksScreen from '../screens/profile/BookmarksScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
+import QuotePostScreen from '../screens/post/QuotePostScreen';
 import {useColors, fonts} from '../theme';
 import type {ProfileStackParamList} from './types';
 
@@ -72,6 +73,11 @@ export default function ProfileStack() {
         name="PostDetail"
         component={PostDetailScreen}
         options={{title: 'Post'}}
+      />
+      <Stack.Screen
+        name="QuotePost"
+        component={QuotePostScreen}
+        options={{title: 'Quote Post', presentation: 'modal'}}
       />
     </Stack.Navigator>
   );

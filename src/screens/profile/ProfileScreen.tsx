@@ -284,6 +284,7 @@ export default function ProfileScreen({route, navigation}: Props) {
         }
         onBookmark={() => toggleBookmark(item.id)}
         onRepost={() => toggleRepost(item.id)}
+        onQuote={() => navigation.navigate('QuotePost', {post: item})}
         onMentionPress={username =>
           navigation.push('Profile', {username})
         }

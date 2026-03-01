@@ -22,6 +22,7 @@ export type ExploreStackParamList = {
   TagPosts: {tagName: string};
   Profile: {username: string};
   PostDetail: {postId: string};
+  QuotePost: {post: Post};
   Followers: {username: string};
   Following: {username: string};
   EditProfile: undefined;
@@ -47,6 +48,7 @@ export type ProfileStackParamList = {
   Settings: undefined;
   Bookmarks: undefined;
   PostDetail: {postId: string};
+  QuotePost: {post: Post};
 };
 
 export type MainTabParamList = {
