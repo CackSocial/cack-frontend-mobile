@@ -1,11 +1,16 @@
 import axios from 'axios';
+import CookieManager from '@react-native-cookies/cookies';
 import {BASE_URL} from '../config';
 import type {ImageAsset} from '../types';
+
+// Base URL without the /api/v1 path, used for cookie domain lookups
+const COOKIE_URL = BASE_URL.replace(/\/api\/v\d+$/, '');
 
 const client = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
   headers: {'Content-Type': 'application/json'},
+  withCredentials: true,
 });
 
 // Token will be set by auth store after login/hydration
@@ -24,6 +29,18 @@ export function getCsrfToken(): string | null {
   return csrfToken;
 }
 
+/** Read sc-csrf cookie from native cookie jar and cache it in memory */
+export async function refreshCsrfToken(): Promise<string | null> {
+  try {
+    const cookies = await CookieManager.get(COOKIE_URL);
+    const csrf = cookies['sc-csrf']?.value ?? null;
+    if (csrf) csrfToken = csrf;
+    return csrf;
+  } catch {
+    return null;
+  }
+}
+
 client.interceptors.request.use(config => {
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
@@ -35,27 +52,9 @@ client.interceptors.request.use(config => {
   return config;
 });
 
-// Extract sc-csrf cookie from Set-Cookie response headers
-function extractCsrfFromHeaders(headers: any): string | null {
-  const setCookie = headers?.['set-cookie'];
-  if (!setCookie) return null;
-  const cookies: string[] = Array.isArray(setCookie) ? setCookie : [setCookie];
-  for (const cookie of cookies) {
-    const match = cookie.match(/sc-csrf=([^;]+)/);
-    if (match) return match[1];
-  }
-  return null;
-}
-
-// Unwrap { success, data } envelope; capture CSRF token from auth responses
+// Unwrap { success, data } envelope
 client.interceptors.response.use(
   response => {
-    // Capture CSRF token from Set-Cookie header (login/register)
-    const csrf = extractCsrfFromHeaders(response.headers);
-    if (csrf) {
-      csrfToken = csrf;
-    }
-
     const body = response.data;
     if (body && typeof body === 'object' && 'success' in body) {
       if (!body.success) {

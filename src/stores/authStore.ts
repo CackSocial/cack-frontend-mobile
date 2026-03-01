@@ -1,7 +1,7 @@
 import {create} from 'zustand';
 import type {UserProfile} from '../types';
 import * as api from '../api';
-import {setClientToken, setCsrfToken, getCsrfToken} from '../api/client';
+import {setClientToken, setCsrfToken, refreshCsrfToken} from '../api/client';
 import * as storage from '../utils/storage';
 import {logError} from '../utils/log';
 
@@ -35,7 +35,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await api.login(username, password);
       setClientToken(res.token);
-      const csrf = getCsrfToken();
+      // Read CSRF cookie set by backend from native cookie jar
+      const csrf = await refreshCsrfToken();
       const saves: Promise<void>[] = [
         storage.setToken(res.token),
         storage.setUser(res.user),
@@ -59,7 +60,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await api.register(username, password, displayName);
       setClientToken(res.token);
-      const csrf = getCsrfToken();
+      const csrf = await refreshCsrfToken();
       const saves: Promise<void>[] = [
         storage.setToken(res.token),
         storage.setUser(res.user),
@@ -102,13 +103,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async hydrate() {
     try {
-      const [token, user, csrf] = await Promise.all([
+      const [token, user, storedCsrf] = await Promise.all([
         storage.getToken(),
         storage.getUser(),
         storage.getCsrf(),
       ]);
       if (token && user) {
         setClientToken(token);
+        // Try native cookie jar first, fall back to AsyncStorage
+        const csrf = await refreshCsrfToken() ?? storedCsrf;
         if (csrf) setCsrfToken(csrf);
         set({
           token,
