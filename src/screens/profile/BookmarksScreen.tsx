@@ -9,9 +9,10 @@ import {
 import PostCard from '../../components/post/PostCard';
 import EmptyState from '../../components/common/EmptyState';
 import {getBookmarks} from '../../api/bookmarks';
-import {usePostsStore} from '../../stores/postsStore';
 import {useSyncLikes} from '../../hooks/useSyncLikes';
 import {useOptimisticLike} from '../../hooks/useOptimisticLike';
+import {useOptimisticBookmark} from '../../hooks/useOptimisticBookmark';
+import {useOptimisticRepost} from '../../hooks/useOptimisticRepost';
 import {useColors} from '../../theme';
 import {PAGINATION_LIMIT} from '../../config';
 import {logError} from '../../utils/log';
@@ -28,13 +29,13 @@ export default function BookmarksScreen({navigation}: Props) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
-  const toggleBookmark = usePostsStore(s => s.toggleBookmark);
-  const toggleRepost = usePostsStore(s => s.toggleRepost);
 
   useSyncLikes(setPosts);
 
   // REFACTORED: Uses shared useOptimisticLike hook instead of inline implementation
   const handleLike = useOptimisticLike(setPosts);
+  const handleBookmark = useOptimisticBookmark(setPosts);
+  const handleRepost = useOptimisticRepost(setPosts);
 
   const fetchBookmarks = useCallback(
     async (reset = false) => {
@@ -70,8 +71,8 @@ export default function BookmarksScreen({navigation}: Props) {
         }
         onLike={() => handleLike(item)}
         onComment={() => navigation.navigate('PostDetail', {postId: item.id})}
-        onBookmark={() => toggleBookmark(item.id)}
-        onRepost={() => toggleRepost(item.id)}
+        onBookmark={() => handleBookmark(item)}
+        onRepost={() => handleRepost(item)}
         onQuote={() => navigation.navigate('QuotePost', {post: item})}
         onMentionPress={username =>
           navigation.navigate('Profile', {username})
@@ -83,7 +84,7 @@ export default function BookmarksScreen({navigation}: Props) {
         }
       />
     ),
-    [navigation, handleLike, toggleBookmark, toggleRepost],
+    [navigation, handleLike, handleBookmark, handleRepost],
   );
 
   return (

@@ -10,7 +10,8 @@ import EmptyState from '../../components/common/EmptyState';
 import {getTagPosts} from '../../api/tags';
 import {useSyncLikes} from '../../hooks/useSyncLikes';
 import {useOptimisticLike} from '../../hooks/useOptimisticLike';
-import {usePostsStore} from '../../stores/postsStore';
+import {useOptimisticBookmark} from '../../hooks/useOptimisticBookmark';
+import {useOptimisticRepost} from '../../hooks/useOptimisticRepost';
 import {useColors} from '../../theme';
 import {PAGINATION_LIMIT} from '../../config';
 import {logError} from '../../utils/log';
@@ -24,8 +25,6 @@ type Props = NativeStackScreenProps<ExploreStackParamList, 'TagPosts'>;
 export default function TagPostsScreen({route, navigation}: Props) {
   const {tagName} = route.params;
   const c = useColors();
-  const toggleBookmark = usePostsStore(s => s.toggleBookmark);
-  const toggleRepost = usePostsStore(s => s.toggleRepost);
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(1);
@@ -37,6 +36,8 @@ export default function TagPostsScreen({route, navigation}: Props) {
 
   // REFACTORED: Uses shared useOptimisticLike hook instead of inline implementation
   const toggleLike = useOptimisticLike(setPosts);
+  const toggleBookmark = useOptimisticBookmark(setPosts);
+  const toggleRepost = useOptimisticRepost(setPosts);
 
   const fetch = useCallback(
     async (reset = false) => {
@@ -81,8 +82,8 @@ export default function TagPostsScreen({route, navigation}: Props) {
             onComment={() =>
               navigation.navigate('PostDetail', {postId: item.id})
             }
-            onBookmark={() => toggleBookmark(item.id)}
-            onRepost={() => toggleRepost(item.id)}
+            onBookmark={() => toggleBookmark(item)}
+            onRepost={() => toggleRepost(item)}
             onQuote={() => navigation.navigate('QuotePost', {post: item})}
             onMentionPress={username =>
               navigation.navigate('Profile', {username})

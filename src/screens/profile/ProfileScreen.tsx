@@ -19,6 +19,8 @@ import {followUser, unfollowUser} from '../../api/follows';
 import {useUserPosts} from '../../hooks/useUserPosts';
 import {useSyncLikes} from '../../hooks/useSyncLikes';
 import {useOptimisticLike} from '../../hooks/useOptimisticLike';
+import {useOptimisticBookmark} from '../../hooks/useOptimisticBookmark';
+import {useOptimisticRepost} from '../../hooks/useOptimisticRepost';
 import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
 import {useColors, fonts} from '../../theme';
@@ -35,8 +37,6 @@ export default function ProfileScreen({route, navigation}: Props) {
   const paramUsername = route.params?.username;
   const c = useColors();
   const currentUser = useAuthStore(s => s.user);
-  const toggleBookmark = usePostsStore(s => s.toggleBookmark);
-  const toggleRepost = usePostsStore(s => s.toggleRepost);
 
   const username = paramUsername || currentUser?.username || '';
   const isOwnProfile = !paramUsername || paramUsername === currentUser?.username;
@@ -52,6 +52,8 @@ export default function ProfileScreen({route, navigation}: Props) {
 
   // REFACTORED: Uses shared useOptimisticLike hook instead of inline implementation
   const handleToggleLike = useOptimisticLike(setPosts);
+  const handleToggleBookmark = useOptimisticBookmark(setPosts);
+  const handleToggleRepost = useOptimisticRepost(setPosts);
 
   useEffect(() => {
     loadProfile();
@@ -240,8 +242,8 @@ export default function ProfileScreen({route, navigation}: Props) {
         onComment={() =>
           navigation.navigate('PostDetail', {postId: item.id})
         }
-        onBookmark={() => toggleBookmark(item.id)}
-        onRepost={() => toggleRepost(item.id)}
+        onBookmark={() => handleToggleBookmark(item)}
+        onRepost={() => handleToggleRepost(item)}
         onQuote={() => navigation.navigate('QuotePost', {post: item})}
         onMentionPress={username =>
           navigation.push('Profile', {username})
@@ -253,7 +255,7 @@ export default function ProfileScreen({route, navigation}: Props) {
         }
       />
     ),
-    [navigation, handleToggleLike, toggleBookmark, toggleRepost],
+    [navigation, handleToggleLike, handleToggleBookmark, handleToggleRepost],
   );
 
   const handleEndReached = useCallback(() => {

@@ -17,6 +17,8 @@ import EmptyState from '../../components/common/EmptyState';
 import {usePostDetail} from '../../hooks/usePostDetail';
 import {useSyncPostLike} from '../../hooks/useSyncLikes';
 import {useOptimisticLike} from '../../hooks/useOptimisticLike';
+import {useOptimisticBookmark} from '../../hooks/useOptimisticBookmark';
+import {useOptimisticRepost} from '../../hooks/useOptimisticRepost';
 import {createComment} from '../../api/comments';
 import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
@@ -100,8 +102,6 @@ export default function PostDetailScreen({route, navigation}: Props) {
   const {postId} = route.params;
   const c = useColors();
   const cachePost = usePostsStore(s => s.cachePost);
-  const toggleBookmark = usePostsStore(s => s.toggleBookmark);
-  const toggleRepost = usePostsStore(s => s.toggleRepost);
 
   const {
     post,
@@ -119,6 +119,8 @@ export default function PostDetailScreen({route, navigation}: Props) {
 
   // REFACTORED: Uses shared useOptimisticLike hook instead of inline implementation
   const handleLike = useOptimisticLike(undefined, setPost);
+  const handleBookmark = useOptimisticBookmark(undefined, setPost);
+  const handleRepost = useOptimisticRepost(undefined, setPost);
 
   useEffect(() => {
     fetchPost();
@@ -149,8 +151,8 @@ export default function PostDetailScreen({route, navigation}: Props) {
           post={post}
           onAuthorPress={() => navigateToProfile(post.author.username)}
           onLike={() => handleLike(post)}
-          onBookmark={() => toggleBookmark(post.id)}
-          onRepost={() => toggleRepost(post.id)}
+          onBookmark={() => handleBookmark(post)}
+          onRepost={() => handleRepost(post)}
           onQuote={() => navigation.navigate('QuotePost', {post})}
           onTagPress={tag =>
             navigation.getParent()?.navigate('ExploreTab', {
@@ -176,7 +178,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
         )}
       </View>
     ) : null,
-  [post, comments.length, handleLike, handleSubmitComment, c, navigation, toggleBookmark, toggleRepost]);
+  [post, comments.length, handleLike, handleBookmark, handleRepost, handleSubmitComment, c, navigation]);
 
   const renderComment = ({item}: {item: Comment}) => (
     <CommentItem
