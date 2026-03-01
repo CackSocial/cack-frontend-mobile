@@ -1,4 +1,4 @@
-import React, {useEffect, useCallback} from 'react';
+import React, {useCallback} from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
@@ -61,10 +62,12 @@ export default function NotificationsScreen({navigation}: Props) {
     markAllAsRead,
   } = useNotificationsStore();
 
-  useEffect(() => {
-    fetchNotifications(true);
-    fetchUnreadCount();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchNotifications(true);
+      fetchUnreadCount();
+    }, [fetchNotifications, fetchUnreadCount]),
+  );
 
   const handleRefresh = useCallback(() => {
     fetchNotifications(true);

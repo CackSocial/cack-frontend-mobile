@@ -33,8 +33,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     set({isLoading: true});
 
     try {
-      const res = await api.getNotifications(page, PAGINATION_LIMIT);
-      const items = res.data ?? [];
+      const items = await api.getNotifications(page, PAGINATION_LIMIT);
       const existing = reset ? [] : state.notifications;
       const existingIds = new Set(existing.map(n => n.id));
       const deduped = items.filter(n => !existingIds.has(n.id));
