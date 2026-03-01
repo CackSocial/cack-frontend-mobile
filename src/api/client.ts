@@ -6,7 +6,11 @@ import type {ImageAsset} from '../types';
 // Clear the OkHttp cookie jar so it doesn't overwrite our manual CSRF Cookie header.
 function clearNativeCookies(): Promise<boolean> {
   return new Promise(resolve => {
-    NativeModules.Networking?.clearCookies?.(resolve) ?? resolve(false);
+    if (NativeModules.Networking?.clearCookies) {
+      NativeModules.Networking.clearCookies(resolve);
+    } else {
+      resolve(false);
+    }
   });
 }
 

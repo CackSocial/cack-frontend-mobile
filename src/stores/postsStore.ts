@@ -1,3 +1,4 @@
+import {Alert} from 'react-native';
 import {create} from 'zustand';
 import type {Post} from '../types';
 import * as api from '../api';
@@ -217,6 +218,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     const apiCall = newReposted ? api.repost : api.deleteRepost;
     apiCall(id).catch(e => {
       logError('toggleRepost', e);
+      Alert.alert('Error', newReposted ? 'Failed to repost.' : 'Failed to remove repost. Please try again.');
       set(s => ({
         timeline: s.timeline.map(p => {
           if (p.id === id) return {...p, is_reposted: wasReposted, repost_count: wasCount};
