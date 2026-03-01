@@ -56,25 +56,28 @@ export default function HomeScreen({navigation}: Props) {
     });
   }, [navigation]);
 
-  const renderPost = useCallback(({item}: {item: Post}) => (
-    <PostCard
-      post={item}
-      onPress={() => navigateToPost(item)}
-      onAuthorPress={() => navigateToProfile(item.author.username)}
-      onLike={() => toggleLike(item.id)}
-      onComment={() => navigateToPost(item)}
-      onBookmark={() => toggleBookmark(item.id)}
-      onRepost={() => toggleRepost(item.id)}
-      onQuote={() => navigation.navigate('QuotePost', {post: item})}
-      onTagPress={handleTagPress}
-      onMentionPress={username => navigateToProfile(username)}
-      onOriginalPostPress={
-        item.original_post
-          ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
-          : undefined
-      }
-    />
-  ), [navigateToPost, navigateToProfile, toggleLike, toggleBookmark, toggleRepost, handleTagPress, navigation]);
+  const renderPost = useCallback(({item}: {item: Post}) => {
+    const actionTarget = item.post_type === 'repost' && item.original_post ? item.original_post : item;
+    return (
+      <PostCard
+        post={item}
+        onPress={() => navigation.navigate('PostDetail', {postId: actionTarget.id})}
+        onAuthorPress={() => navigateToProfile(item.author.username)}
+        onLike={() => toggleLike(actionTarget.id)}
+        onComment={() => navigation.navigate('PostDetail', {postId: actionTarget.id})}
+        onBookmark={() => toggleBookmark(actionTarget.id)}
+        onRepost={() => toggleRepost(actionTarget.id)}
+        onQuote={() => navigation.navigate('QuotePost', {post: actionTarget})}
+        onTagPress={handleTagPress}
+        onMentionPress={username => navigateToProfile(username)}
+        onOriginalPostPress={
+          item.original_post
+            ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
+            : undefined
+        }
+      />
+    );
+  }, [navigateToPost, navigateToProfile, toggleLike, toggleBookmark, toggleRepost, handleTagPress, navigation]);
 
   return (
     <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>

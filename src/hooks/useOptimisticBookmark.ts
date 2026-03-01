@@ -19,46 +19,47 @@ export function useOptimisticBookmark(
 
   const toggleBookmark = useCallback(
     async (post: Post) => {
-      const was = post.is_bookmarked;
+      // For reposts, target the original post
+      const target = post.post_type === 'repost' && post.original_post ? post.original_post : post;
+      const was = target.is_bookmarked;
       const newBookmarked = !was;
+
+      const applyUpdate = (p: Post): Post => {
+        if (p.id === target.id) return {...p, is_bookmarked: newBookmarked};
+        if (p.original_post?.id === target.id) {
+          return {...p, original_post: {...p.original_post, is_bookmarked: newBookmarked}};
+        }
+        return p;
+      };
+      const revertUpdate = (p: Post): Post => {
+        if (p.id === target.id) return {...p, is_bookmarked: was};
+        if (p.original_post?.id === target.id) {
+          return {...p, original_post: {...p.original_post, is_bookmarked: was}};
+        }
+        return p;
+      };
 
       // Optimistic update
       if (setPosts) {
-        setPosts(prev =>
-          prev.map(p =>
-            p.id === post.id ? {...p, is_bookmarked: newBookmarked} : p,
-          ),
-        );
+        setPosts(prev => prev.map(applyUpdate));
       }
       if (setPost) {
-        setPost(prev =>
-          prev && prev.id === post.id
-            ? {...prev, is_bookmarked: newBookmarked}
-            : prev,
-        );
+        setPost(prev => prev ? applyUpdate(prev) : prev);
       }
-      cachePost(post.id, {is_bookmarked: newBookmarked});
+      cachePost(target.id, {is_bookmarked: newBookmarked});
 
       try {
-        was ? await unbookmarkPost(post.id) : await bookmarkPost(post.id);
+        was ? await unbookmarkPost(target.id) : await bookmarkPost(target.id);
       } catch (e: unknown) {
         logError('useOptimisticBookmark', e);
         // Rollback
         if (setPosts) {
-          setPosts(prev =>
-            prev.map(p =>
-              p.id === post.id ? {...p, is_bookmarked: was} : p,
-            ),
-          );
+          setPosts(prev => prev.map(revertUpdate));
         }
         if (setPost) {
-          setPost(prev =>
-            prev && prev.id === post.id
-              ? {...prev, is_bookmarked: was}
-              : prev,
-          );
+          setPost(prev => prev ? revertUpdate(prev) : prev);
         }
-        cachePost(post.id, {is_bookmarked: was});
+        cachePost(target.id, {is_bookmarked: was});
       }
     },
     [setPosts, setPost, cachePost],

@@ -1,11 +1,12 @@
 import React, {useEffect} from 'react';
-import {NavigationContainer} from '@react-navigation/native';
+import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {ActivityIndicator, View} from 'react-native';
 import AuthStack from './AuthStack';
 import MainTabs from './MainTabs';
 import {useAuthStore} from '../stores/authStore';
 import {useNotificationsStore} from '../stores/notificationsStore';
+import {useThemeStore} from '../stores/themeStore';
 import {useWebSocket} from '../hooks/useWebSocket';
 import {useColors} from '../theme';
 import type {RootStackParamList} from './types';
@@ -37,22 +38,29 @@ function NavigationContent() {
 export default function RootNavigator() {
   const isLoading = useAuthStore(s => s.isLoading);
   const hydrate = useAuthStore(s => s.hydrate);
+  const theme = useThemeStore(s => s.theme);
   const c = useColors();
 
   useEffect(() => {
     hydrate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Build navigation theme from app colors
+  const navTheme = theme === 'dark'
+    ? {...DarkTheme, colors: {...DarkTheme.colors, background: c.bgPrimary, card: c.bgPrimary, border: c.border, text: c.textPrimary, primary: c.accent}}
+    : {...DefaultTheme, colors: {...DefaultTheme.colors, background: c.bgPrimary, card: c.bgPrimary, border: c.border, text: c.textPrimary, primary: c.accent}};
 
   if (isLoading) {
     return (
-      <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+      <View style={{flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bgPrimary}}>
         <ActivityIndicator size="large" color={c.accent} />
       </View>
     );
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       <NavigationContent />
     </NavigationContainer>
   );

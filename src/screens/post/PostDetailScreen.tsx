@@ -144,8 +144,10 @@ export default function PostDetailScreen({route, navigation}: Props) {
     navigation.navigate('Profile', {username});
   };
 
-  const renderHeader = useCallback(() =>
-    post ? (
+  const renderHeader = useCallback(() => {
+    if (!post) return null;
+    const actionTarget = post.post_type === 'repost' && post.original_post ? post.original_post : post;
+    return (
       <View>
         <PostCard
           post={post}
@@ -153,7 +155,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
           onLike={() => handleLike(post)}
           onBookmark={() => handleBookmark(post)}
           onRepost={() => handleRepost(post)}
-          onQuote={() => navigation.navigate('QuotePost', {post})}
+          onQuote={() => navigation.navigate('QuotePost', {post: actionTarget})}
           onTagPress={tag =>
             navigation.getParent()?.navigate('ExploreTab', {
               screen: 'TagPosts',
@@ -177,8 +179,8 @@ export default function PostDetailScreen({route, navigation}: Props) {
           </View>
         )}
       </View>
-    ) : null,
-  [post, comments.length, handleLike, handleBookmark, handleRepost, handleSubmitComment, c, navigation]);
+    );
+  }, [post, comments.length, handleLike, handleBookmark, handleRepost, handleSubmitComment, c, navigation]);
 
   const renderComment = ({item}: {item: Comment}) => (
     <CommentItem

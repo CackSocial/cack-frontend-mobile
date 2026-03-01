@@ -102,7 +102,8 @@ export const usePostsStore = create<PostsState>((set, get) => ({
   toggleLike(id: string) {
     const state = get();
     const cached = state.postCache[id];
-    const post = state.timeline.find(p => p.id === id);
+    const post = state.timeline.find(p => p.id === id)
+      ?? state.timeline.find(p => p.original_post?.id === id)?.original_post;
     const wasLiked = cached?.is_liked ?? post?.is_liked ?? false;
     const wasCount = cached?.like_count ?? post?.like_count ?? 0;
     const commentCount = cached?.comment_count ?? post?.comment_count ?? 0;
@@ -116,9 +117,13 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     const oldMeta: CachedPostState = {is_liked: wasLiked, like_count: wasCount, comment_count: commentCount, is_bookmarked: isBookmarked, is_reposted: isReposted, repost_count: repostCount};
 
     set(s => ({
-      timeline: s.timeline.map(p =>
-        p.id !== id ? p : {...p, is_liked: newLiked, like_count: newCount},
-      ),
+      timeline: s.timeline.map(p => {
+        if (p.id === id) return {...p, is_liked: newLiked, like_count: newCount};
+        if (p.original_post?.id === id) {
+          return {...p, original_post: {...p.original_post, is_liked: newLiked, like_count: newCount}};
+        }
+        return p;
+      }),
       postCache: {...s.postCache, [id]: newMeta},
     }));
 
@@ -126,9 +131,13 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     apiCall(id).catch(e => {
       logError('toggleLike', e);
       set(s => ({
-        timeline: s.timeline.map(p =>
-          p.id !== id ? p : {...p, is_liked: wasLiked, like_count: wasCount},
-        ),
+        timeline: s.timeline.map(p => {
+          if (p.id === id) return {...p, is_liked: wasLiked, like_count: wasCount};
+          if (p.original_post?.id === id) {
+            return {...p, original_post: {...p.original_post, is_liked: wasLiked, like_count: wasCount}};
+          }
+          return p;
+        }),
         postCache: {...s.postCache, [id]: oldMeta},
       }));
     });
@@ -137,7 +146,8 @@ export const usePostsStore = create<PostsState>((set, get) => ({
   toggleBookmark(id: string) {
     const state = get();
     const cached = state.postCache[id];
-    const post = state.timeline.find(p => p.id === id);
+    const post = state.timeline.find(p => p.id === id)
+      ?? state.timeline.find(p => p.original_post?.id === id)?.original_post;
     const wasBookmarked = cached?.is_bookmarked ?? post?.is_bookmarked ?? false;
     const newBookmarked = !wasBookmarked;
 
@@ -150,9 +160,13 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     };
 
     set(s => ({
-      timeline: s.timeline.map(p =>
-        p.id !== id ? p : {...p, is_bookmarked: newBookmarked},
-      ),
+      timeline: s.timeline.map(p => {
+        if (p.id === id) return {...p, is_bookmarked: newBookmarked};
+        if (p.original_post?.id === id) {
+          return {...p, original_post: {...p.original_post, is_bookmarked: newBookmarked}};
+        }
+        return p;
+      }),
       postCache: {...s.postCache, [id]: {...baseMeta, is_bookmarked: newBookmarked}},
     }));
 
@@ -160,9 +174,13 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     apiCall(id).catch(e => {
       logError('toggleBookmark', e);
       set(s => ({
-        timeline: s.timeline.map(p =>
-          p.id !== id ? p : {...p, is_bookmarked: wasBookmarked},
-        ),
+        timeline: s.timeline.map(p => {
+          if (p.id === id) return {...p, is_bookmarked: wasBookmarked};
+          if (p.original_post?.id === id) {
+            return {...p, original_post: {...p.original_post, is_bookmarked: wasBookmarked}};
+          }
+          return p;
+        }),
         postCache: {...s.postCache, [id]: {...baseMeta, is_bookmarked: wasBookmarked}},
       }));
     });
@@ -171,7 +189,8 @@ export const usePostsStore = create<PostsState>((set, get) => ({
   toggleRepost(id: string) {
     const state = get();
     const cached = state.postCache[id];
-    const post = state.timeline.find(p => p.id === id);
+    const post = state.timeline.find(p => p.id === id)
+      ?? state.timeline.find(p => p.original_post?.id === id)?.original_post;
     const wasReposted = cached?.is_reposted ?? post?.is_reposted ?? false;
     const wasCount = cached?.repost_count ?? post?.repost_count ?? 0;
     const newReposted = !wasReposted;
@@ -185,9 +204,13 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     };
 
     set(s => ({
-      timeline: s.timeline.map(p =>
-        p.id !== id ? p : {...p, is_reposted: newReposted, repost_count: newCount},
-      ),
+      timeline: s.timeline.map(p => {
+        if (p.id === id) return {...p, is_reposted: newReposted, repost_count: newCount};
+        if (p.original_post?.id === id) {
+          return {...p, original_post: {...p.original_post, is_reposted: newReposted, repost_count: newCount}};
+        }
+        return p;
+      }),
       postCache: {...s.postCache, [id]: {...baseMeta, is_reposted: newReposted, repost_count: newCount}},
     }));
 
@@ -195,9 +218,13 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     apiCall(id).catch(e => {
       logError('toggleRepost', e);
       set(s => ({
-        timeline: s.timeline.map(p =>
-          p.id !== id ? p : {...p, is_reposted: wasReposted, repost_count: wasCount},
-        ),
+        timeline: s.timeline.map(p => {
+          if (p.id === id) return {...p, is_reposted: wasReposted, repost_count: wasCount};
+          if (p.original_post?.id === id) {
+            return {...p, original_post: {...p.original_post, is_reposted: wasReposted, repost_count: wasCount}};
+          }
+          return p;
+        }),
         postCache: {...s.postCache, [id]: {...baseMeta, is_reposted: wasReposted, repost_count: wasCount}},
       }));
     });
@@ -207,7 +234,8 @@ export const usePostsStore = create<PostsState>((set, get) => ({
   cachePost(id: string, meta: Partial<CachedPostState>) {
     set(s => {
       const prev = s.postCache[id];
-      const post = s.timeline.find(p => p.id === id);
+      const post = s.timeline.find(p => p.id === id)
+        ?? s.timeline.find(p => p.original_post?.id === id)?.original_post;
       const merged: CachedPostState = {
         is_liked: meta.is_liked ?? prev?.is_liked ?? post?.is_liked ?? false,
         like_count: meta.like_count ?? prev?.like_count ?? post?.like_count ?? 0,
@@ -217,9 +245,13 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         repost_count: meta.repost_count ?? prev?.repost_count ?? post?.repost_count ?? 0,
       };
       return {
-        timeline: s.timeline.map(p =>
-          p.id !== id ? p : {...p, ...merged},
-        ),
+        timeline: s.timeline.map(p => {
+          if (p.id === id) return {...p, ...merged};
+          if (p.original_post?.id === id) {
+            return {...p, original_post: {...p.original_post, ...merged}};
+          }
+          return p;
+        }),
         postCache: {...s.postCache, [id]: merged},
       };
     });
@@ -230,20 +262,35 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     const cache = get().postCache;
     let changed = false;
     const result = posts.map(p => {
+      let updated = p;
       const c = cache[p.id];
-      if (!c) return p;
-      if (
+      if (c && (
         c.is_liked !== p.is_liked ||
         c.like_count !== p.like_count ||
         c.comment_count !== p.comment_count ||
         c.is_bookmarked !== p.is_bookmarked ||
         c.is_reposted !== p.is_reposted ||
         c.repost_count !== p.repost_count
-      ) {
+      )) {
         changed = true;
-        return {...p, ...c};
+        updated = {...updated, ...c};
       }
-      return p;
+      // Also apply cache to nested original_post
+      if (p.original_post) {
+        const oc = cache[p.original_post.id];
+        if (oc && (
+          oc.is_liked !== p.original_post.is_liked ||
+          oc.like_count !== p.original_post.like_count ||
+          oc.comment_count !== p.original_post.comment_count ||
+          oc.is_bookmarked !== p.original_post.is_bookmarked ||
+          oc.is_reposted !== p.original_post.is_reposted ||
+          oc.repost_count !== p.original_post.repost_count
+        )) {
+          changed = true;
+          updated = {...updated, original_post: {...p.original_post, ...oc}};
+        }
+      }
+      return updated;
     });
     return changed ? result : posts;
   },

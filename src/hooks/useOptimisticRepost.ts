@@ -19,51 +19,48 @@ export function useOptimisticRepost(
 
   const toggleRepost = useCallback(
     async (post: Post) => {
-      const was = post.is_reposted;
+      // For reposts, target the original post
+      const target = post.post_type === 'repost' && post.original_post ? post.original_post : post;
+      const was = target.is_reposted;
       const newReposted = !was;
-      const newCount = post.repost_count + (was ? -1 : 1);
+      const newCount = target.repost_count + (was ? -1 : 1);
+
+      const applyUpdate = (p: Post): Post => {
+        if (p.id === target.id) return {...p, is_reposted: newReposted, repost_count: newCount};
+        if (p.original_post?.id === target.id) {
+          return {...p, original_post: {...p.original_post, is_reposted: newReposted, repost_count: newCount}};
+        }
+        return p;
+      };
+      const revertUpdate = (p: Post): Post => {
+        if (p.id === target.id) return {...p, is_reposted: was, repost_count: target.repost_count};
+        if (p.original_post?.id === target.id) {
+          return {...p, original_post: {...p.original_post, is_reposted: was, repost_count: target.repost_count}};
+        }
+        return p;
+      };
 
       // Optimistic update
       if (setPosts) {
-        setPosts(prev =>
-          prev.map(p =>
-            p.id === post.id
-              ? {...p, is_reposted: newReposted, repost_count: newCount}
-              : p,
-          ),
-        );
+        setPosts(prev => prev.map(applyUpdate));
       }
       if (setPost) {
-        setPost(prev =>
-          prev && prev.id === post.id
-            ? {...prev, is_reposted: newReposted, repost_count: newCount}
-            : prev,
-        );
+        setPost(prev => prev ? applyUpdate(prev) : prev);
       }
-      cachePost(post.id, {is_reposted: newReposted, repost_count: newCount});
+      cachePost(target.id, {is_reposted: newReposted, repost_count: newCount});
 
       try {
-        was ? await deleteRepost(post.id) : await repost(post.id);
+        was ? await deleteRepost(target.id) : await repost(target.id);
       } catch (e: unknown) {
         logError('useOptimisticRepost', e);
         // Rollback
         if (setPosts) {
-          setPosts(prev =>
-            prev.map(p =>
-              p.id === post.id
-                ? {...p, is_reposted: was, repost_count: post.repost_count}
-                : p,
-            ),
-          );
+          setPosts(prev => prev.map(revertUpdate));
         }
         if (setPost) {
-          setPost(prev =>
-            prev && prev.id === post.id
-              ? {...prev, is_reposted: was, repost_count: post.repost_count}
-              : prev,
-          );
+          setPost(prev => prev ? revertUpdate(prev) : prev);
         }
-        cachePost(post.id, {is_reposted: was, repost_count: post.repost_count});
+        cachePost(target.id, {is_reposted: was, repost_count: target.repost_count});
       }
     },
     [setPosts, setPost, cachePost],

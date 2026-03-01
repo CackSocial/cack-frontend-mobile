@@ -73,6 +73,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout() {
+    // Fire-and-forget: notify server, then clear local state
+    api.logout().catch(() => {});
+    // Disconnect WebSocket
+    const {useMessagesStore} = require('../stores/messagesStore');
+    useMessagesStore.getState().disconnectWS();
+
     setClientToken(null);
     storage.clearAll();
     set({

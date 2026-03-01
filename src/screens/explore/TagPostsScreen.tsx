@@ -69,32 +69,35 @@ export default function TagPostsScreen({route, navigation}: Props) {
       <FlatList
         data={posts}
         keyExtractor={item => item.id}
-        renderItem={({item}) => (
-          <PostCard
-            post={item}
-            onPress={() =>
-              navigation.navigate('PostDetail', {postId: item.id})
-            }
-            onAuthorPress={() =>
-              navigation.navigate('Profile', {username: item.author.username})
-            }
-            onLike={() => toggleLike(item)}
-            onComment={() =>
-              navigation.navigate('PostDetail', {postId: item.id})
-            }
-            onBookmark={() => toggleBookmark(item)}
-            onRepost={() => toggleRepost(item)}
-            onQuote={() => navigation.navigate('QuotePost', {post: item})}
-            onMentionPress={username =>
-              navigation.navigate('Profile', {username})
-            }
-            onOriginalPostPress={
-              item.original_post
-                ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
-                : undefined
-            }
-          />
-        )}
+        renderItem={({item}) => {
+          const actionTarget = item.post_type === 'repost' && item.original_post ? item.original_post : item;
+          return (
+            <PostCard
+              post={item}
+              onPress={() =>
+                navigation.navigate('PostDetail', {postId: actionTarget.id})
+              }
+              onAuthorPress={() =>
+                navigation.navigate('Profile', {username: item.author.username})
+              }
+              onLike={() => toggleLike(item)}
+              onComment={() =>
+                navigation.navigate('PostDetail', {postId: actionTarget.id})
+              }
+              onBookmark={() => toggleBookmark(item)}
+              onRepost={() => toggleRepost(item)}
+              onQuote={() => navigation.navigate('QuotePost', {post: actionTarget})}
+              onMentionPress={username =>
+                navigation.navigate('Profile', {username})
+              }
+              onOriginalPostPress={
+                item.original_post
+                  ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
+                  : undefined
+              }
+            />
+          );
+        }}
         ListEmptyComponent={
           !loading ? (
             <EmptyState

@@ -44,11 +44,13 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'message') {
-          get().receiveMessage(data as Message);
+          // Normalize: WS echo omits read_at; ensure it is null
+          const msg: Message = {...data, read_at: data.read_at ?? null};
+          get().receiveMessage(msg);
         } else if (data.type === 'notification') {
-          // Forward to notifications store
+          // WS wraps notification inside a `data` field
           const {useNotificationsStore} = require('./notificationsStore');
-          useNotificationsStore.getState().addNotification(data);
+          useNotificationsStore.getState().addNotification(data.data);
         }
       } catch (e) {
         logError('ws:onmessage', e);

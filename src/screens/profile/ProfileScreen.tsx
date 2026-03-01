@@ -229,32 +229,35 @@ export default function ProfileScreen({route, navigation}: Props) {
   const displayPosts = activeTab === 'posts' ? posts : likedPosts;
 
   const renderPost = useCallback(
-    ({item}: {item: Post}) => (
-      <PostCard
-        post={item}
-        onPress={() =>
-          navigation.navigate('PostDetail', {postId: item.id})
-        }
-        onAuthorPress={() =>
-          navigation.push('Profile', {username: item.author.username})
-        }
-        onLike={() => handleToggleLike(item)}
-        onComment={() =>
-          navigation.navigate('PostDetail', {postId: item.id})
-        }
-        onBookmark={() => handleToggleBookmark(item)}
-        onRepost={() => handleToggleRepost(item)}
-        onQuote={() => navigation.navigate('QuotePost', {post: item})}
-        onMentionPress={username =>
-          navigation.push('Profile', {username})
-        }
-        onOriginalPostPress={
-          item.original_post
-            ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
-            : undefined
-        }
-      />
-    ),
+    ({item}: {item: Post}) => {
+      const actionTarget = item.post_type === 'repost' && item.original_post ? item.original_post : item;
+      return (
+        <PostCard
+          post={item}
+          onPress={() =>
+            navigation.navigate('PostDetail', {postId: actionTarget.id})
+          }
+          onAuthorPress={() =>
+            navigation.push('Profile', {username: item.author.username})
+          }
+          onLike={() => handleToggleLike(item)}
+          onComment={() =>
+            navigation.navigate('PostDetail', {postId: actionTarget.id})
+          }
+          onBookmark={() => handleToggleBookmark(item)}
+          onRepost={() => handleToggleRepost(item)}
+          onQuote={() => navigation.navigate('QuotePost', {post: actionTarget})}
+          onMentionPress={username =>
+            navigation.push('Profile', {username})
+          }
+          onOriginalPostPress={
+            item.original_post
+              ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
+              : undefined
+          }
+        />
+      );
+    },
     [navigation, handleToggleLike, handleToggleBookmark, handleToggleRepost],
   );
 

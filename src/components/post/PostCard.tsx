@@ -37,7 +37,6 @@ export default React.memo(function PostCard({
   onOriginalPostPress,
 }: Props) {
   const c = useColors();
-  const imageUri = resolveImageUri(post.image_url);
 
   const handleShare = () => {
     Share.share({message: post.content});
@@ -151,7 +150,7 @@ export default React.memo(function PostCard({
             </TouchableOpacity>
           )}
 
-          {/* Actions */}
+          {/* Actions — use displayPost for counts/states so reposts show original's engagement */}
           <View style={styles.actions}>
             <TouchableOpacity
               style={styles.actionBtn}
@@ -159,9 +158,9 @@ export default React.memo(function PostCard({
               hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
               accessibilityLabel="View comments">
               <Icon name="comment-outline" size={17} color={c.textMuted} />
-              {post.comment_count > 0 && (
+              {displayPost.comment_count > 0 && (
                 <Text style={[styles.actionCount, {color: c.textMuted}]}>
-                  {formatCount(post.comment_count)}
+                  {formatCount(displayPost.comment_count)}
                 </Text>
               )}
             </TouchableOpacity>
@@ -170,19 +169,19 @@ export default React.memo(function PostCard({
               style={styles.actionBtn}
               onPress={onRepost}
               hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              accessibilityLabel={post.is_reposted ? 'Undo repost' : 'Repost'}>
+              accessibilityLabel={displayPost.is_reposted ? 'Undo repost' : 'Repost'}>
               <Icon
                 name="repeat"
                 size={17}
-                color={post.is_reposted ? c.success : c.textMuted}
+                color={displayPost.is_reposted ? c.success : c.textMuted}
               />
-              {post.repost_count > 0 && (
+              {displayPost.repost_count > 0 && (
                 <Text
                   style={[
                     styles.actionCount,
-                    {color: post.is_reposted ? c.success : c.textMuted},
+                    {color: displayPost.is_reposted ? c.success : c.textMuted},
                   ]}>
-                  {formatCount(post.repost_count)}
+                  {formatCount(displayPost.repost_count)}
                 </Text>
               )}
             </TouchableOpacity>
@@ -191,19 +190,19 @@ export default React.memo(function PostCard({
               style={styles.actionBtn}
               onPress={onLike}
               hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              accessibilityLabel={post.is_liked ? 'Unlike post' : 'Like post'}>
+              accessibilityLabel={displayPost.is_liked ? 'Unlike post' : 'Like post'}>
               <Icon
-                name={post.is_liked ? 'heart' : 'heart-outline'}
+                name={displayPost.is_liked ? 'heart' : 'heart-outline'}
                 size={17}
-                color={post.is_liked ? c.like : c.textMuted}
+                color={displayPost.is_liked ? c.like : c.textMuted}
               />
-              {post.like_count > 0 && (
+              {displayPost.like_count > 0 && (
                 <Text
                   style={[
                     styles.actionCount,
-                    {color: post.is_liked ? c.like : c.textMuted},
+                    {color: displayPost.is_liked ? c.like : c.textMuted},
                   ]}>
-                  {formatCount(post.like_count)}
+                  {formatCount(displayPost.like_count)}
                 </Text>
               )}
             </TouchableOpacity>
@@ -212,11 +211,11 @@ export default React.memo(function PostCard({
               style={styles.actionBtn}
               onPress={onBookmark}
               hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              accessibilityLabel={post.is_bookmarked ? 'Remove bookmark' : 'Bookmark'}>
+              accessibilityLabel={displayPost.is_bookmarked ? 'Remove bookmark' : 'Bookmark'}>
               <Icon
-                name={post.is_bookmarked ? 'bookmark' : 'bookmark-outline'}
+                name={displayPost.is_bookmarked ? 'bookmark' : 'bookmark-outline'}
                 size={17}
-                color={post.is_bookmarked ? c.accent : c.textMuted}
+                color={displayPost.is_bookmarked ? c.accent : c.textMuted}
               />
             </TouchableOpacity>
 

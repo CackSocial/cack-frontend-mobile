@@ -35,7 +35,7 @@ export default function ConversationScreen({route}: Props) {
   const currentUser = useAuthStore(s => s.user);
   const wsSend = useMessagesStore(s => s.sendMessage);
 
-  const {messages, loading, hasMore, refresh, loadMore, addMessage} =
+  const {messages, setMessages, loading, hasMore, refresh, loadMore, addMessage} =
     useConversation(username);
 
   const [text, setText] = useState('');
@@ -57,17 +57,30 @@ export default function ConversationScreen({route}: Props) {
     const unsub = useMessagesStore.subscribe(state => {
       const convMsgs = state.messages[username];
       const newest = convMsgs?.[convMsgs.length - 1];
-      if (
-        newest &&
-        newest.sender_id !== currentUser?.id &&
-        !seenMessageIdsRef.current.has(newest.id)
-      ) {
+      if (!newest || seenMessageIdsRef.current.has(newest.id)) return;
+
+      if (newest.sender_id !== currentUser?.id) {
+        // Incoming message from the other user
         seenMessageIdsRef.current.add(newest.id);
         addMessage(newest);
+      } else {
+        // Echo of our own message — replace the optimistic tmp-* entry
+        seenMessageIdsRef.current.add(newest.id);
+        setMessages(prev => {
+          const tmpIdx = prev.findIndex(
+            m => m.id.startsWith('tmp-') && m.content === newest.content && m.receiver_id === newest.receiver_id,
+          );
+          if (tmpIdx !== -1) {
+            const updated = [...prev];
+            updated[tmpIdx] = newest;
+            return updated;
+          }
+          return prev;
+        });
       }
     });
     return unsub;
-  }, [username, addMessage, currentUser?.id]);
+  }, [username, addMessage, setMessages, currentUser?.id]);
 
   const handleSend = async () => {
     if ((!text.trim() && !imagePreview) || sending) return;

@@ -19,51 +19,48 @@ export function useOptimisticLike(
 
   const toggleLike = useCallback(
     async (post: Post) => {
-      const was = post.is_liked;
+      // For reposts, target the original post
+      const target = post.post_type === 'repost' && post.original_post ? post.original_post : post;
+      const was = target.is_liked;
       const newLiked = !was;
-      const newCount = post.like_count + (was ? -1 : 1);
+      const newCount = target.like_count + (was ? -1 : 1);
+
+      const applyUpdate = (p: Post): Post => {
+        if (p.id === target.id) return {...p, is_liked: newLiked, like_count: newCount};
+        if (p.original_post?.id === target.id) {
+          return {...p, original_post: {...p.original_post, is_liked: newLiked, like_count: newCount}};
+        }
+        return p;
+      };
+      const revertUpdate = (p: Post): Post => {
+        if (p.id === target.id) return {...p, is_liked: was, like_count: target.like_count};
+        if (p.original_post?.id === target.id) {
+          return {...p, original_post: {...p.original_post, is_liked: was, like_count: target.like_count}};
+        }
+        return p;
+      };
 
       // Optimistic update
       if (setPosts) {
-        setPosts(prev =>
-          prev.map(p =>
-            p.id === post.id
-              ? {...p, is_liked: newLiked, like_count: newCount}
-              : p,
-          ),
-        );
+        setPosts(prev => prev.map(applyUpdate));
       }
       if (setPost) {
-        setPost(prev =>
-          prev && prev.id === post.id
-            ? {...prev, is_liked: newLiked, like_count: newCount}
-            : prev,
-        );
+        setPost(prev => prev ? applyUpdate(prev) : prev);
       }
-      cachePost(post.id, {is_liked: newLiked, like_count: newCount});
+      cachePost(target.id, {is_liked: newLiked, like_count: newCount});
 
       try {
-        was ? await unlikePost(post.id) : await likePost(post.id);
+        was ? await unlikePost(target.id) : await likePost(target.id);
       } catch (e: unknown) {
         logError('useOptimisticLike', e);
         // Rollback
         if (setPosts) {
-          setPosts(prev =>
-            prev.map(p =>
-              p.id === post.id
-                ? {...p, is_liked: was, like_count: post.like_count}
-                : p,
-            ),
-          );
+          setPosts(prev => prev.map(revertUpdate));
         }
         if (setPost) {
-          setPost(prev =>
-            prev && prev.id === post.id
-              ? {...prev, is_liked: was, like_count: post.like_count}
-              : prev,
-          );
+          setPost(prev => prev ? revertUpdate(prev) : prev);
         }
-        cachePost(post.id, {is_liked: was, like_count: post.like_count});
+        cachePost(target.id, {is_liked: was, like_count: target.like_count});
       }
     },
     [setPosts, setPost, cachePost],

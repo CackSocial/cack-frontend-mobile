@@ -62,28 +62,31 @@ export default function BookmarksScreen({navigation}: Props) {
   }, []);
 
   const renderPost = useCallback(
-    ({item}: {item: Post}) => (
-      <PostCard
-        post={item}
-        onPress={() => navigation.navigate('PostDetail', {postId: item.id})}
-        onAuthorPress={() =>
-          navigation.navigate('Profile', {username: item.author.username})
-        }
-        onLike={() => handleLike(item)}
-        onComment={() => navigation.navigate('PostDetail', {postId: item.id})}
-        onBookmark={() => handleBookmark(item)}
-        onRepost={() => handleRepost(item)}
-        onQuote={() => navigation.navigate('QuotePost', {post: item})}
-        onMentionPress={username =>
-          navigation.navigate('Profile', {username})
-        }
-        onOriginalPostPress={
-          item.original_post
-            ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
-            : undefined
-        }
-      />
-    ),
+    ({item}: {item: Post}) => {
+      const actionTarget = item.post_type === 'repost' && item.original_post ? item.original_post : item;
+      return (
+        <PostCard
+          post={item}
+          onPress={() => navigation.navigate('PostDetail', {postId: actionTarget.id})}
+          onAuthorPress={() =>
+            navigation.navigate('Profile', {username: item.author.username})
+          }
+          onLike={() => handleLike(item)}
+          onComment={() => navigation.navigate('PostDetail', {postId: actionTarget.id})}
+          onBookmark={() => handleBookmark(item)}
+          onRepost={() => handleRepost(item)}
+          onQuote={() => navigation.navigate('QuotePost', {post: actionTarget})}
+          onMentionPress={username =>
+            navigation.navigate('Profile', {username})
+          }
+          onOriginalPostPress={
+            item.original_post
+              ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
+              : undefined
+          }
+        />
+      );
+    },
     [navigation, handleLike, handleBookmark, handleRepost],
   );
 
