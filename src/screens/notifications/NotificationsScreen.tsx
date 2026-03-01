@@ -73,6 +73,7 @@ export default function NotificationsScreen({navigation}: Props) {
 
   const handlePress = useCallback(
     (item: Notification) => {
+      if (!item.actor) return;
       if (!item.is_read) {
         markAsRead(item.id);
       }
@@ -89,6 +90,9 @@ export default function NotificationsScreen({navigation}: Props) {
 
   const renderItem = useCallback(
     ({item}: {item: Notification}) => {
+      const actor = item.actor;
+      if (!actor) return null;
+
       const iconInfo = NOTIFICATION_ICONS[item.type] || {
         icon: 'bell-outline',
         color: c.textMuted,
@@ -106,11 +110,11 @@ export default function NotificationsScreen({navigation}: Props) {
           onPress={() => handlePress(item)}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel={`${item.actor.display_name} ${getNotificationText(item.type)}`}>
+          accessibilityLabel={`${actor.display_name} ${getNotificationText(item.type)}`}>
           <View style={styles.iconWrap}>
             <Avatar
-              uri={item.actor.avatar_url}
-              name={item.actor.display_name}
+              uri={actor.avatar_url}
+              name={actor.display_name}
               size={40}
             />
             <View
@@ -123,7 +127,7 @@ export default function NotificationsScreen({navigation}: Props) {
           </View>
           <View style={styles.textWrap}>
             <Text style={[styles.text, {color: c.textPrimary}]} numberOfLines={2}>
-              <Text style={styles.bold}>{item.actor.display_name}</Text>
+              <Text style={styles.bold}>{actor.display_name}</Text>
               {' '}
               {getNotificationText(item.type)}
             </Text>
