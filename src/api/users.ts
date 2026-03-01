@@ -35,14 +35,11 @@ export async function deleteAccount(password: string): Promise<void> {
   await client.delete('/users/me', {data: {password}});
 }
 
-export async function searchUsers(
-  query: string,
-  page = 1,
-  limit = PAGINATION_LIMIT,
-): Promise<PaginatedResponse<UserProfile>> {
-  const {data} = await client.get<PaginatedResponse<UserProfile>>('/users', {
-    params: {q: query, page, limit},
-  });
+/** Look up a single user by exact username (no search endpoint exists). */
+export async function lookupUser(username: string): Promise<UserProfile> {
+  const {data} = await client.get<UserProfile>(
+    `/users/${encodeURIComponent(username)}`,
+  );
   return data;
 }
 

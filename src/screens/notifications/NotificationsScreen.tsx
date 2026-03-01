@@ -73,7 +73,7 @@ export default function NotificationsScreen({navigation}: Props) {
 
   const handlePress = useCallback(
     (item: Notification) => {
-      if (!item.actor) return;
+      if (!item.actor?.username) return;
       if (!item.is_read) {
         markAsRead(item.id);
       }
@@ -91,7 +91,7 @@ export default function NotificationsScreen({navigation}: Props) {
   const renderItem = useCallback(
     ({item}: {item: Notification}) => {
       const actor = item.actor;
-      if (!actor) return null;
+      if (!actor?.username) return null;
 
       const iconInfo = NOTIFICATION_ICONS[item.type] || {
         icon: 'bell-outline',
@@ -144,7 +144,7 @@ export default function NotificationsScreen({navigation}: Props) {
     [c, handlePress],
   );
 
-  const unreadExists = notifications.some(n => !n.is_read);
+  const unreadExists = notifications.some(n => !n.is_read && n.actor?.username);
 
   return (
     <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>

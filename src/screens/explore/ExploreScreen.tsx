@@ -14,7 +14,7 @@ import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
 import ErrorBanner from '../../components/common/ErrorBanner';
 import {getTrendingTags} from '../../api/tags';
-import {searchUsers} from '../../api/users';
+import {lookupUser} from '../../api/users';
 import {useColors, fonts} from '../../theme';
 import {useDebounce} from '../../hooks/useDebounce';
 import {getErrorMessage} from '../../utils/log';
@@ -59,7 +59,7 @@ export default function ExploreScreen({navigation}: Props) {
     }, [loadTags]),
   );
 
-  // Search users when debounced query changes and mode is 'users'
+  // Lookup user by exact username when debounced query changes and mode is 'users'
   useEffect(() => {
     if (searchMode !== 'users' || !debouncedQuery.trim()) {
       setUserResults([]);
@@ -69,8 +69,8 @@ export default function ExploreScreen({navigation}: Props) {
     const doSearch = async () => {
       setUserSearching(true);
       try {
-        const res = await searchUsers(debouncedQuery.trim());
-        if (!cancelled) setUserResults(res.data ?? []);
+        const user = await lookupUser(debouncedQuery.trim());
+        if (!cancelled) setUserResults([user]);
       } catch {
         if (!cancelled) setUserResults([]);
       }
@@ -144,7 +144,7 @@ export default function ExploreScreen({navigation}: Props) {
           <Icon name="magnify" size={20} color={c.textMuted} />
           <TextInput
             style={[styles.searchInput, {color: c.textPrimary}]}
-            placeholder={searchMode === 'tags' ? 'Search tags…' : 'Search people…'}
+            placeholder={searchMode === 'tags' ? 'Search tags…' : 'Search by exact username…'}
             placeholderTextColor={c.textMuted}
             value={query}
             onChangeText={setQuery}

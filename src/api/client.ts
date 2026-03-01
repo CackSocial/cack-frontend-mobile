@@ -15,7 +15,9 @@ let authToken: string | null = null;
 // The backend only checks that the Cookie value matches the header value;
 // it does NOT verify against a server-stored token. So we generate our own
 // and send it as both `Cookie: sc-csrf=TOKEN` and `X-CSRF-Token: TOKEN`.
-const csrfToken = generateCsrfToken();
+// If the server sets a new CSRF cookie (e.g. on login), we adopt it so the
+// native cookie store and our manual header stay in sync.
+let csrfToken = generateCsrfToken();
 
 function generateCsrfToken(): string {
   const chars = '0123456789abcdef';
@@ -45,6 +47,17 @@ client.interceptors.request.use(config => {
 // Unwrap { success, data } envelope
 client.interceptors.response.use(
   response => {
+    // If the server set a new sc-csrf cookie, adopt it so the native cookie
+    // store and our manual X-CSRF-Token header stay in sync.
+    const setCookie = response.headers?.['set-cookie'];
+    if (setCookie) {
+      const raw = Array.isArray(setCookie) ? setCookie.join('; ') : setCookie;
+      const match = raw.match(/sc-csrf=([^;]+)/);
+      if (match) {
+        csrfToken = match[1];
+      }
+    }
+
     const body = response.data;
     if (body && typeof body === 'object' && 'success' in body) {
       if (!body.success) {

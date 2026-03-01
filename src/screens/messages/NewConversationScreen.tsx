@@ -11,7 +11,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
-import {searchUsers} from '../../api/users';
+import {lookupUser} from '../../api/users';
 import {useDebounce} from '../../hooks/useDebounce';
 import {useColors, fonts} from '../../theme';
 import {sharedStyles} from '../../styles/shared';
@@ -38,8 +38,8 @@ export default function NewConversationScreen({navigation}: Props) {
     const doSearch = async () => {
       setSearching(true);
       try {
-        const res = await searchUsers(debouncedQuery.trim());
-        if (!cancelled) setResults(res.data ?? []);
+        const user = await lookupUser(debouncedQuery.trim());
+        if (!cancelled) setResults([user]);
       } catch {
         if (!cancelled) setResults([]);
       }
@@ -93,7 +93,7 @@ export default function NewConversationScreen({navigation}: Props) {
           <Icon name="magnify" size={20} color={c.textMuted} />
           <TextInput
             style={[styles.searchInput, {color: c.textPrimary}]}
-            placeholder="Search people…"
+            placeholder="Search by exact username…"
             placeholderTextColor={c.textMuted}
             value={query}
             onChangeText={setQuery}
