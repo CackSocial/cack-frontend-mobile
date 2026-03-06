@@ -69,6 +69,7 @@ export default function TagPostsScreen({route, navigation}: Props) {
       <FlatList
         data={posts}
         keyExtractor={item => item.id}
+        contentContainerStyle={sharedStyles.paddedListContent}
         renderItem={({item}) => {
           const actionTarget = item.post_type === 'repost' && item.original_post ? item.original_post : item;
           return (

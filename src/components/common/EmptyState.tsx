@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {useColors, fonts} from '../../theme';
+import {useColors, fonts, radii, spacing, typography} from '../../theme';
 
 interface Props {
   icon?: string;
@@ -14,40 +14,44 @@ export default function EmptyState({icon = 'inbox-outline', title, subtitle}: Pr
 
   return (
     <View style={styles.container}>
-      <Icon
-        name={icon}
-        size={56}
-        color={c.textMuted}
-      />
-      <Text style={[styles.title, {color: c.textSecondary}]}>
-        {title}
-      </Text>
-      {subtitle && (
-        <Text style={[styles.subtitle, {color: c.textTertiary}]}>
-          {subtitle}
-        </Text>
-      )}
+      <View style={[styles.iconWrap, {backgroundColor: c.bgSecondary, borderColor: c.border}]}> 
+        <Icon name={icon} size={28} color={c.textTertiary} />
+      </View>
+      <Text style={[styles.title, {color: c.textPrimary}]}>{title}</Text>
+      {subtitle ? (
+        <Text style={[styles.subtitle, {color: c.textSecondary}]}>{subtitle}</Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    paddingHorizontal: spacing[6],
+    paddingVertical: spacing[12],
+  },
+  iconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing[4],
   },
   title: {
-    fontSize: 18,
-    fontFamily: fonts.bodySemiBold,
-    marginTop: 12,
+    fontSize: typography.xl,
+    fontFamily: fonts.displayBold,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
+    marginTop: spacing[2],
+    fontSize: typography.sm,
     fontFamily: fonts.body,
-    marginTop: 6,
+    lineHeight: 20,
     textAlign: 'center',
+    maxWidth: 320,
   },
 });

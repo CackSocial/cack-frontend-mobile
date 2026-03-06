@@ -1,27 +1,35 @@
 import React from 'react';
 import {View, TextInput, Text, StyleSheet} from 'react-native';
-import type {TextInputProps} from 'react-native';
-import {useColors, fonts} from '../../theme';
+import type {StyleProp, TextInputProps, TextStyle, ViewStyle} from 'react-native';
+import {useColors, fonts, radii, spacing, typography} from '../../theme';
 
 interface Props extends TextInputProps {
   label?: string;
   error?: string;
+  containerStyle?: StyleProp<ViewStyle>;
+  style?: StyleProp<TextStyle>;
 }
 
-export default function Input({label, error, style, ...rest}: Props) {
+export default function Input({
+  label,
+  error,
+  containerStyle,
+  style,
+  multiline,
+  ...rest
+}: Props) {
   const c = useColors();
 
   return (
-    <View style={styles.container}>
-      {label && (
-        <Text style={[styles.label, {color: c.textSecondary}]}>
-          {label}
-        </Text>
-      )}
+    <View style={[styles.container, containerStyle]}>
+      {label ? (
+        <Text style={[styles.label, {color: c.textSecondary}]}>{label}</Text>
+      ) : null}
       <TextInput
         placeholderTextColor={c.textMuted}
         style={[
           styles.input,
+          multiline ? styles.multiline : null,
           {
             backgroundColor: c.bgSecondary,
             color: c.textPrimary,
@@ -29,33 +37,39 @@ export default function Input({label, error, style, ...rest}: Props) {
           },
           style,
         ]}
+        multiline={multiline}
         {...rest}
       />
-      {error && <Text style={[styles.error, {color: c.danger}]}>{error}</Text>}
+      {error ? (
+        <Text style={[styles.error, {color: c.danger}]}>{error}</Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    gap: spacing[1],
   },
   label: {
-    fontSize: 14,
-    fontFamily: fonts.bodySemiBold,
-    marginBottom: 6,
+    fontSize: typography.sm,
+    fontFamily: fonts.bodyMedium,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
+    borderWidth: 1.5,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    fontSize: typography.base,
     fontFamily: fonts.body,
+    minHeight: 50,
+  },
+  multiline: {
+    minHeight: 112,
+    textAlignVertical: 'top',
   },
   error: {
-    fontSize: 12,
+    fontSize: typography.xs,
     fontFamily: fonts.body,
-    marginTop: 4,
   },
 });

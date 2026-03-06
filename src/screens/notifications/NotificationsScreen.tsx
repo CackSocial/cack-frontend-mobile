@@ -13,7 +13,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
 import {useNotificationsStore} from '../../stores/notificationsStore';
-import {useColors, fonts} from '../../theme';
+import {useColors, fonts, radii, spacing, typography, elevation} from '../../theme';
 import {formatRelativeTime} from '../../utils/format';
 import {sharedStyles} from '../../styles/shared';
 import type {Notification} from '../../types';
@@ -23,12 +23,12 @@ import type {NotificationsStackParamList} from '../../navigation/types';
 type Props = NativeStackScreenProps<NotificationsStackParamList, 'Notifications'>;
 
 const NOTIFICATION_ICONS: Record<string, {icon: string; color: string}> = {
-  like: {icon: 'heart', color: '#f91880'},
-  comment: {icon: 'comment-outline', color: '#1d9bf0'},
-  follow: {icon: 'account-plus-outline', color: '#7856ff'},
-  mention: {icon: 'at', color: '#ff7a00'},
-  repost: {icon: 'repeat', color: '#00ba7c'},
-  quote: {icon: 'format-quote-close', color: '#1d9bf0'},
+  like: {icon: 'heart', color: '#ef4444'},
+  comment: {icon: 'comment-outline', color: '#525252'},
+  follow: {icon: 'account-plus-outline', color: '#16a34a'},
+  mention: {icon: 'at', color: '#262626'},
+  repost: {icon: 'repeat', color: '#16a34a'},
+  quote: {icon: 'format-quote-close', color: '#525252'},
 };
 
 function getNotificationText(type: string): string {
@@ -105,42 +105,29 @@ export default function NotificationsScreen({navigation}: Props) {
         <TouchableOpacity
           style={[
             styles.item,
+            elevation.card,
             {
               backgroundColor: item.is_read ? c.bgElevated : c.bgSecondary,
-              borderBottomColor: c.border,
+              borderColor: c.border,
             },
           ]}
           onPress={() => handlePress(item)}
-          activeOpacity={0.7}
+          activeOpacity={0.84}
           accessibilityRole="button"
           accessibilityLabel={`${actor.display_name} ${getNotificationText(item.type)}`}>
           <View style={styles.iconWrap}>
-            <Avatar
-              uri={actor.avatar_url}
-              name={actor.display_name}
-              size={40}
-            />
-            <View
-              style={[
-                styles.typeIcon,
-                {backgroundColor: iconInfo.color, borderColor: item.is_read ? c.bgElevated : c.bgSecondary},
-              ]}>
+            <Avatar uri={actor.avatar_url} name={actor.display_name} size={44} />
+            <View style={[styles.typeIcon, {backgroundColor: iconInfo.color}]}> 
               <Icon name={iconInfo.icon} size={12} color="#fff" />
             </View>
           </View>
           <View style={styles.textWrap}>
             <Text style={[styles.text, {color: c.textPrimary}]} numberOfLines={2}>
-              <Text style={styles.bold}>{actor.display_name}</Text>
-              {' '}
-              {getNotificationText(item.type)}
+              <Text style={styles.bold}>{actor.display_name}</Text> {getNotificationText(item.type)}
             </Text>
-            <Text style={[styles.time, {color: c.textTertiary}]}>
-              {formatRelativeTime(item.created_at)}
-            </Text>
+            <Text style={[styles.time, {color: c.textTertiary}]}>{formatRelativeTime(item.created_at)}</Text>
           </View>
-          {!item.is_read && (
-            <View style={[styles.unreadDot, {backgroundColor: c.accent}]} />
-          )}
+          {!item.is_read ? <View style={[styles.unreadDot, {backgroundColor: c.accent}]} /> : null}
         </TouchableOpacity>
       );
     },
@@ -150,39 +137,31 @@ export default function NotificationsScreen({navigation}: Props) {
   const unreadExists = notifications.some(n => !n.is_read && n.actor?.username);
 
   return (
-    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
-      {unreadExists && (
-        <TouchableOpacity
-          style={[styles.markAllBtn, {borderBottomColor: c.border}]}
-          onPress={markAllAsRead}>
-          <Icon name="check-all" size={18} color={c.accent} />
-          <Text style={[styles.markAllText, {color: c.accent}]}>
-            Mark all as read
-          </Text>
+    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}> 
+      {unreadExists ? (
+        <TouchableOpacity style={styles.markAllWrap} onPress={markAllAsRead}>
+          <Icon name="check-all" size={18} color={c.textPrimary} />
+          <Text style={[styles.markAllText, {color: c.textPrimary}]}>Mark all as read</Text>
         </TouchableOpacity>
-      )}
+      ) : null}
+
       <FlatList
         data={notifications}
         keyExtractor={item => item.id}
         renderItem={renderItem}
+        contentContainerStyle={[
+          sharedStyles.paddedListContent,
+          !unreadExists && styles.listContent,
+        ]}
         refreshControl={
-          <RefreshControl
-            refreshing={isLoading && notifications.length > 0}
-            onRefresh={handleRefresh}
-          />
+          <RefreshControl refreshing={isLoading && notifications.length > 0} onRefresh={handleRefresh} />
         }
         onEndReached={() => {
           if (hasMore) fetchNotifications(false);
         }}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
-          !isLoading ? (
-            <EmptyState
-              icon="bell-outline"
-              title="No notifications"
-              subtitle="You're all caught up!"
-            />
-          ) : null
+          !isLoading ? <EmptyState icon="bell-outline" title="No notifications" /> : null
         }
         ListFooterComponent={
           isLoading && notifications.length > 0 ? (
@@ -196,25 +175,30 @@ export default function NotificationsScreen({navigation}: Props) {
 
 const styles = StyleSheet.create({
   container: {flex: 1},
-  markAllBtn: {
+  listContent: {
+    paddingTop: spacing[4],
+  },
+  markAllWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: spacing[2],
+    marginHorizontal: spacing[4],
+    marginTop: spacing[4],
+    marginBottom: spacing[1],
   },
   markAllText: {
-    fontSize: 14,
+    fontSize: typography.sm,
     fontFamily: fonts.bodySemiBold,
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 12,
+    gap: spacing[3],
+    marginHorizontal: spacing[4],
+    marginTop: spacing[3],
+    padding: spacing[4],
+    borderWidth: 1,
+    borderRadius: radii.xxl,
   },
   iconWrap: {
     position: 'relative',
@@ -223,18 +207,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -2,
     right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
   },
   textWrap: {
     flex: 1,
+    gap: spacing[1],
   },
   text: {
-    fontSize: 14,
+    fontSize: typography.sm,
     fontFamily: fonts.body,
     lineHeight: 20,
   },
@@ -242,9 +226,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodySemiBold,
   },
   time: {
-    fontSize: 12,
+    fontSize: typography.xs,
     fontFamily: fonts.body,
-    marginTop: 2,
   },
   unreadDot: {
     width: 8,

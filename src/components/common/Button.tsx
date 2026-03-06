@@ -1,12 +1,12 @@
 import React from 'react';
 import {
-  TouchableOpacity,
+  Pressable,
   Text,
-  StyleSheet,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
-import type {ViewStyle, TextStyle} from 'react-native';
-import {useColors, fonts} from '../../theme';
+import type {StyleProp, TextStyle, ViewStyle} from 'react-native';
+import {useColors, fonts, radii, spacing, typography} from '../../theme';
 
 interface Props {
   title: string;
@@ -15,8 +15,9 @@ interface Props {
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  fullWidth?: boolean;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   accessibilityLabel?: string;
 }
 
@@ -27,80 +28,110 @@ export default function Button({
   size = 'md',
   loading = false,
   disabled = false,
+  fullWidth = false,
   style,
   textStyle,
   accessibilityLabel,
 }: Props) {
   const c = useColors();
 
-  const bgColors = {
+  const backgroundColor = {
     primary: c.accent,
     secondary: 'transparent',
     danger: c.danger,
     ghost: 'transparent',
-  };
+  }[variant];
 
-  const textColors = {
-    primary: c.accentText,
-    secondary: c.textPrimary,
-    danger: '#ffffff',
-    ghost: c.textSecondary,
-  };
-
-  const borderColors = {
+  const borderColor = {
     primary: c.accent,
     secondary: c.borderStrong,
     danger: c.danger,
     ghost: 'transparent',
-  };
+  }[variant];
 
-  const heights = {sm: 32, md: 42, lg: 50};
-  const fontSizes = {sm: 13, md: 15, lg: 17};
+  const textColor = {
+    primary: c.accentText,
+    secondary: c.textPrimary,
+    danger: '#ffffff',
+    ghost: c.textSecondary,
+  }[variant];
+
+  const sizeStyles = {
+    sm: styles.sm,
+    md: styles.md,
+    lg: styles.lg,
+  }[size];
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || title}
       accessibilityState={{disabled: disabled || loading}}
-      style={[
-        styles.btn,
+      style={({pressed}) => [
+        styles.base,
+        sizeStyles,
         {
-          backgroundColor: bgColors[variant],
-          borderWidth: 1.5,
-          borderColor: borderColors[variant],
-          height: heights[size],
+          backgroundColor,
+          borderColor,
           opacity: disabled ? 0.5 : 1,
+          transform: [{scale: pressed && !disabled && !loading ? 0.98 : 1}],
         },
+        fullWidth ? styles.fullWidth : null,
+        variant === 'ghost' && pressed ? {backgroundColor: c.bgHover} : null,
+        variant === 'secondary' && pressed ? {backgroundColor: c.bgHover} : null,
+        variant === 'primary' && pressed ? {backgroundColor: c.accentHover} : null,
+        variant === 'danger' && pressed ? {backgroundColor: c.dangerHover} : null,
         style,
       ]}>
       {loading ? (
-        <ActivityIndicator size="small" color={textColors[variant]} />
+        <ActivityIndicator size="small" color={textColor} />
       ) : (
-        <Text
-          style={[
-            styles.text,
-            {color: textColors[variant], fontSize: fontSizes[size]},
-            textStyle,
-          ]}>
+        <Text style={[styles.text, styles[`${size}Text`], {color: textColor}, textStyle]}>
           {title}
         </Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  btn: {
-    borderRadius: 9999,
-    paddingHorizontal: 20,
+  base: {
+    borderWidth: 1.5,
+    borderRadius: radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    gap: spacing[2],
+  },
+  fullWidth: {
+    width: '100%',
+  },
+  sm: {
+    minHeight: 36,
+    paddingHorizontal: spacing[3],
+    borderRadius: radii.md,
+  },
+  md: {
+    minHeight: 42,
+    paddingHorizontal: spacing[5],
+  },
+  lg: {
+    minHeight: 50,
+    paddingHorizontal: spacing[6],
   },
   text: {
-    fontFamily: fonts.bodySemiBold,
+    fontFamily: fonts.bodyMedium,
+    includeFontPadding: false,
+  },
+  smText: {
+    fontSize: typography.sm,
+  },
+  mdText: {
+    fontSize: typography.sm,
+  },
+  lgText: {
+    fontSize: typography.base,
   },
 });

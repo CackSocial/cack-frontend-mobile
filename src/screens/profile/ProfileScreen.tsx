@@ -11,6 +11,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import Button from '../../components/common/Button';
+import Surface from '../../components/common/Surface';
 import PostCard from '../../components/post/PostCard';
 import EmptyState from '../../components/common/EmptyState';
 import ErrorBanner from '../../components/common/ErrorBanner';
@@ -21,9 +22,8 @@ import {useSyncLikes} from '../../hooks/useSyncLikes';
 import {useOptimisticLike} from '../../hooks/useOptimisticLike';
 import {useOptimisticBookmark} from '../../hooks/useOptimisticBookmark';
 import {useOptimisticRepost} from '../../hooks/useOptimisticRepost';
-import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
-import {useColors, fonts} from '../../theme';
+import {useColors, fonts, layout, radii, spacing, typography} from '../../theme';
 import {getErrorMessage} from '../../utils/log';
 import {formatCount} from '../../utils/format';
 import {sharedStyles} from '../../styles/shared';
@@ -47,22 +47,11 @@ export default function ProfileScreen({route, navigation}: Props) {
   const [activeTab, setActiveTab] = useState<'posts' | 'likes'>('posts');
   const [error, setError] = useState<string | null>(null);
 
-  const {posts, setPosts, loading: postsLoading, hasMore, refresh, loadMore} =
-    useUserPosts(username);
+  const {posts, setPosts, loading: postsLoading, hasMore, refresh, loadMore} = useUserPosts(username);
 
-  // REFACTORED: Uses shared useOptimisticLike hook instead of inline implementation
   const handleToggleLike = useOptimisticLike(setPosts);
   const handleToggleBookmark = useOptimisticBookmark(setPosts);
   const handleToggleRepost = useOptimisticRepost(setPosts);
-
-  useEffect(() => {
-    loadProfile();
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username]);
-
-  // Sync like states from global cache when screen gains focus
-  useSyncLikes(setPosts);
 
   const loadProfile = useCallback(async () => {
     setLoadingProfile(true);
@@ -76,20 +65,23 @@ export default function ProfileScreen({route, navigation}: Props) {
     setLoadingProfile(false);
   }, [username]);
 
+  useEffect(() => {
+    loadProfile();
+    refresh();
+  }, [loadProfile, refresh]);
+
+  useSyncLikes(setPosts);
+
   const handleFollowToggle = useCallback(async () => {
     if (!profile || followLoading) return;
     setFollowLoading(true);
     try {
       if (profile.is_following) {
         await unfollowUser(profile.username);
-        setProfile(prev =>
-          prev ? {...prev, is_following: false, follower_count: prev.follower_count - 1} : prev,
-        );
+        setProfile(prev => (prev ? {...prev, is_following: false, follower_count: prev.follower_count - 1} : prev));
       } else {
         await followUser(profile.username);
-        setProfile(prev =>
-          prev ? {...prev, is_following: true, follower_count: prev.follower_count + 1} : prev,
-        );
+        setProfile(prev => (prev ? {...prev, is_following: true, follower_count: prev.follower_count + 1} : prev));
       }
     } catch (e: unknown) {
       Alert.alert('Error', getErrorMessage(e));
@@ -97,136 +89,90 @@ export default function ProfileScreen({route, navigation}: Props) {
     setFollowLoading(false);
   }, [profile, followLoading]);
 
+  const likedPosts = useMemo(() => posts.filter(p => p.is_liked), [posts]);
+  const displayPosts = activeTab === 'posts' ? posts : likedPosts;
+
   const renderHeader = useCallback(() => {
     if (!profile) return null;
     return (
-      <View>
-        <View style={styles.profileHeader}>
-          <View style={styles.topRow}>
-            <Avatar
-              uri={profile.avatar_url}
-              name={profile.display_name}
-              size={72}
-            />
-            <View style={styles.actionRow}>
-              {isOwnProfile ? (
-                <Button
-                  title="Edit profile"
-                  variant="secondary"
-                  size="sm"
-                  onPress={() => navigation.navigate('EditProfile')}
-                />
-              ) : (
-                <>
-                  <TouchableOpacity
-                    style={[styles.msgBtn, {borderColor: c.borderStrong}]}
-                    onPress={() =>
-                      navigation.getParent()?.navigate('MessagesTab', {
-                        screen: 'Conversation',
-                        params: {
-                          username: profile.username,
-                          userId: profile.id,
-                          displayName: profile.display_name,
-                        },
-                      })
-                    }
-                    accessibilityLabel="Send message">
-                    <Icon name="email-outline" size={18} color={c.textPrimary} />
-                  </TouchableOpacity>
-                  <Button
-                    title={profile.is_following ? 'Following' : 'Follow'}
-                    variant={profile.is_following ? 'secondary' : 'primary'}
-                    size="sm"
-                    loading={followLoading}
-                    onPress={handleFollowToggle}
-                  />
-                </>
-              )}
+      <View style={styles.headerWrap}>
+        <Surface elevated style={styles.profileCard}>
+          <View style={styles.heroRow}>
+            <Avatar uri={profile.avatar_url} name={profile.display_name} size={84} />
+            <View style={styles.heroBody}>
+              <Text style={[styles.displayName, {color: c.textPrimary}]}>{profile.display_name}</Text>
+              <Text style={[styles.username, {color: c.textTertiary}]}>@{profile.username}</Text>
             </View>
           </View>
-          <Text style={[styles.displayName, {color: c.textPrimary}]}>
-            {profile.display_name}
-          </Text>
-          <Text style={[styles.username, {color: c.textSecondary}]}>
-            @{profile.username}
-          </Text>
-          {profile.bio ? (
-            <Text style={[styles.bio, {color: c.textPrimary}]}>
-              {profile.bio}
-            </Text>
-          ) : null}
+
+          {profile.bio ? <Text style={[styles.bio, {color: c.textSecondary}]}>{profile.bio}</Text> : null}
 
           <View style={styles.statsRow}>
-            <TouchableOpacity
-              style={styles.stat}
-              onPress={() =>
-                navigation.navigate('Following', {username: profile.username})
-              }
-              accessibilityLabel={`${profile.following_count} following`}>
-              <Text style={[styles.statNum, {color: c.textPrimary}]}>
-                {formatCount(profile.following_count)}
-              </Text>
-              <Text style={[styles.statLabel, {color: c.textSecondary}]}>
-                Following
-              </Text>
+            <TouchableOpacity style={styles.stat} onPress={() => navigation.navigate('Followers', {username: profile.username})}>
+              <Text style={[styles.statValue, {color: c.textPrimary}]}>{formatCount(profile.follower_count)}</Text>
+              <Text style={[styles.statLabel, {color: c.textTertiary}]}>Followers</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.stat}
-              onPress={() =>
-                navigation.navigate('Followers', {username: profile.username})
-              }
-              accessibilityLabel={`${profile.follower_count} followers`}>
-              <Text style={[styles.statNum, {color: c.textPrimary}]}>
-                {formatCount(profile.follower_count)}
-              </Text>
-              <Text style={[styles.statLabel, {color: c.textSecondary}]}>
-                Followers
-              </Text>
+            <TouchableOpacity style={styles.stat} onPress={() => navigation.navigate('Following', {username: profile.username})}>
+              <Text style={[styles.statValue, {color: c.textPrimary}]}>{formatCount(profile.following_count)}</Text>
+              <Text style={[styles.statLabel, {color: c.textTertiary}]}>Following</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Posts / Likes tabs */}
-        <View style={[styles.tabBar, {borderBottomColor: c.border}]}>
-          <TouchableOpacity
-            style={styles.tab}
-            onPress={() => setActiveTab('posts')}
-            accessibilityRole="tab"
-            accessibilityState={{selected: activeTab === 'posts'}}>
-            <Text
-              style={[
-                styles.tabText,
-                {color: activeTab === 'posts' ? c.textPrimary : c.textMuted},
-              ]}>
-              Posts
-            </Text>
-            {activeTab === 'posts' && (
-              <View style={[styles.tabIndicator, {backgroundColor: c.accent}]} />
+          <View style={[styles.actionRow, isOwnProfile ? styles.actionRowCentered : null]}>
+            {isOwnProfile ? (
+              <Button
+                title="Edit profile"
+                variant="secondary"
+                onPress={() => navigation.navigate('EditProfile')}
+                style={styles.editProfileButton}
+              />
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={[styles.messageButton, {borderColor: c.borderStrong}]}
+                  onPress={() =>
+                    navigation.getParent()?.navigate('MessagesTab', {
+                      screen: 'Conversation',
+                      params: {
+                        username: profile.username,
+                        userId: profile.id,
+                        displayName: profile.display_name,
+                      },
+                    })
+                  }>
+                  <Icon name="email-outline" size={18} color={c.textPrimary} />
+                </TouchableOpacity>
+                <Button
+                  title={profile.is_following ? 'Following' : 'Follow'}
+                  variant={profile.is_following ? 'secondary' : 'primary'}
+                  loading={followLoading}
+                  onPress={handleFollowToggle}
+                />
+              </>
             )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.tab}
-            onPress={() => setActiveTab('likes')}
-            accessibilityRole="tab"
-            accessibilityState={{selected: activeTab === 'likes'}}>
-            <Text
-              style={[
-                styles.tabText,
-                {color: activeTab === 'likes' ? c.textPrimary : c.textMuted},
-              ]}>
-              Likes
-            </Text>
-            {activeTab === 'likes' && (
-              <View style={[styles.tabIndicator, {backgroundColor: c.accent}]} />
-            )}
-          </TouchableOpacity>
+          </View>
+        </Surface>
+
+        <View style={[styles.tabBar, {borderColor: c.border}]}> 
+          {(['posts', 'likes'] as const).map(tab => {
+            const selected = activeTab === tab;
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.tab, selected ? {borderBottomColor: c.accent} : null]}
+                onPress={() => setActiveTab(tab)}
+                accessibilityRole="tab"
+                accessibilityState={{selected}}>
+                <Text style={[styles.tabText, {color: selected ? c.textPrimary : c.textTertiary}]}> 
+                  {tab === 'posts' ? 'Posts' : 'Likes'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
     );
-  }, [profile, c, posts.length, activeTab, isOwnProfile, followLoading, navigation, handleFollowToggle]);
-
-  const likedPosts = useMemo(() => posts.filter(p => p.is_liked), [posts]);
-  const displayPosts = activeTab === 'posts' ? posts : likedPosts;
+  }, [profile, c, activeTab, isOwnProfile, followLoading, navigation, handleFollowToggle]);
 
   const renderPost = useCallback(
     ({item}: {item: Post}) => {
@@ -234,27 +180,15 @@ export default function ProfileScreen({route, navigation}: Props) {
       return (
         <PostCard
           post={item}
-          onPress={() =>
-            navigation.navigate('PostDetail', {postId: actionTarget.id})
-          }
-          onAuthorPress={() =>
-            navigation.push('Profile', {username: item.author.username})
-          }
+          onPress={() => navigation.navigate('PostDetail', {postId: actionTarget.id})}
+          onAuthorPress={() => navigation.push('Profile', {username: actionTarget.author.username})}
           onLike={() => handleToggleLike(item)}
-          onComment={() =>
-            navigation.navigate('PostDetail', {postId: actionTarget.id})
-          }
+          onComment={() => navigation.navigate('PostDetail', {postId: actionTarget.id})}
           onBookmark={() => handleToggleBookmark(item)}
           onRepost={() => handleToggleRepost(item)}
           onQuote={() => navigation.navigate('QuotePost', {post: actionTarget})}
-          onMentionPress={username =>
-            navigation.push('Profile', {username})
-          }
-          onOriginalPostPress={
-            item.original_post
-              ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
-              : undefined
-          }
+          onMentionPress={profileUsername => navigation.push('Profile', {username: profileUsername})}
+          onOriginalPostPress={item.original_post ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id}) : undefined}
         />
       );
     },
@@ -267,20 +201,21 @@ export default function ProfileScreen({route, navigation}: Props) {
 
   if (loadingProfile && !profile) {
     return (
-      <View style={[styles.center, {backgroundColor: c.bgPrimary}]}>
-        <ActivityIndicator size="large" />
+      <View style={[styles.center, {backgroundColor: c.bgPrimary}]}> 
+        <ActivityIndicator size="large" color={c.textPrimary} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
-      {error && <ErrorBanner message={error} onRetry={loadProfile} />}
+    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}> 
+      {error ? <ErrorBanner message={error} onRetry={loadProfile} /> : null}
       <FlatList
         data={displayPosts}
         keyExtractor={item => item.id}
         renderItem={renderPost}
         ListHeaderComponent={renderHeader}
+        contentContainerStyle={sharedStyles.paddedListContent}
         ListEmptyComponent={
           !postsLoading ? (
             <EmptyState
@@ -291,11 +226,7 @@ export default function ProfileScreen({route, navigation}: Props) {
         }
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          postsLoading ? (
-            <ActivityIndicator style={sharedStyles.listLoader} size="small" />
-          ) : null
-        }
+        ListFooterComponent={postsLoading ? <ActivityIndicator style={sharedStyles.listLoader} size="small" /> : null}
       />
     </View>
   );
@@ -304,85 +235,88 @@ export default function ProfileScreen({route, navigation}: Props) {
 const styles = StyleSheet.create({
   container: {flex: 1},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  profileHeader: {
-    paddingTop: 16,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
+  headerWrap: {
+    gap: spacing[4],
   },
-  topRow: {
+  profileCard: {
+    marginHorizontal: layout.screenPadding,
+    gap: spacing[4],
+  },
+  heroRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 10,
+    alignItems: 'center',
+    gap: spacing[4],
+  },
+  heroBody: {
+    flex: 1,
+    gap: spacing[1],
   },
   displayName: {
-    fontSize: 22,
-    fontFamily: fonts.bodyBold,
+    fontSize: typography.xxl,
+    fontFamily: fonts.displayBold,
   },
   username: {
-    fontSize: 15,
+    fontSize: typography.sm,
     fontFamily: fonts.body,
-    marginTop: 1,
   },
   bio: {
-    fontSize: 15,
+    fontSize: typography.sm,
     fontFamily: fonts.body,
-    marginTop: 10,
-    lineHeight: 21,
+    lineHeight: 22,
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 20,
-    marginTop: 14,
+    justifyContent: 'space-between',
+    gap: spacing[3],
   },
   stat: {
-    flexDirection: 'row',
+    flex: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
-  statNum: {
-    fontSize: 14,
-    fontFamily: fonts.bodyBold,
+  statValue: {
+    fontSize: typography.lg,
+    fontFamily: fonts.bodySemiBold,
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: typography.xs,
     fontFamily: fonts.body,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   actionRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
+    alignItems: 'center',
+    gap: spacing[3],
   },
-  editBtn: {
-    flex: 1,
+  actionRowCentered: {
+    justifyContent: 'center',
   },
-  msgBtn: {
+  editProfileButton: {
+    minWidth: 160,
+  },
+  messageButton: {
     width: 42,
     height: 42,
-    borderRadius: 9999,
+    borderRadius: 21,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabBar: {
     flexDirection: 'row',
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginHorizontal: layout.screenPadding,
+    borderBottomWidth: 1,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 14,
-    position: 'relative',
+    paddingVertical: spacing[3],
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
   tabText: {
-    fontSize: 15,
+    fontSize: typography.sm,
     fontFamily: fonts.bodySemiBold,
-  },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    height: 3,
-    width: 56,
-    borderRadius: 3,
   },
 });

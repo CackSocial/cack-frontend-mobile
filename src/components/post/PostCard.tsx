@@ -1,12 +1,12 @@
 import React from 'react';
-import {View, Text, Image, TouchableOpacity, StyleSheet, Share} from 'react-native';
+import {View, Text, Image, Pressable, Share, StyleSheet} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {Post} from '../../types';
 import Avatar from '../common/Avatar';
 import RenderTaggedContent from '../../utils/renderTaggedContent';
 import {resolveImageUri} from '../../utils/resolveImageUri';
 import {formatRelativeTime, formatCount} from '../../utils/format';
-import {useColors, fonts} from '../../theme';
+import {useColors, fonts, radii, spacing, typography, elevation} from '../../theme';
 
 interface Props {
   post: Post;
@@ -22,7 +22,25 @@ interface Props {
   onOriginalPostPress?: () => void;
 }
 
-// REFACTORED: Wrapped in React.memo — rendered in FlatList, benefits from shallow prop comparison
+interface ActionButtonProps {
+  icon: string;
+  label?: string;
+  tintColor: string;
+  onPress?: () => void;
+}
+
+function ActionButton({icon, label, tintColor, onPress}: ActionButtonProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({pressed}) => [styles.actionButton, pressed ? {opacity: 0.75} : null]}>
+      <Icon name={icon} size={18} color={tintColor} />
+      {label ? <Text style={[styles.actionText, {color: tintColor}]}>{label}</Text> : null}
+    </Pressable>
+  );
+}
+
 export default React.memo(function PostCard({
   post,
   onPress,
@@ -38,303 +56,256 @@ export default React.memo(function PostCard({
 }: Props) {
   const c = useColors();
 
-  const handleShare = () => {
-    Share.share({message: post.content}).catch(() => {});
-  };
-
   const isRepost = post.post_type === 'repost';
   const isQuote = post.post_type === 'quote';
 
   const displayPost = isRepost && post.original_post ? post.original_post : post;
   const displayImage = resolveImageUri(displayPost.image_url);
 
+  const handleShare = () => {
+    const message = displayPost.content || 'Check out this post on Cack Social';
+    Share.share({message}).catch(() => {});
+  };
+
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={onPress}
-      style={[styles.card, {borderBottomColor: c.border}]}
-      accessibilityRole="button"
-      accessibilityLabel={`Post by ${displayPost.author.display_name}`}>
-      {/* Repost label */}
-      {isRepost && (
+    <View
+      style={[
+        styles.card,
+        elevation.card,
+        {
+          backgroundColor: c.bgElevated,
+          borderColor: c.border,
+        },
+      ]}>
+      {isRepost ? (
         <View style={styles.repostLabel}>
-          <Icon name="repeat" size={14} color={c.textMuted} />
-          <Text style={[styles.repostLabelText, {color: c.textMuted}]}>
+          <Icon name="repeat" size={14} color={c.textTertiary} />
+          <Text style={[styles.repostLabelText, {color: c.textTertiary}]}> 
             {post.author.display_name} reposted
           </Text>
         </View>
-      )}
+      ) : null}
 
       <View style={styles.row}>
-        <TouchableOpacity onPress={isRepost ? onOriginalPostPress : onAuthorPress}>
+        <Pressable onPress={onAuthorPress}>
           <Avatar
             uri={displayPost.author.avatar_url}
             name={displayPost.author.display_name}
-            size={40}
+            size={44}
           />
-        </TouchableOpacity>
+        </Pressable>
+
         <View style={styles.body}>
-          {/* Header */}
-          <TouchableOpacity
-            onPress={isRepost ? onOriginalPostPress : onAuthorPress}
-            style={styles.authorRow}
-            accessibilityLabel={`View ${displayPost.author.display_name}'s profile`}>
-            <Text style={[styles.displayName, {color: c.textPrimary}]} numberOfLines={1}>
-              {displayPost.author.display_name}
-            </Text>
-            <Text style={[styles.meta, {color: c.textSecondary}]} numberOfLines={1}>
-              @{displayPost.author.username}
-            </Text>
-            <Text style={[styles.dot, {color: c.textSecondary}]}>·</Text>
-            <Text style={[styles.meta, {color: c.textSecondary}]}>
-              {formatRelativeTime(displayPost.created_at)}
-            </Text>
-          </TouchableOpacity>
+          <Pressable
+            onPress={onPress}
+            style={({pressed}) => [styles.contentPressable, pressed ? {opacity: 0.88} : null]}>
+            <Pressable
+              onPress={onAuthorPress}
+              style={styles.authorRow}
+              accessibilityLabel={`View ${displayPost.author.display_name}'s profile`}>
+              <Text style={[styles.displayName, {color: c.textPrimary}]} numberOfLines={1}>
+                {displayPost.author.display_name}
+              </Text>
+              <Text style={[styles.meta, {color: c.textTertiary}]} numberOfLines={1}>
+                @{displayPost.author.username}
+              </Text>
+              <Text style={[styles.meta, {color: c.textTertiary}]}>·</Text>
+              <Text style={[styles.meta, {color: c.textTertiary}]}> 
+                {formatRelativeTime(displayPost.created_at)}
+              </Text>
+            </Pressable>
 
-          {/* Content */}
-          {displayPost.content ? (
-            <View style={styles.content}>
-              <RenderTaggedContent
-                content={displayPost.content}
-                style={{color: c.textPrimary, fontSize: 15, lineHeight: 22, fontFamily: fonts.body}}
-                tagStyle={{color: c.accent, fontFamily: fonts.bodySemiBold}}
-                onTagPress={onTagPress}
-                onMentionPress={onMentionPress}
-              />
-            </View>
-          ) : null}
-
-          {/* Image */}
-          {displayImage && (
-            <Image
-              source={{uri: displayImage}}
-              style={[styles.postImage, {borderColor: c.border}]}
-              resizeMode="cover"
-              accessibilityLabel="Post image"
-            />
-          )}
-
-          {/* Quoted post embed */}
-          {isQuote && post.original_post && (
-            <TouchableOpacity
-              style={[styles.quotedPost, {borderColor: c.border}]}
-              onPress={onOriginalPostPress}
-              activeOpacity={0.7}>
-              <View style={styles.quotedHeader}>
-                <Avatar
-                  uri={post.original_post.author.avatar_url}
-                  name={post.original_post.author.display_name}
-                  size={18}
+            {displayPost.content ? (
+              <View style={styles.content}>
+                <RenderTaggedContent
+                  content={displayPost.content}
+                  style={{
+                    color: c.textPrimary,
+                    fontSize: typography.base,
+                    lineHeight: 24,
+                    fontFamily: fonts.body,
+                  }}
+                  tagStyle={{color: c.textPrimary, fontFamily: fonts.bodySemiBold}}
+                  onTagPress={onTagPress}
+                  onMentionPress={onMentionPress}
                 />
-                <Text style={[styles.quotedName, {color: c.textPrimary}]}>
-                  {post.original_post.author.display_name}
-                </Text>
-                <Text style={[styles.quotedMeta, {color: c.textSecondary}]}>
-                  @{post.original_post.author.username}
-                </Text>
               </View>
-              {post.original_post.content ? (
-                <Text
-                  style={[styles.quotedContent, {color: c.textPrimary}]}
-                  numberOfLines={3}>
-                  {post.original_post.content}
-                </Text>
-              ) : null}
-              {post.original_post.image_url ? (
-                <Image
-                  source={{uri: resolveImageUri(post.original_post.image_url)!}}
-                  style={[styles.quotedImage, {borderColor: c.border}]}
-                  resizeMode="cover"
-                />
-              ) : null}
-            </TouchableOpacity>
-          )}
+            ) : null}
 
-          {/* Actions — use displayPost for counts/states so reposts show original's engagement */}
+            {displayImage ? (
+              <Image
+                source={{uri: displayImage}}
+                style={[styles.postImage, {borderColor: c.border}]}
+                resizeMode="cover"
+                accessibilityLabel="Post image"
+              />
+            ) : null}
+
+            {isQuote && post.original_post ? (
+              <Pressable
+                style={[styles.quotedPost, {borderColor: c.border, backgroundColor: c.bgPrimary}]}
+                onPress={onOriginalPostPress}>
+                <View style={styles.quotedHeader}>
+                  <Avatar
+                    uri={post.original_post.author.avatar_url}
+                    name={post.original_post.author.display_name}
+                    size={20}
+                  />
+                  <Text style={[styles.quotedName, {color: c.textPrimary}]}>
+                    {post.original_post.author.display_name}
+                  </Text>
+                  <Text style={[styles.quotedMeta, {color: c.textTertiary}]}> 
+                    @{post.original_post.author.username}
+                  </Text>
+                </View>
+                {post.original_post.content ? (
+                  <Text style={[styles.quotedContent, {color: c.textSecondary}]} numberOfLines={4}>
+                    {post.original_post.content}
+                  </Text>
+                ) : null}
+                {post.original_post.image_url ? (
+                  <Image
+                    source={{uri: resolveImageUri(post.original_post.image_url)!}}
+                    style={[styles.quotedImage, {borderColor: c.border}]}
+                    resizeMode="cover"
+                  />
+                ) : null}
+              </Pressable>
+            ) : null}
+          </Pressable>
+
           <View style={styles.actions}>
-            <TouchableOpacity
-              style={styles.actionBtn}
+            <ActionButton
+              icon="comment-outline"
+              label={displayPost.comment_count > 0 ? formatCount(displayPost.comment_count) : undefined}
+              tintColor={c.textTertiary}
               onPress={onComment}
-              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              accessibilityLabel="View comments">
-              <Icon name="comment-outline" size={17} color={c.textMuted} />
-              {displayPost.comment_count > 0 && (
-                <Text style={[styles.actionCount, {color: c.textMuted}]}>
-                  {formatCount(displayPost.comment_count)}
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionBtn}
+            />
+            <ActionButton
+              icon="repeat"
+              label={displayPost.repost_count > 0 ? formatCount(displayPost.repost_count) : undefined}
+              tintColor={displayPost.is_reposted ? c.success : c.textTertiary}
               onPress={onRepost}
-              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              accessibilityLabel={displayPost.is_reposted ? 'Undo repost' : 'Repost'}>
-              <Icon
-                name="repeat"
-                size={17}
-                color={displayPost.is_reposted ? c.success : c.textMuted}
-              />
-              {displayPost.repost_count > 0 && (
-                <Text
-                  style={[
-                    styles.actionCount,
-                    {color: displayPost.is_reposted ? c.success : c.textMuted},
-                  ]}>
-                  {formatCount(displayPost.repost_count)}
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionBtn}
+            />
+            <ActionButton
+              icon={displayPost.is_liked ? 'heart' : 'heart-outline'}
+              label={displayPost.like_count > 0 ? formatCount(displayPost.like_count) : undefined}
+              tintColor={displayPost.is_liked ? c.like : c.textTertiary}
               onPress={onLike}
-              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              accessibilityLabel={displayPost.is_liked ? 'Unlike post' : 'Like post'}>
-              <Icon
-                name={displayPost.is_liked ? 'heart' : 'heart-outline'}
-                size={17}
-                color={displayPost.is_liked ? c.like : c.textMuted}
-              />
-              {displayPost.like_count > 0 && (
-                <Text
-                  style={[
-                    styles.actionCount,
-                    {color: displayPost.is_liked ? c.like : c.textMuted},
-                  ]}>
-                  {formatCount(displayPost.like_count)}
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionBtn}
+            />
+            {onQuote ? (
+              <ActionButton icon="format-quote-close" tintColor={c.textTertiary} onPress={onQuote} />
+            ) : null}
+            <ActionButton
+              icon={displayPost.is_bookmarked ? 'bookmark' : 'bookmark-outline'}
+              tintColor={displayPost.is_bookmarked ? c.textPrimary : c.textTertiary}
               onPress={onBookmark}
-              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              accessibilityLabel={displayPost.is_bookmarked ? 'Remove bookmark' : 'Bookmark'}>
-              <Icon
-                name={displayPost.is_bookmarked ? 'bookmark' : 'bookmark-outline'}
-                size={17}
-                color={displayPost.is_bookmarked ? c.accent : c.textMuted}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={handleShare}
-              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              accessibilityLabel="Share post">
-              <Icon name="export-variant" size={17} color={c.textMuted} />
-            </TouchableOpacity>
+            />
+            <ActionButton icon="share-variant-outline" tintColor={c.textTertiary} onPress={handleShare} />
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 });
 
 const styles = StyleSheet.create({
   card: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginHorizontal: spacing[4],
+    marginTop: spacing[3],
+    borderWidth: 1,
+    borderRadius: radii.xxl,
+    padding: spacing[4],
   },
   repostLabel: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingLeft: 52,
-    marginBottom: 4,
+    gap: spacing[2],
+    paddingLeft: 56,
+    marginBottom: spacing[2],
   },
   repostLabelText: {
-    fontSize: 13,
-    fontFamily: fonts.bodySemiBold,
+    fontSize: typography.xs,
+    fontFamily: fonts.bodyMedium,
   },
   row: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing[3],
   },
   body: {
     flex: 1,
-    paddingBottom: 4,
+    minWidth: 0,
+  },
+  contentPressable: {
+    gap: spacing[3],
   },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingRight: 16,
+    flexWrap: 'wrap',
+    gap: spacing[2],
   },
   displayName: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 15,
-    flexShrink: 0,
+    fontFamily: fonts.bodySemiBold,
+    fontSize: typography.sm,
   },
   meta: {
-    fontSize: 14,
-    fontFamily: fonts.body,
-    flexShrink: 1,
-  },
-  dot: {
-    fontSize: 14,
+    fontSize: typography.sm,
     fontFamily: fonts.body,
   },
   content: {
-    marginTop: 2,
+    gap: spacing[2],
   },
   postImage: {
     width: '100%',
-    height: 200,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginTop: 10,
+    height: 220,
+    borderRadius: radii.xl,
+    borderWidth: 1,
   },
   quotedPost: {
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 12,
-    marginTop: 10,
+    borderRadius: radii.xl,
+    padding: spacing[3],
+    gap: spacing[2],
   },
   quotedHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 4,
+    gap: spacing[2],
   },
   quotedName: {
-    fontSize: 13,
+    fontSize: typography.sm,
     fontFamily: fonts.bodySemiBold,
   },
   quotedMeta: {
-    fontSize: 13,
+    fontSize: typography.sm,
     fontFamily: fonts.body,
   },
   quotedContent: {
-    fontSize: 14,
+    fontSize: typography.sm,
     fontFamily: fonts.body,
-    lineHeight: 19,
+    lineHeight: 20,
   },
   quotedImage: {
     width: '100%',
     height: 120,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginTop: 8,
+    borderRadius: radii.lg,
+    borderWidth: 1,
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 10,
-    paddingBottom: 6,
-    paddingRight: 20,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing[4],
+    marginTop: spacing[4],
   },
-  actionBtn: {
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing[1],
   },
-  actionCount: {
-    fontSize: 13,
+  actionText: {
+    fontSize: typography.sm,
     fontFamily: fonts.body,
   },
 });

@@ -8,61 +8,39 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import FollowersScreen from '../screens/profile/FollowersScreen';
 import FollowingScreen from '../screens/profile/FollowingScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
-import {useColors, fonts} from '../theme';
+import {useStackScreenOptions} from './useStackScreenOptions';
 import type {HomeStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
 
 export default function HomeStack() {
-  const c = useColors();
+  const screenOptions = useStackScreenOptions();
 
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: {backgroundColor: c.bgPrimary},
-        headerTintColor: c.textPrimary,
-        headerShadowVisible: false,
-        headerTitleStyle: {fontFamily: fonts.bodySemiBold, fontSize: 18},
-      }}>
-      <Stack.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{title: 'Home'}}
-      />
-      <Stack.Screen
-        name="PostDetail"
-        component={PostDetailScreen}
-        options={{title: 'Post'}}
-      />
+    <Stack.Navigator screenOptions={screenOptions}>
+      <Stack.Screen name="Home" component={HomeScreen} options={{title: 'Home'}} />
+      <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{title: 'Post'}} />
       <Stack.Screen
         name="CreatePost"
         component={CreatePostScreen}
-        options={{title: 'New Post', presentation: 'modal'}}
+        options={{title: 'Compose', presentation: 'modal'}}
       />
       <Stack.Screen
         name="QuotePost"
         component={QuotePostScreen}
-        options={{title: 'Quote Post', presentation: 'modal'}}
+        options={{title: 'Quote', presentation: 'modal'}}
       />
       <Stack.Screen
         name="Profile"
         component={ProfileScreen}
         options={({route}) => ({title: `@${route.params.username}`})}
       />
-      <Stack.Screen
-        name="Followers"
-        component={FollowersScreen}
-        options={{title: 'Followers'}}
-      />
-      <Stack.Screen
-        name="Following"
-        component={FollowingScreen}
-        options={{title: 'Following'}}
-      />
+      <Stack.Screen name="Followers" component={FollowersScreen} options={{title: 'Followers'}} />
+      <Stack.Screen name="Following" component={FollowingScreen} options={{title: 'Following'}} />
       <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
-        options={{title: 'Edit Profile'}}
+        options={{title: 'Edit profile'}}
       />
     </Stack.Navigator>
   );

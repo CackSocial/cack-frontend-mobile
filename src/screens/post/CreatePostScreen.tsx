@@ -1,14 +1,9 @@
 import React, {useState} from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Alert,
-} from 'react-native';
+import {KeyboardAvoidingView, Platform, StyleSheet, Alert, View} from 'react-native';
 import PostComposer from '../../components/post/PostComposer';
 import {createPost} from '../../api/posts';
 import {usePostsStore} from '../../stores/postsStore';
-import {useColors} from '../../theme';
+import {useColors, spacing} from '../../theme';
 import {getErrorMessage} from '../../utils/log';
 import type {ImageAsset} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -29,15 +24,19 @@ export default function CreatePostScreen({navigation}: Props) {
       navigation.goBack();
     } catch (e: unknown) {
       Alert.alert('Error', getErrorMessage(e));
+      throw e;
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <KeyboardAvoidingView
       style={[styles.container, {backgroundColor: c.bgPrimary}]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PostComposer onSubmit={handleSubmit} loading={loading} />
+      <View style={styles.composerWrap}>
+        <PostComposer onSubmit={handleSubmit} loading={loading} />
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -45,5 +44,9 @@ export default function CreatePostScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: spacing[4],
+  },
+  composerWrap: {
+    paddingHorizontal: spacing[4],
   },
 });

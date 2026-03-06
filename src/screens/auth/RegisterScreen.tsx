@@ -2,17 +2,18 @@ import React, {useState} from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
+import Surface from '../../components/common/Surface';
+import ThemeToggleButton from '../../components/common/ThemeToggleButton';
 import {useAuthStore} from '../../stores/authStore';
-import {useColors, fonts} from '../../theme';
+import {useColors, fonts, layout, spacing, typography} from '../../theme';
 import {logError} from '../../utils/log';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {AuthStackParamList} from '../../navigation/types';
@@ -70,91 +71,87 @@ export default function RegisterScreen({navigation}: Props) {
       style={[styles.flex, {backgroundColor: c.bgPrimary}]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <View style={[styles.logoCircle, {backgroundColor: c.accent}]}>
-            <Icon name="account-plus-outline" size={36} color="#fff" />
-          </View>
-          <Text style={[styles.title, {color: c.textPrimary}]}>
-            Create Account
-          </Text>
-          <Text style={[styles.subtitle, {color: c.textSecondary}]}>
-            Join Cack today
-          </Text>
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.toggleWrap}>
+          <ThemeToggleButton />
         </View>
 
-        {displayError ? (
-          <View style={[styles.errorBox, {backgroundColor: c.dangerBg}]}>
-            <Text style={[styles.errorText, {color: c.danger}]}>{displayError}</Text>
+        <Surface elevated style={styles.card} padding={spacing[6]}>
+          <View style={styles.header}>
+            <Text style={[styles.logo, {color: c.textPrimary}]}>Create account</Text>
           </View>
-        ) : null}
 
-        <Input
-          label="Username"
-          placeholder="Choose a username"
-          autoCapitalize="none"
-          autoCorrect={false}
-          value={username}
-          onChangeText={t => {
-            setUsername(t);
-            clearError();
-            setLocalError('');
-          }}
-          accessibilityLabel="Username"
-        />
+          {displayError ? (
+            <View style={[styles.errorBox, {backgroundColor: c.dangerBg}]}> 
+              <Text style={[styles.errorText, {color: c.danger}]}>{displayError}</Text>
+            </View>
+          ) : null}
 
-        <Input
-          label="Display Name (optional)"
-          placeholder="Your display name"
-          value={displayName}
-          onChangeText={setDisplayName}
-          accessibilityLabel="Display name"
-        />
+          <View style={styles.form}>
+            <Input
+              label="Username"
+              placeholder="Choose a username"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={username}
+              onChangeText={t => {
+                setUsername(t);
+                clearError();
+                setLocalError('');
+              }}
+              accessibilityLabel="Username"
+            />
+            <Input
+              label="Display name (optional)"
+              placeholder="Your display name"
+              value={displayName}
+              onChangeText={setDisplayName}
+              accessibilityLabel="Display name"
+            />
+            <Input
+              label="Password"
+              placeholder="At least 6 characters"
+              secureTextEntry
+              value={password}
+              onChangeText={t => {
+                setPassword(t);
+                clearError();
+                setLocalError('');
+              }}
+              accessibilityLabel="Password"
+            />
+            <Input
+              label="Confirm password"
+              placeholder="Re-enter your password"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={t => {
+                setConfirmPassword(t);
+                setLocalError('');
+              }}
+              accessibilityLabel="Confirm password"
+            />
+            <Button
+              title="Create Account"
+              onPress={handleRegister}
+              loading={loading}
+              disabled={!username.trim() || !password.trim()}
+              fullWidth
+              size="lg"
+            />
+          </View>
 
-        <Input
-          label="Password"
-          placeholder="At least 6 characters"
-          secureTextEntry
-          value={password}
-          onChangeText={t => {
-            setPassword(t);
-            clearError();
-            setLocalError('');
-          }}
-          accessibilityLabel="Password"
-        />
-
-        <Input
-          label="Confirm Password"
-          placeholder="Re-enter password"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={t => {
-            setConfirmPassword(t);
-            setLocalError('');
-          }}
-          accessibilityLabel="Confirm password"
-        />
-
-        <Button
-          title="Create Account"
-          onPress={handleRegister}
-          loading={loading}
-          disabled={!username.trim() || !password.trim()}
-          style={styles.btn}
-        />
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Login')}
-          style={styles.linkRow}
-          accessibilityRole="link"
-          accessibilityLabel="Go to login">
-          <Text style={[styles.linkText, {color: c.textSecondary}]}>
-            Already have an account?{' '}
-          </Text>
-          <Text style={[styles.link, {color: c.accent}]}>Sign In</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Login')}
+            style={styles.footer}
+            accessibilityRole="link"
+            accessibilityLabel="Go to login">
+            <Text style={[styles.footerText, {color: c.textTertiary}]}>Already have an account? </Text>
+            <Text style={[styles.footerLink, {color: c.textPrimary}]}>Sign in</Text>
+          </TouchableOpacity>
+        </Surface>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -162,55 +159,56 @@ export default function RegisterScreen({navigation}: Props) {
 
 const styles = StyleSheet.create({
   flex: {flex: 1},
-  container: {
+  content: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 28,
+    paddingHorizontal: layout.screenPadding,
+    paddingVertical: spacing[8],
+  },
+  toggleWrap: {
+    alignItems: 'flex-end',
+    marginBottom: spacing[5],
+  },
+  card: {
+    width: '100%',
+    maxWidth: layout.narrowMaxWidth,
+    alignSelf: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 36,
+    marginBottom: spacing[6],
+    gap: spacing[2],
   },
-  logoCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
+  logo: {
+    fontSize: typography.hero,
     fontFamily: fonts.displayBold,
+    textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 16,
-    fontFamily: fonts.body,
-    marginTop: 6,
+  form: {
+    gap: spacing[4],
   },
   errorBox: {
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    marginBottom: spacing[4],
   },
   errorText: {
-    fontSize: 14,
+    fontSize: typography.sm,
     fontFamily: fonts.body,
+    textAlign: 'center',
   },
-  btn: {
-    marginTop: 12,
-  },
-  linkRow: {
+  footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: spacing[5],
   },
-  linkText: {
-    fontSize: 14,
+  footerText: {
+    fontSize: typography.sm,
     fontFamily: fonts.body,
   },
-  link: {
-    fontSize: 14,
+  footerLink: {
+    fontSize: typography.sm,
     fontFamily: fonts.bodySemiBold,
   },
 });

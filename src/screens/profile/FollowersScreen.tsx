@@ -70,6 +70,7 @@ export default function FollowersScreen({route, navigation}: Props) {
       <FlatList
         data={users}
         keyExtractor={item => item.id}
+        contentContainerStyle={sharedStyles.paddedListContent}
         renderItem={({item}) => (
           <UserListItem
             user={item}

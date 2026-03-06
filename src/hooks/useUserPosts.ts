@@ -1,4 +1,4 @@
-import {useState, useCallback} from 'react';
+import {useState, useCallback, useRef} from 'react';
 import type {Post} from '../types';
 import {getUserPosts} from '../api/posts';
 import {PAGINATION_LIMIT} from '../config';
@@ -6,29 +6,34 @@ import {logError} from '../utils/log';
 
 export function useUserPosts(username: string) {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const pageRef = useRef(1);
+  const hasMoreRef = useRef(true);
+  const loadingRef = useRef(false);
 
   const fetch = useCallback(
     async (reset = false) => {
-      if (loading) return;
-      const p = reset ? 1 : page;
-      if (!reset && !hasMore) return;
+      if (loadingRef.current) return;
+      const page = reset ? 1 : pageRef.current;
+      if (!reset && !hasMoreRef.current) return;
 
+      loadingRef.current = true;
       setLoading(true);
       try {
-        const res = await getUserPosts(username, p, PAGINATION_LIMIT);
+        const res = await getUserPosts(username, page, PAGINATION_LIMIT);
         const data = res.data ?? [];
         setPosts(prev => (reset ? data : [...prev, ...data]));
-        setPage(p + 1);
-        setHasMore(data.length === PAGINATION_LIMIT);
+        pageRef.current = page + 1;
+        hasMoreRef.current = data.length === PAGINATION_LIMIT;
+        setHasMore(hasMoreRef.current);
       } catch (e) {
         logError('useUserPosts:fetch', e);
       }
+      loadingRef.current = false;
       setLoading(false);
     },
-    [username, page, hasMore, loading],
+    [username],
   );
 
   const refresh = useCallback(() => fetch(true), [fetch]);

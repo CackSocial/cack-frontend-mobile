@@ -1,24 +1,61 @@
 import React, {useState} from 'react';
-import {View, Text, TextInput, TouchableOpacity, Switch, Alert, Modal, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Alert,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Button from '../../components/common/Button';
+import Surface from '../../components/common/Surface';
+import ThemeToggleButton from '../../components/common/ThemeToggleButton';
 import {useAuthStore} from '../../stores/authStore';
-import {useThemeStore} from '../../stores/themeStore';
 import {useMessagesStore} from '../../stores/messagesStore';
 import {deleteAccount} from '../../api/users';
-import {useColors, fonts} from '../../theme';
+import {useColors, fonts, layout, radii, spacing, typography} from '../../theme';
 import {getErrorMessage} from '../../utils/log';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ProfileStackParamList} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Settings'>;
 
+function SettingsRow({
+  icon,
+  label,
+  value,
+  danger,
+  onPress,
+}: {
+  icon: string;
+  label: string;
+  value?: string;
+  danger?: boolean;
+  onPress?: () => void;
+}) {
+  const c = useColors();
+  return (
+    <TouchableOpacity style={styles.row} onPress={onPress} disabled={!onPress}>
+      <View style={styles.rowLeft}>
+        <Icon name={icon} size={20} color={danger ? c.danger : c.textPrimary} />
+        <View>
+          <Text style={[styles.rowLabel, {color: danger ? c.danger : c.textPrimary}]}>{label}</Text>
+          {value ? <Text style={[styles.rowValue, {color: c.textSecondary}]}>{value}</Text> : null}
+        </View>
+      </View>
+      {onPress ? <Icon name="chevron-right" size={20} color={c.textMuted} /> : null}
+    </TouchableOpacity>
+  );
+}
+
 export default function SettingsScreen({navigation}: Props) {
-  const theme = useThemeStore(s => s.theme);
-  const toggleTheme = useThemeStore(s => s.toggleTheme);
+  const c = useColors();
+  const user = useAuthStore(s => s.user);
   const logout = useAuthStore(s => s.logout);
   const disconnectWS = useMessagesStore(s => s.disconnectWS);
-  const c = useColors();
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
@@ -43,91 +80,53 @@ export default function SettingsScreen({navigation}: Props) {
   };
 
   return (
-    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
-      {/* Bookmarks */}
-      <TouchableOpacity
-        style={[styles.row, {borderBottomColor: c.border}]}
-        onPress={() => navigation.navigate('Bookmarks')}
-        accessibilityRole="button"
-        accessibilityLabel="View bookmarks">
-        <View style={styles.rowLeft}>
-          <Icon name="bookmark-outline" size={22} color={c.textPrimary} />
-          <Text style={[styles.rowLabel, {color: c.textPrimary}]}>
-            Bookmarks
-          </Text>
-        </View>
-        <Icon name="chevron-right" size={20} color={c.textMuted} />
-      </TouchableOpacity>
-
-      {/* Theme toggle */}
-      <View
-        style={[
-          styles.row,
-          {borderBottomColor: c.border},
-        ]}>
-        <View style={styles.rowLeft}>
-          <Icon
-            name={theme === 'dark' ? 'weather-night' : 'white-balance-sunny'}
-            size={22}
-            color={c.textPrimary}
+    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}> 
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Surface elevated style={styles.section}>
+          <Text style={[styles.sectionTitle, {color: c.textPrimary}]}>Profile</Text>
+          <SettingsRow
+            icon="account-circle-outline"
+            label="Edit profile"
+            value={user ? `@${user.username}` : undefined}
+            onPress={() => navigation.navigate('EditProfile')}
           />
-          <Text style={[styles.rowLabel, {color: c.textPrimary}]}>
-            Dark Mode
-          </Text>
-        </View>
-        <Switch
-          value={theme === 'dark'}
-          onValueChange={toggleTheme}
-          trackColor={{false: c.borderStrong, true: c.accent}}
-          thumbColor="#ffffff"
-          accessibilityLabel="Toggle dark mode"
-        />
-      </View>
+          <SettingsRow
+            icon="bookmark-outline"
+            label="Bookmarks"
+            onPress={() => navigation.navigate('Bookmarks')}
+          />
+        </Surface>
 
-      {/* Logout */}
-      <TouchableOpacity
-        style={[styles.row, {borderBottomColor: c.border}]}
-        onPress={handleLogout}
-        accessibilityRole="button"
-        accessibilityLabel="Log out">
-        <View style={styles.rowLeft}>
-          <Icon name="logout" size={22} color={c.danger} />
-          <Text style={[styles.rowLabel, {color: c.danger}]}>Log Out</Text>
-        </View>
-      </TouchableOpacity>
+        <Surface elevated style={styles.section}>
+          <Text style={[styles.sectionTitle, {color: c.textPrimary}]}>Appearance</Text>
+          <View style={styles.themeRow}>
+            <Text style={[styles.rowLabel, {color: c.textPrimary}]}>Theme</Text>
+            <ThemeToggleButton />
+          </View>
+        </Surface>
 
-      {/* Delete Account */}
-      <TouchableOpacity
-        style={[styles.row, {borderBottomColor: c.border}]}
-        onPress={() => {
-          setDeletePassword('');
-          setShowDeleteModal(true);
-        }}
-        disabled={deleteLoading}
-        accessibilityRole="button"
-        accessibilityLabel="Delete account">
-        <View style={styles.rowLeft}>
-          <Icon name="delete-outline" size={22} color={c.danger} />
-          <Text style={[styles.rowLabel, {color: c.danger}]}>
-            Delete Account
-          </Text>
-        </View>
-      </TouchableOpacity>
+        <Surface elevated style={styles.section}>
+          <Text style={[styles.sectionTitle, {color: c.textPrimary}]}>Account</Text>
+          <View style={styles.actionGroup}>
+            <Button title="Log Out" variant="secondary" onPress={handleLogout} fullWidth />
+            <Button
+              title="Delete Account"
+              variant="danger"
+              onPress={() => {
+                setDeletePassword('');
+                setShowDeleteModal(true);
+              }}
+              fullWidth
+            />
+          </View>
+        </Surface>
+      </ScrollView>
 
-      {/* Delete Account Modal */}
-      <Modal
-        visible={showDeleteModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowDeleteModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, {backgroundColor: c.bgElevated}]}>
-            <Text style={[styles.modalTitle, {color: c.textPrimary}]}>
-              Delete Account
-            </Text>
-            <Text style={[styles.modalSubtitle, {color: c.textSecondary}]}>
-              Enter your password to permanently delete your account. This cannot be undone.
-            </Text>
+      <Modal visible={showDeleteModal} transparent animationType="fade" onRequestClose={() => setShowDeleteModal(false)}>
+        <View style={[styles.modalOverlay, {backgroundColor: c.bgOverlay}]}> 
+          <Surface style={styles.modalCard} elevated>
+            <Text style={[styles.modalTitle, {color: c.textPrimary}]}>Delete account</Text>
+            <Text style={[styles.modalSubtitle, {color: c.textSecondary}]}>Enter your password to permanently delete your account. This cannot be undone.</Text>
             <TextInput
               style={[styles.modalInput, {color: c.textPrimary, backgroundColor: c.bgSecondary, borderColor: c.border}]}
               placeholder="Password"
@@ -138,22 +137,17 @@ export default function SettingsScreen({navigation}: Props) {
               accessibilityLabel="Password for account deletion"
             />
             <View style={styles.modalActions}>
-              <Button
-                title="Cancel"
-                variant="secondary"
-                onPress={() => setShowDeleteModal(false)}
-                style={{flex: 1}}
-              />
+              <Button title="Cancel" variant="secondary" onPress={() => setShowDeleteModal(false)} style={styles.modalButton} />
               <Button
                 title="Delete"
                 variant="danger"
                 onPress={handleDeleteAccount}
                 loading={deleteLoading}
                 disabled={!deletePassword.trim()}
-                style={{flex: 1}}
+                style={styles.modalButton}
               />
             </View>
-          </View>
+          </Surface>
         </View>
       </Modal>
     </View>
@@ -163,60 +157,80 @@ export default function SettingsScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 8,
+  },
+  content: {
+    paddingHorizontal: layout.screenPadding,
+    paddingVertical: spacing[5],
+    gap: spacing[4],
+  },
+  section: {
+    gap: spacing[4],
+  },
+  sectionTitle: {
+    fontSize: typography.lg,
+    fontFamily: fonts.displayBold,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: spacing[3],
   },
   rowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing[3],
+    flex: 1,
   },
   rowLabel: {
-    fontSize: 16,
+    fontSize: typography.base,
     fontFamily: fonts.bodyMedium,
+  },
+  rowValue: {
+    marginTop: 2,
+    fontSize: typography.sm,
+    fontFamily: fonts.body,
+  },
+  themeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing[4],
+  },
+  actionGroup: {
+    gap: spacing[3],
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+    padding: spacing[6],
   },
-  modalContent: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 16,
-    padding: 24,
+  modalCard: {
+    gap: spacing[4],
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: typography.xl,
     fontFamily: fonts.displayBold,
-    marginBottom: 8,
   },
   modalSubtitle: {
-    fontSize: 14,
+    fontSize: typography.sm,
     fontFamily: fonts.body,
     lineHeight: 20,
-    marginBottom: 16,
   },
   modalInput: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    fontSize: typography.base,
     fontFamily: fonts.body,
-    marginBottom: 16,
   },
   modalActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing[3],
+  },
+  modalButton: {
+    flex: 1,
   },
 });

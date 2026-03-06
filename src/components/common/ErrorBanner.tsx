@@ -1,7 +1,7 @@
 import React from 'react';
-import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
+import {View, Text, Pressable, StyleSheet} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {fonts} from '../../theme';
+import {useColors, fonts, radii, spacing, typography} from '../../theme';
 
 interface Props {
   message: string;
@@ -9,41 +9,51 @@ interface Props {
 }
 
 export default function ErrorBanner({message, onRetry}: Props) {
+  const c = useColors();
+
   return (
-    <View style={styles.banner}>
-      <Icon name="alert-circle-outline" size={20} color="#fef2f2" />
-      <Text style={styles.text} numberOfLines={2}>
+    <View
+      style={[
+        styles.banner,
+        {
+          backgroundColor: c.dangerBg,
+          borderColor: c.danger,
+        },
+      ]}>
+      <Icon name="alert-circle-outline" size={18} color={c.danger} />
+      <Text style={[styles.text, {color: c.danger}]} numberOfLines={3}>
         {message}
       </Text>
-      {onRetry && (
-        <TouchableOpacity
-          onPress={onRetry}
-          accessibilityRole="button"
-          accessibilityLabel="Retry">
-          <Text style={styles.retry}>Retry</Text>
-        </TouchableOpacity>
-      )}
+      {onRetry ? (
+        <Pressable onPress={onRetry} accessibilityRole="button" accessibilityLabel="Retry">
+          <Text style={[styles.retry, {color: c.danger}]}>Retry</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: '#dc2626',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
+    gap: spacing[2],
+    marginHorizontal: spacing[4],
+    marginTop: spacing[4],
+    marginBottom: spacing[2],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    borderRadius: radii.lg,
+    borderWidth: 1,
   },
   text: {
-    color: '#fef2f2',
-    fontSize: 14,
     flex: 1,
+    fontSize: typography.sm,
+    fontFamily: fonts.body,
+    lineHeight: 20,
   },
   retry: {
-    color: '#fef2f2',
+    fontSize: typography.sm,
     fontFamily: fonts.bodyBold,
-    fontSize: 14,
   },
 });

@@ -18,7 +18,7 @@ import MessageBubble from '../../components/messages/MessageBubble';
 import {useConversation} from '../../hooks/useConversation';
 import {useMessagesStore} from '../../stores/messagesStore';
 import {useAuthStore} from '../../stores/authStore';
-import {useColors, fonts} from '../../theme';
+import {useColors, fonts, radii, spacing, typography} from '../../theme';
 import {getErrorMessage} from '../../utils/log';
 import {sharedStyles} from '../../styles/shared';
 import {sendMessage as sendMessageApi} from '../../api/messages';
@@ -252,62 +252,63 @@ export default function ConversationScreen({route}: Props) {
 const styles = StyleSheet.create({
   flex: {flex: 1},
   listContent: {
-    paddingVertical: 8,
+    paddingVertical: spacing[2],
+    paddingBottom: spacing[4],
   },
   loadMoreBtn: {
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: spacing[3],
   },
   loadMoreText: {
-    fontSize: 13,
+    fontSize: typography.sm,
     fontFamily: fonts.bodyMedium,
   },
   composerShell: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 18,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    borderRadius: radii.xxl,
     borderWidth: StyleSheet.hairlineWidth,
-    gap: 8,
+    gap: spacing[2],
   },
   iconBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
   textInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: typography.base,
     fontFamily: fonts.body,
     maxHeight: 100,
-    paddingVertical: 8,
+    paddingVertical: spacing[2],
     paddingHorizontal: 2,
   },
   sendBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
   imagePreviewRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 8,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2],
+    gap: spacing[2],
   },
   previewThumb: {
     width: 60,
     height: 60,
-    borderRadius: 8,
+    borderRadius: radii.lg,
   },
 });

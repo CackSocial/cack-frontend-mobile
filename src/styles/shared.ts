@@ -1,18 +1,20 @@
 import {StyleSheet} from 'react-native';
+import {spacing} from '../theme';
 
-// REFACTORED: Extracted shared styles used across multiple screens
-// to avoid inline style objects that cause unnecessary re-renders.
 export const sharedStyles = StyleSheet.create({
   listLoader: {
-    paddingVertical: 20,
+    paddingVertical: spacing[6],
   },
   centerLoader: {
-    paddingVertical: 24,
+    paddingVertical: spacing[8],
   },
   smallLoader: {
-    paddingVertical: 16,
+    paddingVertical: spacing[4],
   },
   inlineLoader: {
-    paddingVertical: 12,
+    paddingVertical: spacing[3],
+  },
+  paddedListContent: {
+    paddingBottom: spacing[8],
   },
 });

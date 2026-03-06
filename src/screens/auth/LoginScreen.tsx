@@ -2,17 +2,18 @@ import React, {useState} from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
+import Surface from '../../components/common/Surface';
+import ThemeToggleButton from '../../components/common/ThemeToggleButton';
 import {useAuthStore} from '../../stores/authStore';
-import {useColors, fonts} from '../../theme';
+import {useColors, fonts, layout, spacing, typography} from '../../theme';
 import {logError} from '../../utils/log';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {AuthStackParamList} from '../../navigation/types';
@@ -45,69 +46,67 @@ export default function LoginScreen({navigation}: Props) {
       style={[styles.flex, {backgroundColor: c.bgPrimary}]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <View style={[styles.logoCircle, {backgroundColor: c.accent}]}>
-            <Icon name="chat-processing-outline" size={36} color="#fff" />
-          </View>
-          <Text style={[styles.title, {color: c.textPrimary}]}>
-            Welcome back
-          </Text>
-          <Text style={[styles.subtitle, {color: c.textSecondary}]}>
-            Sign in to Cack
-          </Text>
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.toggleWrap}>
+          <ThemeToggleButton />
         </View>
 
-        {error && (
-          <View style={[styles.errorBox, {backgroundColor: c.dangerBg}]}>
-            <Text style={[styles.errorText, {color: c.danger}]}>{error}</Text>
+        <Surface elevated style={styles.card} padding={spacing[6]}>
+          <View style={styles.header}>
+            <Text style={[styles.logo, {color: c.textPrimary}]}>Cack Social</Text>
           </View>
-        )}
 
-        <Input
-          label="Username"
-          placeholder="Enter your username"
-          autoCapitalize="none"
-          autoCorrect={false}
-          value={username}
-          onChangeText={t => {
-            setUsername(t);
-            clearError();
-          }}
-          accessibilityLabel="Username"
-        />
+          {error ? (
+            <View style={[styles.errorBox, {backgroundColor: c.dangerBg}]}> 
+              <Text style={[styles.errorText, {color: c.danger}]}>{error}</Text>
+            </View>
+          ) : null}
 
-        <Input
-          label="Password"
-          placeholder="Enter your password"
-          secureTextEntry
-          value={password}
-          onChangeText={t => {
-            setPassword(t);
-            clearError();
-          }}
-          accessibilityLabel="Password"
-        />
+          <View style={styles.form}>
+            <Input
+              label="Username"
+              placeholder="Enter your username"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={username}
+              onChangeText={t => {
+                setUsername(t);
+                clearError();
+              }}
+              accessibilityLabel="Username"
+            />
+            <Input
+              label="Password"
+              placeholder="Enter your password"
+              secureTextEntry
+              value={password}
+              onChangeText={t => {
+                setPassword(t);
+                clearError();
+              }}
+              accessibilityLabel="Password"
+            />
+            <Button
+              title="Sign In"
+              onPress={handleLogin}
+              loading={loading}
+              disabled={!username.trim() || !password.trim()}
+              fullWidth
+              size="lg"
+            />
+          </View>
 
-        <Button
-          title="Sign In"
-          onPress={handleLogin}
-          loading={loading}
-          disabled={!username.trim() || !password.trim()}
-          style={styles.btn}
-        />
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Register')}
-          style={styles.linkRow}
-          accessibilityRole="link"
-          accessibilityLabel="Go to register">
-          <Text style={[styles.linkText, {color: c.textSecondary}]}>
-            Don't have an account?{' '}
-          </Text>
-          <Text style={[styles.link, {color: c.accent}]}>Sign Up</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Register')}
+            style={styles.footer}
+            accessibilityRole="link"
+            accessibilityLabel="Go to register">
+            <Text style={[styles.footerText, {color: c.textTertiary}]}>Don't have an account? </Text>
+            <Text style={[styles.footerLink, {color: c.textPrimary}]}>Sign up</Text>
+          </TouchableOpacity>
+        </Surface>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -115,55 +114,56 @@ export default function LoginScreen({navigation}: Props) {
 
 const styles = StyleSheet.create({
   flex: {flex: 1},
-  container: {
+  content: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 28,
+    paddingHorizontal: layout.screenPadding,
+    paddingVertical: spacing[8],
+  },
+  toggleWrap: {
+    alignItems: 'flex-end',
+    marginBottom: spacing[5],
+  },
+  card: {
+    width: '100%',
+    maxWidth: layout.narrowMaxWidth,
+    alignSelf: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: spacing[6],
+    gap: spacing[2],
   },
-  logoCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
+  logo: {
+    fontSize: typography.hero,
     fontFamily: fonts.displayBold,
+    textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 16,
-    fontFamily: fonts.body,
-    marginTop: 6,
+  form: {
+    gap: spacing[4],
   },
   errorBox: {
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    marginBottom: spacing[4],
   },
   errorText: {
-    fontSize: 14,
+    fontSize: typography.sm,
     fontFamily: fonts.body,
+    textAlign: 'center',
   },
-  btn: {
-    marginTop: 12,
-  },
-  linkRow: {
+  footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: spacing[5],
   },
-  linkText: {
-    fontSize: 14,
+  footerText: {
+    fontSize: typography.sm,
     fontFamily: fonts.body,
   },
-  link: {
-    fontSize: 14,
+  footerLink: {
+    fontSize: typography.sm,
     fontFamily: fonts.bodySemiBold,
   },
 });

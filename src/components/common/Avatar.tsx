@@ -9,7 +9,6 @@ interface Props {
   size?: number;
 }
 
-// REFACTORED: Uses shared resolveImageUri utility
 export default function Avatar({uri, name, size = 40}: Props) {
   const c = useColors();
   const resolvedUri = resolveImageUri(uri);
@@ -18,7 +17,15 @@ export default function Avatar({uri, name, size = 40}: Props) {
     return (
       <Image
         source={{uri: resolvedUri}}
-        style={[styles.image, {width: size, height: size, borderRadius: size / 2}]}
+        style={[
+          styles.image,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            borderColor: c.borderSubtle,
+          },
+        ]}
         accessibilityLabel={`${name || 'User'}'s avatar`}
       />
     );
@@ -40,7 +47,7 @@ export default function Avatar({uri, name, size = 40}: Props) {
       <Text
         style={[
           styles.initial,
-          {fontSize: size * 0.4, color: c.accentText},
+          {fontSize: size * 0.38, color: c.accentText},
         ]}>
         {initial}
       </Text>
@@ -51,12 +58,14 @@ export default function Avatar({uri, name, size = 40}: Props) {
 const styles = StyleSheet.create({
   image: {
     resizeMode: 'cover',
+    borderWidth: 1,
   },
   fallback: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   initial: {
-    fontFamily: fonts.bodyBold,
+    fontFamily: fonts.displayBold,
+    includeFontPadding: false,
   },
 });

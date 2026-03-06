@@ -10,36 +10,29 @@ import SettingsScreen from '../screens/profile/SettingsScreen';
 import BookmarksScreen from '../screens/profile/BookmarksScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
 import QuotePostScreen from '../screens/post/QuotePostScreen';
-import {useColors, fonts} from '../theme';
+import {useColors} from '../theme';
+import {useStackScreenOptions} from './useStackScreenOptions';
 import type {ProfileStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
 export default function ProfileStack() {
   const c = useColors();
+  const screenOptions = useStackScreenOptions();
 
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: {backgroundColor: c.bgPrimary},
-        headerTintColor: c.textPrimary,
-        headerShadowVisible: false,
-        headerTitleStyle: {fontFamily: fonts.bodySemiBold, fontSize: 18},
-      }}>
+    <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
         name="Profile"
         component={ProfileScreen}
-        options={({navigation: nav}) => ({
+        options={({navigation}) => ({
           title: 'Profile',
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => nav.navigate('Settings')}
-              accessibilityLabel="Settings">
-              <Icon
-                name="cog-outline"
-                size={24}
-                color={c.textPrimary}
-              />
+              onPress={() => navigation.navigate('Settings')}
+              accessibilityLabel="Settings"
+              style={{padding: 4}}>
+              <Icon name="cog-outline" size={22} color={c.textPrimary} />
             </TouchableOpacity>
           ),
         })}
@@ -47,37 +40,17 @@ export default function ProfileStack() {
       <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
-        options={{title: 'Edit Profile'}}
+        options={{title: 'Edit profile'}}
       />
-      <Stack.Screen
-        name="Followers"
-        component={FollowersScreen}
-        options={{title: 'Followers'}}
-      />
-      <Stack.Screen
-        name="Following"
-        component={FollowingScreen}
-        options={{title: 'Following'}}
-      />
-      <Stack.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{title: 'Settings'}}
-      />
-      <Stack.Screen
-        name="Bookmarks"
-        component={BookmarksScreen}
-        options={{title: 'Bookmarks'}}
-      />
-      <Stack.Screen
-        name="PostDetail"
-        component={PostDetailScreen}
-        options={{title: 'Post'}}
-      />
+      <Stack.Screen name="Followers" component={FollowersScreen} options={{title: 'Followers'}} />
+      <Stack.Screen name="Following" component={FollowingScreen} options={{title: 'Following'}} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{title: 'Settings'}} />
+      <Stack.Screen name="Bookmarks" component={BookmarksScreen} options={{title: 'Bookmarks'}} />
+      <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{title: 'Post'}} />
       <Stack.Screen
         name="QuotePost"
         component={QuotePostScreen}
-        options={{title: 'Quote Post', presentation: 'modal'}}
+        options={{title: 'Quote', presentation: 'modal'}}
       />
     </Stack.Navigator>
   );

@@ -14,9 +14,10 @@ import {launchImageLibrary} from 'react-native-image-picker';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Avatar from '../../components/common/Avatar';
+import Surface from '../../components/common/Surface';
 import {updateMe} from '../../api/users';
 import {useAuthStore} from '../../stores/authStore';
-import {useColors} from '../../theme';
+import {useColors, spacing, layout} from '../../theme';
 import {getErrorMessage} from '../../utils/log';
 import {MAX_IMAGE_SIZE_MB} from '../../config';
 import type {ImageAsset} from '../../types';
@@ -36,10 +37,7 @@ export default function EditProfileScreen({navigation}: Props) {
   const [loading, setLoading] = useState(false);
 
   const pickAvatar = async () => {
-    const result = await launchImageLibrary({
-      mediaType: 'photo',
-      quality: 0.8,
-    });
+    const result = await launchImageLibrary({mediaType: 'photo', quality: 0.8});
     if (result.assets && result.assets[0]) {
       const asset = result.assets[0];
       if (asset.fileSize && asset.fileSize > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
@@ -58,10 +56,7 @@ export default function EditProfileScreen({navigation}: Props) {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const updated = await updateMe(
-        {display_name: displayName, bio},
-        avatar || undefined,
-      );
+      const updated = await updateMe({display_name: displayName, bio}, avatar || undefined);
       updateUser(updated);
       navigation.goBack();
     } catch (e: unknown) {
@@ -76,51 +71,38 @@ export default function EditProfileScreen({navigation}: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled">
-        {/* Avatar picker */}
-        <TouchableOpacity
-          style={styles.avatarWrap}
-          onPress={pickAvatar}
-          accessibilityRole="button"
-          accessibilityLabel="Change profile picture">
-          {avatar ? (
-            <Image
-              source={{uri: avatar.uri}}
-              style={styles.avatarImage}
-            />
-          ) : (
-            <Avatar
-              uri={user?.avatar_url}
-              name={user?.display_name}
-              size={96}
-            />
-          )}
-          <View style={[styles.cameraIcon, {backgroundColor: c.accent, borderColor: c.bgPrimary}]}>
-            <Icon name="camera" size={18} color={c.accentText} />
-          </View>
-        </TouchableOpacity>
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
+        <Surface elevated style={styles.card}>
+          <TouchableOpacity
+            style={styles.avatarWrap}
+            onPress={pickAvatar}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile picture">
+            {avatar ? <Image source={{uri: avatar.uri}} style={styles.avatarImage} /> : <Avatar uri={user?.avatar_url} name={user?.display_name} size={104} />}
+            <View style={[styles.cameraIcon, {backgroundColor: c.accent, borderColor: c.bgElevated}]}>
+              <Icon name="camera-outline" size={18} color={c.accentText} />
+            </View>
+          </TouchableOpacity>
 
-        <Input
-          label="Display Name"
-          value={displayName}
-          onChangeText={setDisplayName}
-          accessibilityLabel="Display name"
-        />
-        <Input
-          label="Bio"
-          value={bio}
-          onChangeText={setBio}
-          multiline
-          numberOfLines={4}
-          style={{minHeight: 100, textAlignVertical: 'top'}}
-          accessibilityLabel="Bio"
-        />
-        <Button
-          title="Save Changes"
-          onPress={handleSave}
-          loading={loading}
-          disabled={!displayName.trim()}
-        />
+          <Input label="Display name" value={displayName} onChangeText={setDisplayName} accessibilityLabel="Display name" />
+          <Input
+            label="Bio"
+            value={bio}
+            onChangeText={setBio}
+            multiline
+            numberOfLines={4}
+            style={styles.bioInput}
+            accessibilityLabel="Bio"
+          />
+          <Button
+            title="Save Changes"
+            onPress={handleSave}
+            loading={loading}
+            disabled={!displayName.trim()}
+            fullWidth
+          />
+        </Surface>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -129,32 +111,35 @@ export default function EditProfileScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {flex: 1},
   content: {
-    padding: 20,
-    flexGrow: 1,
-    justifyContent: 'center',
-    maxWidth: 480,
-    alignSelf: 'center',
-    width: '100%',
+    paddingHorizontal: layout.screenPadding,
+    paddingVertical: spacing[5],
+    gap: spacing[4],
+  },
+  card: {
+    gap: spacing[4],
   },
   avatarWrap: {
     alignSelf: 'center',
-    marginBottom: 24,
-    position: 'relative',
+    marginBottom: spacing[2],
   },
   avatarImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 104,
+    height: 104,
+    borderRadius: 52,
   },
   cameraIcon: {
     position: 'absolute',
-    bottom: 0,
     right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    bottom: 0,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
+  },
+  bioInput: {
+    minHeight: 120,
+    textAlignVertical: 'top',
   },
 });

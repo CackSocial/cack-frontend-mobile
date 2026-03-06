@@ -1,19 +1,20 @@
 import React, {useEffect, useState, useCallback} from 'react';
 import {
   View,
-  Text,
   FlatList,
   TextInput,
   TouchableOpacity,
-  Alert,
   StyleSheet,
   ActivityIndicator,
+  Text,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import PostCard from '../../components/post/PostCard';
 import CommentItem from '../../components/post/CommentItem';
 import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
+import Surface from '../../components/common/Surface';
 import {usePostDetail} from '../../hooks/usePostDetail';
 import {useSyncPostLike} from '../../hooks/useSyncLikes';
 import {useOptimisticLike} from '../../hooks/useOptimisticLike';
@@ -22,15 +23,15 @@ import {useOptimisticRepost} from '../../hooks/useOptimisticRepost';
 import {createComment} from '../../api/comments';
 import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
-import {useColors, fonts} from '../../theme';
+import {useColors, fonts, radii, spacing, typography} from '../../theme';
 import {getErrorMessage} from '../../utils/log';
+import {sharedStyles} from '../../styles/shared';
 import type {Comment} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {HomeStackParamList} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'PostDetail'>;
 
-/** Self-contained reply bar — owns its own text state so typing doesn't re-render the parent */
 const ReplyBar = React.memo(function ReplyBar({
   onSubmit,
 }: {
@@ -53,48 +54,38 @@ const ReplyBar = React.memo(function ReplyBar({
   }, [text, sending, onSubmit]);
 
   return (
-    <View
-      style={[
-        styles.replyBar,
-        {borderBottomColor: c.border, borderTopColor: c.border},
-      ]}>
-      <Avatar
-        uri={currentUser?.avatar_url}
-        name={currentUser?.display_name ?? ''}
-        size={32}
-      />
-      <View
-        style={[
-          styles.replyInputWrap,
-          {backgroundColor: c.bgSecondary, borderColor: c.borderStrong},
-        ]}>
-        <TextInput
-          style={[styles.replyInput, {color: c.textPrimary}]}
-          placeholder="Post your reply"
-          placeholderTextColor={c.textMuted}
-          value={text}
-          onChangeText={setText}
-          multiline
-          maxLength={2000}
-          accessibilityLabel="Reply input"
-        />
+    <Surface style={styles.replySurface}>
+      <View style={styles.replyRow}>
+        <Avatar uri={currentUser?.avatar_url} name={currentUser?.display_name ?? ''} size={36} />
+        <View style={[styles.replyInputWrap, {backgroundColor: c.bgSecondary, borderColor: c.border}]}> 
+          <TextInput
+            style={[styles.replyInput, {color: c.textPrimary}]}
+            placeholder="Post your reply"
+            placeholderTextColor={c.textMuted}
+            value={text}
+            onChangeText={setText}
+            multiline
+            maxLength={2000}
+            accessibilityLabel="Reply input"
+          />
+        </View>
+        <TouchableOpacity
+          onPress={handleSend}
+          disabled={!text.trim() || sending}
+          style={[
+            styles.replyBtn,
+            {backgroundColor: text.trim() ? c.accent : c.bgTertiary},
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Send reply">
+          {sending ? (
+            <ActivityIndicator size="small" color={c.accentText} />
+          ) : (
+            <Icon name="send" size={18} color={text.trim() ? c.accentText : c.textMuted} />
+          )}
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        onPress={handleSend}
-        disabled={!text.trim() || sending}
-        style={[
-          styles.replyBtn,
-          {backgroundColor: text.trim() ? c.accent : c.bgTertiary},
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel="Send reply">
-        <Icon
-          name="send"
-          size={18}
-          color={text.trim() ? c.accentText : c.textMuted}
-        />
-      </TouchableOpacity>
-    </View>
+    </Surface>
   );
 });
 
@@ -103,21 +94,11 @@ export default function PostDetailScreen({route, navigation}: Props) {
   const c = useColors();
   const cachePost = usePostsStore(s => s.cachePost);
 
-  const {
-    post,
-    setPost,
-    comments,
-    loading,
-    commentsHasMore,
-    fetchPost,
-    fetchComments,
-    addComment,
-  } = usePostDetail(postId);
+  const {post, setPost, comments, loading, commentsHasMore, fetchPost, fetchComments, addComment} =
+    usePostDetail(postId);
 
-  // Sync post state from global cache on focus
   useSyncPostLike(setPost);
 
-  // REFACTORED: Uses shared useOptimisticLike hook instead of inline implementation
   const handleLike = useOptimisticLike(undefined, setPost);
   const handleBookmark = useOptimisticBookmark(undefined, setPost);
   const handleRepost = useOptimisticRepost(undefined, setPost);
@@ -127,18 +108,21 @@ export default function PostDetailScreen({route, navigation}: Props) {
     fetchComments(true);
   }, []);
 
-  const handleSubmitComment = useCallback(async (text: string) => {
-    try {
-      const newComment = await createComment(postId, text);
-      addComment(newComment);
-      if (post) {
-        cachePost(postId, {comment_count: post.comment_count + 1});
+  const handleSubmitComment = useCallback(
+    async (text: string) => {
+      try {
+        const newComment = await createComment(postId, text);
+        addComment(newComment);
+        if (post) {
+          cachePost(postId, {comment_count: post.comment_count + 1});
+        }
+      } catch (e: unknown) {
+        Alert.alert('Error', getErrorMessage(e));
+        throw e;
       }
-    } catch (e: unknown) {
-      Alert.alert('Error', getErrorMessage(e));
-      throw e; // let ReplyBar know it failed
-    }
-  }, [postId, post, addComment, cachePost]);
+    },
+    [postId, post, addComment, cachePost],
+  );
 
   const navigateToProfile = (username: string) => {
     navigation.navigate('Profile', {username});
@@ -148,10 +132,10 @@ export default function PostDetailScreen({route, navigation}: Props) {
     if (!post) return null;
     const actionTarget = post.post_type === 'repost' && post.original_post ? post.original_post : post;
     return (
-      <View>
+      <View style={styles.headerContent}>
         <PostCard
           post={post}
-          onAuthorPress={() => navigateToProfile(post.author.username)}
+          onAuthorPress={() => navigateToProfile(actionTarget.author.username)}
           onLike={() => handleLike(post)}
           onBookmark={() => handleBookmark(post)}
           onRepost={() => handleRepost(post)}
@@ -171,16 +155,10 @@ export default function PostDetailScreen({route, navigation}: Props) {
           }
         />
         <ReplyBar onSubmit={handleSubmitComment} />
-        {comments.length > 0 && (
-          <View style={[styles.repliesHeader, {borderBottomColor: c.border}]}>
-            <Text style={[styles.repliesTitle, {color: c.textPrimary}]}>
-              Replies
-            </Text>
-          </View>
-        )}
+        <Text style={[styles.repliesTitle, {color: c.textPrimary}]}>Replies</Text>
       </View>
     );
-  }, [post, comments.length, handleLike, handleBookmark, handleRepost, handleSubmitComment, c, navigation]);
+  }, [c.textPrimary, handleBookmark, handleLike, handleRepost, handleSubmitComment, navigation, post]);
 
   const renderComment = ({item}: {item: Comment}) => (
     <CommentItem
@@ -199,27 +177,22 @@ export default function PostDetailScreen({route, navigation}: Props) {
 
   if (loading && !post) {
     return (
-      <View style={[styles.center, {backgroundColor: c.bgPrimary}]}>
-        <ActivityIndicator size="large" />
+      <View style={[styles.center, {backgroundColor: c.bgPrimary}]}> 
+        <ActivityIndicator size="large" color={c.textPrimary} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.flex, {backgroundColor: c.bgPrimary}]}>
+    <View style={[styles.flex, {backgroundColor: c.bgPrimary}]}> 
       <FlatList
         data={comments}
         keyExtractor={item => item.id}
         renderItem={renderComment}
         ListHeaderComponent={renderHeader}
+        contentContainerStyle={sharedStyles.paddedListContent}
         ListEmptyComponent={
-          !loading ? (
-            <EmptyState
-              icon="comment-outline"
-              title="No replies yet"
-              subtitle="Be the first to reply"
-            />
-          ) : null
+          !loading ? <EmptyState icon="comment-outline" title="No replies yet" /> : null
         }
         onEndReached={() => {
           if (commentsHasMore) fetchComments(false);
@@ -234,43 +207,42 @@ export default function PostDetailScreen({route, navigation}: Props) {
 const styles = StyleSheet.create({
   flex: {flex: 1},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  replyBar: {
+  headerContent: {
+    gap: spacing[3],
+  },
+  replySurface: {
+    marginHorizontal: spacing[4],
+  },
+  replyRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 10,
+    gap: spacing[3],
   },
   replyInputWrap: {
     flex: 1,
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    maxHeight: 120,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    minHeight: 48,
   },
   replyInput: {
-    fontSize: 15,
+    fontSize: typography.base,
     fontFamily: fonts.body,
-    maxHeight: 100,
-    paddingVertical: 6,
+    maxHeight: 110,
+    paddingVertical: spacing[2],
   },
   replyBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  repliesHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
   repliesTitle: {
-    fontSize: 16,
-    fontFamily: fonts.bodySemiBold,
+    fontSize: typography.lg,
+    fontFamily: fonts.displayBold,
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[2],
   },
 });

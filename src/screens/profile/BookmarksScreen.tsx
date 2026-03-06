@@ -96,6 +96,7 @@ export default function BookmarksScreen({navigation}: Props) {
         data={posts}
         keyExtractor={item => item.id}
         renderItem={renderPost}
+        contentContainerStyle={sharedStyles.paddedListContent}
         refreshControl={
           <RefreshControl
             refreshing={loading && posts.length > 0}
@@ -107,13 +108,7 @@ export default function BookmarksScreen({navigation}: Props) {
         }}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
-          !loading ? (
-            <EmptyState
-              icon="bookmark-outline"
-              title="No bookmarks yet"
-              subtitle="Save posts to find them later"
-            />
-          ) : null
+          !loading ? <EmptyState icon="bookmark-outline" title="No bookmarks yet" /> : null
         }
         ListFooterComponent={
           loading ? (

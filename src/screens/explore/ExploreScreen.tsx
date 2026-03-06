@@ -1,21 +1,22 @@
-import React, {useEffect, useState, useMemo, useCallback} from 'react';
+import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import {
   View,
   Text,
-  TextInput,
   FlatList,
+  TextInput,
   TouchableOpacity,
-  ActivityIndicator,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useFocusEffect} from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
 import ErrorBanner from '../../components/common/ErrorBanner';
+import Surface from '../../components/common/Surface';
 import {getTrendingTags} from '../../api/tags';
 import {lookupUser} from '../../api/users';
-import {useColors, fonts} from '../../theme';
+import {useColors, fonts, radii, spacing, typography, elevation} from '../../theme';
 import {useDebounce} from '../../hooks/useDebounce';
 import {getErrorMessage} from '../../utils/log';
 import {formatCount} from '../../utils/format';
@@ -52,14 +53,12 @@ export default function ExploreScreen({navigation}: Props) {
     setLoading(false);
   }, []);
 
-  // Refresh trending tags every time the screen gains focus
   useFocusEffect(
     useCallback(() => {
       loadTags();
     }, [loadTags]),
   );
 
-  // Lookup user by exact username when debounced query changes and mode is 'users'
   useEffect(() => {
     if (searchMode !== 'users' || !debouncedQuery.trim()) {
       setUserResults([]);
@@ -91,19 +90,17 @@ export default function ExploreScreen({navigation}: Props) {
   const renderTag = useCallback(
     ({item}: {item: Tag}) => (
       <TouchableOpacity
-        style={[styles.tagRow, {borderBottomColor: c.border}]}
+        style={[styles.rowCard, elevation.card, {backgroundColor: c.bgElevated, borderColor: c.border}]}
         onPress={() => navigation.navigate('TagPosts', {tagName: item.name})}
-        activeOpacity={0.7}
+        activeOpacity={0.84}
         accessibilityRole="button"
         accessibilityLabel={`Tag ${item.name}, ${item.post_count} posts`}>
-        <View style={[styles.hashBg, {backgroundColor: c.bgSecondary}]}>
+        <View style={[styles.hashBg, {backgroundColor: c.bgSecondary}]}> 
           <Icon name="pound" size={18} color={c.textTertiary} />
         </View>
-        <View style={styles.tagInfo}>
-          <Text style={[styles.tagName, {color: c.textPrimary}]}>
-            {item.name}
-          </Text>
-          <Text style={[styles.tagCount, {color: c.textTertiary}]}>
+        <View style={styles.rowInfo}>
+          <Text style={[styles.rowTitle, {color: c.textPrimary}]}>#{item.name}</Text>
+          <Text style={[styles.rowSubtitle, {color: c.textSecondary}]}> 
             {formatCount(item.post_count)} posts
           </Text>
         </View>
@@ -116,19 +113,15 @@ export default function ExploreScreen({navigation}: Props) {
   const renderUser = useCallback(
     ({item}: {item: UserProfile}) => (
       <TouchableOpacity
-        style={[styles.tagRow, {borderBottomColor: c.border}]}
+        style={[styles.rowCard, elevation.card, {backgroundColor: c.bgElevated, borderColor: c.border}]}
         onPress={() => navigation.navigate('Profile', {username: item.username})}
-        activeOpacity={0.7}
+        activeOpacity={0.84}
         accessibilityRole="button"
         accessibilityLabel={`${item.display_name} @${item.username}`}>
-        <Avatar uri={item.avatar_url} name={item.display_name} size={40} />
-        <View style={styles.tagInfo}>
-          <Text style={[styles.tagName, {color: c.textPrimary}]}>
-            {item.display_name}
-          </Text>
-          <Text style={[styles.tagCount, {color: c.textTertiary}]}>
-            @{item.username}
-          </Text>
+        <Avatar uri={item.avatar_url} name={item.display_name} size={44} />
+        <View style={styles.rowInfo}>
+          <Text style={[styles.rowTitle, {color: c.textPrimary}]}>{item.display_name}</Text>
+          <Text style={[styles.rowSubtitle, {color: c.textSecondary}]}>@{item.username}</Text>
         </View>
         <Icon name="chevron-right" size={20} color={c.textMuted} />
       </TouchableOpacity>
@@ -137,14 +130,13 @@ export default function ExploreScreen({navigation}: Props) {
   );
 
   return (
-    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>
-      {/* Search bar */}
-      <View style={styles.searchWrapper}>
-        <View style={[styles.searchBar, {backgroundColor: c.bgSecondary, borderColor: c.border}]}>
+    <View style={[styles.container, {backgroundColor: c.bgPrimary}]}> 
+      <Surface style={styles.searchCard}>
+        <View style={[styles.searchBar, {backgroundColor: c.bgSecondary, borderColor: c.border}]}> 
           <Icon name="magnify" size={20} color={c.textMuted} />
           <TextInput
             style={[styles.searchInput, {color: c.textPrimary}]}
-            placeholder={searchMode === 'tags' ? 'Search tags…' : 'Search by exact username…'}
+            placeholder={searchMode === 'tags' ? 'Search tags...' : 'Search by exact username...'}
             placeholderTextColor={c.textMuted}
             value={query}
             onChangeText={setQuery}
@@ -152,85 +144,64 @@ export default function ExploreScreen({navigation}: Props) {
             autoCorrect={false}
             accessibilityLabel="Search"
           />
-          {query.length > 0 && (
+          {query.length > 0 ? (
             <TouchableOpacity onPress={() => setQuery('')}>
               <Icon name="close-circle" size={18} color={c.textMuted} />
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
-      </View>
+        <View style={styles.modeTabs}>
+          {(['tags', 'users'] as SearchMode[]).map(mode => {
+            const selected = searchMode === mode;
+            return (
+              <TouchableOpacity
+                key={mode}
+                style={[
+                  styles.modeTab,
+                  {
+                    backgroundColor: selected ? c.accent : c.bgSecondary,
+                    borderColor: selected ? c.accent : c.border,
+                  },
+                ]}
+                onPress={() => setSearchMode(mode)}
+                accessibilityRole="tab"
+                accessibilityState={{selected}}>
+                <Text style={[styles.modeTabText, {color: selected ? c.accentText : c.textPrimary}]}> 
+                  {mode === 'tags' ? 'Tags' : 'People'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Surface>
 
-      {/* Search mode tabs */}
-      <View style={[styles.modeTabs, {borderBottomColor: c.border}]}>
-        <TouchableOpacity
-          style={styles.modeTab}
-          onPress={() => setSearchMode('tags')}
-          accessibilityRole="tab"
-          accessibilityState={{selected: searchMode === 'tags'}}>
-          <Text
-            style={[
-              styles.modeTabText,
-              {color: searchMode === 'tags' ? c.textPrimary : c.textMuted},
-            ]}>
-            Tags
-          </Text>
-          {searchMode === 'tags' && (
-            <View style={[styles.modeIndicator, {backgroundColor: c.accent}]} />
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.modeTab}
-          onPress={() => setSearchMode('users')}
-          accessibilityRole="tab"
-          accessibilityState={{selected: searchMode === 'users'}}>
-          <Text
-            style={[
-              styles.modeTabText,
-              {color: searchMode === 'users' ? c.textPrimary : c.textMuted},
-            ]}>
-            People
-          </Text>
-          {searchMode === 'users' && (
-            <View style={[styles.modeIndicator, {backgroundColor: c.accent}]} />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {error && searchMode === 'tags' && <ErrorBanner message={error} onRetry={loadTags} />}
+      {error && searchMode === 'tags' ? <ErrorBanner message={error} onRetry={loadTags} /> : null}
 
       {searchMode === 'tags' ? (
-        <>
-          <Text style={[styles.sectionTitle, {color: c.textPrimary}]}>
-            {query.trim() ? 'Search Results' : 'Trending Tags'}
-          </Text>
-          {loading ? (
-            <ActivityIndicator style={sharedStyles.centerLoader} size="large" />
-          ) : (
-            <FlatList
-              data={filteredTags}
-              keyExtractor={item => item.name}
-              renderItem={renderTag}
-              ListEmptyComponent={
-                <EmptyState icon="tag-outline" title={query ? 'No matching tags' : 'No trending tags'} />
-              }
-            />
-          )}
-        </>
+        loading ? (
+          <ActivityIndicator style={sharedStyles.centerLoader} size="large" />
+        ) : (
+          <FlatList
+            data={filteredTags}
+            keyExtractor={item => item.name}
+            renderItem={renderTag}
+            contentContainerStyle={sharedStyles.paddedListContent}
+            ListEmptyComponent={<EmptyState icon="tag-outline" title={query ? 'No matching tags' : 'No trending tags'} />}
+          />
+        )
       ) : (
         <>
-          {userSearching && (
-            <ActivityIndicator style={sharedStyles.smallLoader} size="small" />
-          )}
+          {userSearching ? <ActivityIndicator style={sharedStyles.smallLoader} size="small" /> : null}
           <FlatList
             data={userResults}
             keyExtractor={item => item.id}
             renderItem={renderUser}
+            contentContainerStyle={sharedStyles.paddedListContent}
             ListEmptyComponent={
               !userSearching ? (
                 <EmptyState
                   icon="account-search-outline"
                   title={debouncedQuery.trim() ? 'No users found' : 'Search for people'}
-                  subtitle={!debouncedQuery.trim() ? 'Type a name or username above' : undefined}
                 />
               ) : null
             }
@@ -243,79 +214,67 @@ export default function ExploreScreen({navigation}: Props) {
 
 const styles = StyleSheet.create({
   container: {flex: 1},
-  searchWrapper: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
+  searchCard: {
+    marginHorizontal: spacing[4],
+    marginTop: spacing[4],
+    gap: spacing[3],
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 9999,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 14,
-    height: 42,
-    gap: 8,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    minHeight: 46,
+    paddingHorizontal: spacing[3],
+    gap: spacing[2],
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: typography.base,
     fontFamily: fonts.body,
     paddingVertical: 0,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontFamily: fonts.display,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+  modeTabs: {
+    flexDirection: 'row',
+    gap: spacing[2],
   },
-  tagRow: {
+  modeTab: {
+    borderWidth: 1,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2],
+  },
+  modeTabText: {
+    fontSize: typography.sm,
+    fontFamily: fonts.bodyMedium,
+  },
+  rowCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 12,
+    gap: spacing[3],
+    marginHorizontal: spacing[4],
+    marginTop: spacing[3],
+    padding: spacing[4],
+    borderWidth: 1,
+    borderRadius: radii.xxl,
   },
   hashBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tagInfo: {
+  rowInfo: {
     flex: 1,
+    gap: 2,
   },
-  tagName: {
-    fontSize: 15,
+  rowTitle: {
+    fontSize: typography.base,
     fontFamily: fonts.bodySemiBold,
   },
-  tagCount: {
-    fontSize: 13,
+  rowSubtitle: {
+    fontSize: typography.sm,
     fontFamily: fonts.body,
-    marginTop: 1,
-  },
-  modeTabs: {
-    flexDirection: 'row',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  modeTab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-    position: 'relative',
-  },
-  modeTabText: {
-    fontSize: 14,
-    fontFamily: fonts.bodySemiBold,
-  },
-  modeIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    height: 3,
-    width: 40,
-    borderRadius: 3,
   },
 });
