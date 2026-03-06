@@ -49,7 +49,6 @@ const FEED_TABS: {key: FeedTab; label: string}[] = [
 
 export default function ExploreScreen({navigation}: Props) {
   const c = useColors();
-  const currentUser = useAuthStore(s => s.user);
   const updateUser = useAuthStore(s => s.updateUser);
   const [activeTab, setActiveTab] = useState<FeedTab>('popular');
   const [tags, setTags] = useState<Tag[]>([]);
@@ -175,13 +174,14 @@ export default function ExploreScreen({navigation}: Props) {
     try {
       await followUser(username);
       setFollowingSet(prev => new Set(prev).add(username));
-      if (currentUser) {
-        updateUser({following_count: currentUser.following_count + 1});
+      const latestUser = useAuthStore.getState().user;
+      if (latestUser) {
+        updateUser({following_count: latestUser.following_count + 1});
       }
     } catch (error: unknown) {
       logError('followSuggestedUser', error);
     }
-  }, [currentUser, updateUser]);
+  }, [updateUser]);
 
   const handleUnfollow = useCallback(async (username: string) => {
     try {
@@ -191,13 +191,14 @@ export default function ExploreScreen({navigation}: Props) {
         next.delete(username);
         return next;
       });
-      if (currentUser) {
-        updateUser({following_count: currentUser.following_count - 1});
+      const latestUser = useAuthStore.getState().user;
+      if (latestUser) {
+        updateUser({following_count: latestUser.following_count - 1});
       }
     } catch (error: unknown) {
       logError('unfollowSuggestedUser', error);
     }
-  }, [currentUser, updateUser]);
+  }, [updateUser]);
 
   // Refresh handler
   const handleRefresh = useCallback(() => {

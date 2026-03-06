@@ -18,7 +18,6 @@ type Props = NativeStackScreenProps<ProfileStackParamList, 'Followers'>;
 export default function FollowersScreen({route, navigation}: Props) {
   const {username} = route.params;
   const c = useColors();
-  const currentUser = useAuthStore(s => s.user);
   const updateUser = useAuthStore(s => s.updateUser);
   const fetchFollowersPage = useCallback(
     async (page: number, limit: number) => {
@@ -56,16 +55,17 @@ export default function FollowersScreen({route, navigation}: Props) {
           entry.id === user.id ? {...entry, is_following: !entry.is_following} : entry,
         ),
       );
-      if (currentUser) {
+      const latestUser = useAuthStore.getState().user;
+      if (latestUser) {
         updateUser({
-          following_count: currentUser.following_count + (wasFollowing ? -1 : 1),
+          following_count: latestUser.following_count + (wasFollowing ? -1 : 1),
         });
       }
     } catch (error: unknown) {
       logError('FollowersScreen:followToggle', error);
       Alert.alert('Error', getErrorMessage(error));
     }
-  }, [currentUser, setUsers, updateUser]);
+  }, [setUsers, updateUser]);
 
   return (
     <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>

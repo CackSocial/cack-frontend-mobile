@@ -2,7 +2,7 @@ import {useCallback, useRef} from 'react';
 import {usePostsStore} from '../stores/postsStore';
 import {logError} from '../utils/log';
 import type {Post} from '../types';
-import {resolveActionTarget, updatePostReference} from '../utils/posts';
+import {resolveActionTarget, updatePostReference, postToCachedState} from '../utils/posts';
 
 interface OptimisticToggleConfig {
   context: string;
@@ -40,7 +40,10 @@ export function useOptimisticToggle(
         );
       }
 
-      cachePost(target.id, updates);
+      // Seed the cache with the full post state so that fields not being
+      // updated (e.g. comment_count) don't fall back to 0 for posts that
+      // aren't in the timeline or cache yet (e.g. explore-only posts).
+      cachePost(target.id, {...postToCachedState(target), ...updates});
 
       try {
         await request(target.id);

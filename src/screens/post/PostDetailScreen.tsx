@@ -31,7 +31,7 @@ import {sharedStyles} from '../../styles/shared';
 import type {Comment} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {HomeStackParamList} from '../../navigation/types';
-import {resolveActionTarget} from '../../utils/posts';
+import {resolveActionTarget, postToCachedState} from '../../utils/posts';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'PostDetail'>;
 
@@ -124,7 +124,10 @@ export default function PostDetailScreen({route, navigation}: Props) {
         addComment(newComment);
         const currentPost = postRef.current;
         if (currentPost) {
-          cachePost(postId, {comment_count: currentPost.comment_count + 1});
+          cachePost(postId, {
+            ...postToCachedState(currentPost),
+            comment_count: currentPost.comment_count + 1,
+          });
         }
       } catch (e: unknown) {
         Alert.alert('Error', getErrorMessage(e));

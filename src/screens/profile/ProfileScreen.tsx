@@ -220,8 +220,9 @@ export default function ProfileScreen({route, navigation}: Props) {
               }
             : current,
         );
-        if (currentUser) {
-          updateUser({following_count: currentUser.following_count - 1});
+        const latestUser = useAuthStore.getState().user;
+        if (latestUser) {
+          updateUser({following_count: latestUser.following_count - 1});
         }
       } else {
         await followUser(profile.username);
@@ -234,8 +235,9 @@ export default function ProfileScreen({route, navigation}: Props) {
               }
             : current,
         );
-        if (currentUser) {
-          updateUser({following_count: currentUser.following_count + 1});
+        const latestUser = useAuthStore.getState().user;
+        if (latestUser) {
+          updateUser({following_count: latestUser.following_count + 1});
         }
       }
     } catch (toggleError: unknown) {
@@ -243,7 +245,7 @@ export default function ProfileScreen({route, navigation}: Props) {
     } finally {
       setFollowLoading(false);
     }
-  }, [currentUser, followLoading, profile, updateUser]);
+  }, [followLoading, profile, updateUser]);
 
   const displayPosts = useMemo(
     () => (activeTab === 'posts' ? posts : likedPosts),
