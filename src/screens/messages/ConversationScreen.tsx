@@ -65,14 +65,25 @@ export default function ConversationScreen({route}: Props) {
     if ((!trimmedText && !imagePreview) || sending) return;
 
     if (imagePreview) {
-      // Image messages go via REST
+      // Optimistic add so the real message from WS replaces it (same as text)
+      const optimistic: Message = {
+        id: createOptimisticMessageId(),
+        sender_id: currentUser?.id || '',
+        receiver_id: userId,
+        content: trimmedText,
+        image_url: imagePreview.uri,
+        read_at: null,
+        created_at: new Date().toISOString(),
+      };
+      const prevImage = imagePreview;
+      addMessage(optimistic);
+      setText('');
+      setImagePreview(null);
       setSending(true);
       try {
-        const msg = await sendMessageApi(username, trimmedText, imagePreview);
-        addMessage(msg);
-        setText('');
-        setImagePreview(null);
+        await sendMessageApi(username, trimmedText, prevImage);
       } catch (e: unknown) {
+        setMessages(current => current.filter(m => m.id !== optimistic.id));
         Alert.alert('Error', getErrorMessage(e));
       }
       setSending(false);
