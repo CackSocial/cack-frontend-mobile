@@ -110,6 +110,7 @@ export default function HomeScreen({navigation}: Props) {
         renderItem={renderPost}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={sharedStyles.paddedListContent}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl refreshing={isLoading && timeline.length > 0} onRefresh={handleRefresh} />
         }
