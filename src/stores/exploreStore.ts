@@ -1,8 +1,10 @@
+import type React from 'react';
 import {create} from 'zustand';
 import type {Post, SuggestedUser} from '../types';
 import * as api from '../api';
 import {PAGINATION_LIMIT} from '../config';
 import {logError} from '../utils/log';
+import {applyStateUpdate} from '../utils/state';
 
 interface ExploreState {
   suggestedUsers: SuggestedUser[];
@@ -23,6 +25,8 @@ interface ExploreState {
   fetchSuggestedUsers(): Promise<void>;
   fetchPopularPosts(reset?: boolean): Promise<void>;
   fetchDiscoverFeed(reset?: boolean): Promise<void>;
+  setPopularPosts: React.Dispatch<React.SetStateAction<Post[]>>;
+  setDiscoverPosts: React.Dispatch<React.SetStateAction<Post[]>>;
   resetPopular(): void;
   resetDiscover(): void;
 }
@@ -118,6 +122,18 @@ export const useExploreStore = create<ExploreState>((set, get) => ({
       logError('fetchDiscoverFeed', error);
       set({isLoadingDiscover: false, isLoadingMoreDiscover: false});
     }
+  },
+
+  setPopularPosts(updater: React.SetStateAction<Post[]>) {
+    set(current => ({
+      popularPosts: applyStateUpdate(current.popularPosts, updater),
+    }));
+  },
+
+  setDiscoverPosts(updater: React.SetStateAction<Post[]>) {
+    set(current => ({
+      discoverPosts: applyStateUpdate(current.discoverPosts, updater),
+    }));
   },
 
   resetPopular() {

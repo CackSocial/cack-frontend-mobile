@@ -23,8 +23,11 @@ import {lookupUser} from '../../api/users';
 import {followUser, unfollowUser} from '../../api/follows';
 import {useExploreStore} from '../../stores/exploreStore';
 import {useAuthStore} from '../../stores/authStore';
-import {usePostsStore} from '../../stores/postsStore';
 import {usePostCardActions} from '../../hooks/usePostCardActions';
+import {useSyncLikes} from '../../hooks/useSyncLikes';
+import {useOptimisticLike} from '../../hooks/useOptimisticLike';
+import {useOptimisticBookmark} from '../../hooks/useOptimisticBookmark';
+import {useOptimisticRepost} from '../../hooks/useOptimisticRepost';
 import {useColors, fonts, radii, spacing, typography, elevation, opacity} from '../../theme';
 import {useDebounce} from '../../hooks/useDebounce';
 import {getErrorMessage, logError} from '../../utils/log';
@@ -77,17 +80,27 @@ export default function ExploreScreen({navigation}: Props) {
   const discoverHasMore = useExploreStore(s => s.discoverHasMore);
   const fetchDiscoverFeed = useExploreStore(s => s.fetchDiscoverFeed);
 
-  // Posts store for optimistic updates
-  const toggleLike = usePostsStore(s => s.toggleLike);
-  const toggleBookmark = usePostsStore(s => s.toggleBookmark);
-  const toggleRepost = usePostsStore(s => s.toggleRepost);
-  const applyPostCache = usePostsStore(s => s.applyPostCache);
-  // Subscribe to postCache so the component re-renders when
-  // likes/bookmarks/reposts are toggled via the store
-  usePostsStore(s => s.postCache);
+  // Post setters from explore store
+  const setPopularPosts = useExploreStore(s => s.setPopularPosts);
+  const setDiscoverPosts = useExploreStore(s => s.setDiscoverPosts);
 
-  const cachedPopular = applyPostCache(popularPosts);
-  const cachedDiscover = applyPostCache(discoverPosts);
+  // Combined setter that updates both lists so a post appearing in both stays in sync
+  const setAllExplorePosts = useCallback(
+    (updater: React.SetStateAction<Post[]>) => {
+      setPopularPosts(updater);
+      setDiscoverPosts(updater);
+    },
+    [setPopularPosts, setDiscoverPosts],
+  );
+
+  // Optimistic post interactions (reads actual post state, not defaults)
+  const handleToggleLike = useOptimisticLike(setAllExplorePosts);
+  const handleToggleBookmark = useOptimisticBookmark(setAllExplorePosts);
+  const handleToggleRepost = useOptimisticRepost(setAllExplorePosts);
+
+  // Sync like state from global cache when screen gains focus
+  useSyncLikes(setPopularPosts);
+  useSyncLikes(setDiscoverPosts);
 
   // Load initial data on focus
   useFocusEffect(
@@ -210,9 +223,9 @@ export default function ExploreScreen({navigation}: Props) {
 
   const getPostCardActions = usePostCardActions({
     navigation,
-    onLike: (_, actionTarget) => toggleLike(actionTarget.id),
-    onBookmark: (_, actionTarget) => toggleBookmark(actionTarget.id),
-    onRepost: (_, actionTarget) => toggleRepost(actionTarget.id),
+    onLike: post => handleToggleLike(post),
+    onBookmark: post => handleToggleBookmark(post),
+    onRepost: post => handleToggleRepost(post),
     onTagPress: handleTagPress,
   });
 
@@ -329,7 +342,7 @@ export default function ExploreScreen({navigation}: Props) {
   );
 
   // Determine which posts to show
-  const feedPosts = activeTab === 'popular' ? cachedPopular : cachedDiscover;
+  const feedPosts = activeTab === 'popular' ? popularPosts : discoverPosts;
   const feedLoading = activeTab === 'popular' ? isLoadingPopular : isLoadingDiscover;
   const feedLoadingMore = activeTab === 'popular' ? isLoadingMorePopular : isLoadingMoreDiscover;
   const isRefreshing = feedLoading && feedPosts.length > 0;
