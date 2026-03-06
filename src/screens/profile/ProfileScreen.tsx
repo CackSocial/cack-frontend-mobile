@@ -118,7 +118,7 @@ export default function ProfileScreen({route, navigation}: Props) {
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.actionRow, isOwnProfile ? styles.actionRowCentered : null]}>
+          <View style={styles.actionRow}>
             {isOwnProfile ? (
               <Button
                 title="Edit profile"
@@ -138,6 +138,7 @@ export default function ProfileScreen({route, navigation}: Props) {
                         userId: profile.id,
                         displayName: profile.display_name,
                       },
+                      initial: false,
                     })
                   }>
                   <Icon name="email-outline" size={18} color={c.textPrimary} />
@@ -287,10 +288,8 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[3],
-  },
-  actionRowCentered: {
     justifyContent: 'center',
+    gap: spacing[3],
   },
   editProfileButton: {
     minWidth: 160,

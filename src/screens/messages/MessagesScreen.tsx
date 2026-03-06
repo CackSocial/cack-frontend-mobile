@@ -14,7 +14,9 @@ type Props = NativeStackScreenProps<MessagesStackParamList, 'Messages'>;
 
 export default function MessagesScreen({navigation}: Props) {
   const c = useColors();
-  const {conversations, isLoading, fetchConversations} = useMessagesStore();
+  const conversations = useMessagesStore(s => s.conversations);
+  const isLoading = useMessagesStore(s => s.isLoading);
+  const fetchConversations = useMessagesStore(s => s.fetchConversations);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -32,7 +34,7 @@ export default function MessagesScreen({navigation}: Props) {
 
   useEffect(() => {
     fetchConversations();
-  }, []);
+  }, [fetchConversations]);
 
   const renderItem = ({item}: {item: ConversationListItem}) => (
     <ConversationItem
