@@ -82,6 +82,9 @@ export default function ExploreScreen({navigation}: Props) {
   const toggleBookmark = usePostsStore(s => s.toggleBookmark);
   const toggleRepost = usePostsStore(s => s.toggleRepost);
   const applyPostCache = usePostsStore(s => s.applyPostCache);
+  // Subscribe to postCache so the component re-renders when
+  // likes/bookmarks/reposts are toggled via the store
+  usePostsStore(s => s.postCache);
 
   const cachedPopular = applyPostCache(popularPosts);
   const cachedDiscover = applyPostCache(discoverPosts);
