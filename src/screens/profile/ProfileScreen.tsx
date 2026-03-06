@@ -88,6 +88,7 @@ export default function ProfileScreen({route, navigation}: Props) {
   });
   const postsRef = useRef(posts);
   const likedPostsRef = useRef(likedPosts);
+  const likedPostsFetchedRef = useRef(false);
 
   useLayoutEffect(() => {
     postsRef.current = posts;
@@ -185,8 +186,15 @@ export default function ProfileScreen({route, navigation}: Props) {
   useEffect(() => {
     loadProfile();
     refresh();
-    refreshLikedPosts();
-  }, [loadProfile, refresh, refreshLikedPosts]);
+  }, [loadProfile, refresh]);
+
+  // Lazy-load liked posts only when the user first switches to the Likes tab
+  useEffect(() => {
+    if (activeTab === 'likes' && !likedPostsFetchedRef.current) {
+      likedPostsFetchedRef.current = true;
+      refreshLikedPosts();
+    }
+  }, [activeTab, refreshLikedPosts]);
 
   useSyncLikes(setProfilePosts);
   useSyncLikes(setProfileLikedPosts);
