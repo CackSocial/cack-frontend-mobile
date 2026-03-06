@@ -78,6 +78,17 @@ export interface AuthResponse {
   user: UserProfile;
 }
 
+export interface SuggestedUser {
+  id: string;
+  username: string;
+  display_name: string;
+  bio: string;
+  avatar_url: string;
+  follower_count: number;
+  following_count: number;
+  mutual_follower_count: number;
+}
+
 export interface ImageAsset {
   uri: string;
   fileName?: string;
