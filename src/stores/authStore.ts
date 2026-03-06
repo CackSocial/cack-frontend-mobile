@@ -2,6 +2,8 @@ import {create} from 'zustand';
 import type {UserProfile} from '../types';
 import * as api from '../api';
 import {setClientToken} from '../api/client';
+import {setLogoutHandler} from '../authSession';
+import {useMessagesStore} from './messagesStore';
 import * as storage from '../utils/storage';
 import {logError, getErrorMessage} from '../utils/log';
 
@@ -74,9 +76,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout() {
     // Fire-and-forget: notify server, then clear local state
-    api.logout().catch(() => {});
+    api.logout().catch(error => {
+      logError('logout', error);
+    });
     // Disconnect WebSocket
-    const {useMessagesStore} = require('../stores/messagesStore');
     useMessagesStore.getState().disconnectWS();
 
     setClientToken(null);
@@ -126,3 +129,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({error: null});
   },
 }));
+
+setLogoutHandler(() => {
+  const {isAuthenticated, logout} = useAuthStore.getState();
+  if (isAuthenticated) {
+    logout();
+  }
+});

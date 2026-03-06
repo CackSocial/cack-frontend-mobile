@@ -1,6 +1,7 @@
 import axios from 'axios';
 import {NativeModules} from 'react-native';
 import {BASE_URL} from '../config';
+import {triggerSessionLogout} from '../authSession';
 import type {ImageAsset} from '../types';
 
 // Clear the OkHttp cookie jar so it doesn't overwrite our manual CSRF Cookie header.
@@ -40,6 +41,10 @@ function generateCsrfToken(): string {
 
 export function setClientToken(token: string | null) {
   authToken = token;
+}
+
+export function getClientToken(): string | null {
+  return authToken;
 }
 
 // Clear stale cookies from any previous session on module load
@@ -85,12 +90,7 @@ client.interceptors.response.use(
       // Auto-logout on expired/invalid token (skip auth endpoints)
       const url = error.config?.url || '';
       if (!url.startsWith('/auth/')) {
-        // Lazy import to avoid circular dependency
-        const {useAuthStore} = require('../stores/authStore');
-        const {isAuthenticated, logout} = useAuthStore.getState();
-        if (isAuthenticated) {
-          logout();
-        }
+        triggerSessionLogout();
       }
     }
     const msg =

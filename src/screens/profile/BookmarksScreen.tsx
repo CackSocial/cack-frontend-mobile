@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useEffect, useCallback} from 'react';
 import {
   View,
   FlatList,
@@ -14,80 +14,69 @@ import {useOptimisticLike} from '../../hooks/useOptimisticLike';
 import {useOptimisticBookmark} from '../../hooks/useOptimisticBookmark';
 import {useOptimisticRepost} from '../../hooks/useOptimisticRepost';
 import {useColors} from '../../theme';
-import {PAGINATION_LIMIT} from '../../config';
-import {logError} from '../../utils/log';
 import {sharedStyles} from '../../styles/shared';
 import type {Post} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ProfileStackParamList} from '../../navigation/types';
+import {usePaginatedFetch} from '../../hooks/usePaginatedFetch';
+import {usePostCardActions} from '../../hooks/usePostCardActions';
+import {resolveActionTarget} from '../../utils/posts';
+import {applyStateUpdate} from '../../utils/state';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Bookmarks'>;
 
 export default function BookmarksScreen({navigation}: Props) {
   const c = useColors();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const fetchBookmarksPage = useCallback(async (page: number, limit: number) => {
+    const res = await getBookmarks(page, limit);
+    return res.data ?? [];
+  }, []);
+  const {
+    items: posts,
+    setItems: setPosts,
+    loading,
+    hasMore,
+    refresh,
+    loadMore,
+  } = usePaginatedFetch<Post>({
+    fetchPage: fetchBookmarksPage,
+    errorContext: 'BookmarksScreen:fetch',
+  });
 
   useSyncLikes(setPosts);
 
   // REFACTORED: Uses shared useOptimisticLike hook instead of inline implementation
   const handleLike = useOptimisticLike(setPosts);
-  const handleBookmark = useOptimisticBookmark(setPosts);
-  const handleRepost = useOptimisticRepost(setPosts);
-
-  const fetchBookmarks = useCallback(
-    async (reset = false) => {
-      if (loading) return;
-      const p = reset ? 1 : page;
-      if (!reset && !hasMore) return;
-      setLoading(true);
-      try {
-        const res = await getBookmarks(p, PAGINATION_LIMIT);
-        const items = res.data ?? [];
-        setPosts(prev => (reset ? items : [...prev, ...items]));
-        setPage(p + 1);
-        setHasMore(items.length === PAGINATION_LIMIT);
-      } catch (e: unknown) {
-        logError('BookmarksScreen:fetch', e);
-      }
-      setLoading(false);
+  const handleBookmarkPosts = useCallback(
+    (updater: React.SetStateAction<Post[]>) => {
+      setPosts(current =>
+        applyStateUpdate(current, updater).filter(
+          post => resolveActionTarget(post).is_bookmarked,
+        ),
+      );
     },
-    [page, hasMore, loading],
+    [setPosts],
   );
+  const handleBookmark = useOptimisticBookmark(handleBookmarkPosts);
+  const handleRepost = useOptimisticRepost(setPosts);
+  const getPostCardActions = usePostCardActions({
+    navigation,
+    onLike: post => handleLike(post),
+    onBookmark: post => handleBookmark(post),
+    onRepost: post => handleRepost(post),
+  });
 
   useEffect(() => {
-    fetchBookmarks(true);
-  }, []);
+    refresh();
+  }, [refresh]);
 
   const renderPost = useCallback(
     ({item}: {item: Post}) => {
-      const actionTarget = item.post_type === 'repost' && item.original_post ? item.original_post : item;
       return (
-        <PostCard
-          post={item}
-          onPress={() => navigation.navigate('PostDetail', {postId: actionTarget.id})}
-          onAuthorPress={() =>
-            navigation.navigate('Profile', {username: item.author.username})
-          }
-          onLike={() => handleLike(item)}
-          onComment={() => navigation.navigate('PostDetail', {postId: actionTarget.id})}
-          onBookmark={() => handleBookmark(item)}
-          onRepost={() => handleRepost(item)}
-          onQuote={() => navigation.navigate('QuotePost', {post: actionTarget})}
-          onMentionPress={username =>
-            navigation.navigate('Profile', {username})
-          }
-          onOriginalPostPress={
-            item.original_post
-              ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
-              : undefined
-          }
-        />
+        <PostCard post={item} {...getPostCardActions(item)} />
       );
     },
-    [navigation, handleLike, handleBookmark, handleRepost],
+    [getPostCardActions],
   );
 
   return (
@@ -100,11 +89,11 @@ export default function BookmarksScreen({navigation}: Props) {
         refreshControl={
           <RefreshControl
             refreshing={loading && posts.length > 0}
-            onRefresh={() => fetchBookmarks(true)}
+            onRefresh={refresh}
           />
         }
         onEndReached={() => {
-          if (hasMore) fetchBookmarks(false);
+          if (hasMore) loadMore();
         }}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={

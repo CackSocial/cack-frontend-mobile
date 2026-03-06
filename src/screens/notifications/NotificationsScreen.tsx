@@ -1,4 +1,4 @@
-import React, {useCallback} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
 import {useNotificationsStore} from '../../stores/notificationsStore';
-import {useColors, fonts, radii, spacing, typography, elevation} from '../../theme';
+import {useColors, fonts, opacity, radii, sizes, spacing, typography, elevation} from '../../theme';
 import {formatRelativeTime} from '../../utils/format';
 import {sharedStyles} from '../../styles/shared';
 import type {Notification} from '../../types';
@@ -21,15 +21,6 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {NotificationsStackParamList} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<NotificationsStackParamList, 'Notifications'>;
-
-const NOTIFICATION_ICONS: Record<string, {icon: string; color: string}> = {
-  like: {icon: 'heart', color: '#ef4444'},
-  comment: {icon: 'comment-outline', color: '#525252'},
-  follow: {icon: 'account-plus-outline', color: '#16a34a'},
-  mention: {icon: 'at', color: '#262626'},
-  repost: {icon: 'repeat', color: '#16a34a'},
-  quote: {icon: 'format-quote-close', color: '#525252'},
-};
 
 function getNotificationText(type: string): string {
   switch (type) {
@@ -52,15 +43,24 @@ function getNotificationText(type: string): string {
 
 export default function NotificationsScreen({navigation}: Props) {
   const c = useColors();
-  const {
-    notifications,
-    isLoading,
-    hasMore,
-    fetchNotifications,
-    fetchUnreadCount,
-    markAsRead,
-    markAllAsRead,
-  } = useNotificationsStore();
+  const notifications = useNotificationsStore(s => s.notifications);
+  const isLoading = useNotificationsStore(s => s.isLoading);
+  const hasMore = useNotificationsStore(s => s.hasMore);
+  const fetchNotifications = useNotificationsStore(s => s.fetchNotifications);
+  const fetchUnreadCount = useNotificationsStore(s => s.fetchUnreadCount);
+  const markAsRead = useNotificationsStore(s => s.markAsRead);
+  const markAllAsRead = useNotificationsStore(s => s.markAllAsRead);
+  const notificationIcons = useMemo(
+    () => ({
+      like: {icon: 'heart', color: c.like},
+      comment: {icon: 'comment-outline', color: c.textSecondary},
+      follow: {icon: 'account-plus-outline', color: c.success},
+      mention: {icon: 'at', color: c.textPrimary},
+      repost: {icon: 'repeat', color: c.success},
+      quote: {icon: 'format-quote-close', color: c.textSecondary},
+    }),
+    [c],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -96,10 +96,10 @@ export default function NotificationsScreen({navigation}: Props) {
       const actor = item.actor;
       if (!actor?.username) return null;
 
-      const iconInfo = NOTIFICATION_ICONS[item.type] || {
-        icon: 'bell-outline',
-        color: c.textMuted,
-      };
+       const iconInfo = notificationIcons[item.type] || {
+         icon: 'bell-outline',
+         color: c.textMuted,
+       };
 
       return (
         <TouchableOpacity
@@ -110,13 +110,13 @@ export default function NotificationsScreen({navigation}: Props) {
               backgroundColor: item.is_read ? c.bgElevated : c.bgSecondary,
               borderColor: c.border,
             },
-          ]}
-          onPress={() => handlePress(item)}
-          activeOpacity={0.84}
-          accessibilityRole="button"
-          accessibilityLabel={`${actor.display_name} ${getNotificationText(item.type)}`}>
+           ]}
+           onPress={() => handlePress(item)}
+           activeOpacity={opacity.active}
+           accessibilityRole="button"
+           accessibilityLabel={`${actor.display_name} ${getNotificationText(item.type)}`}>
           <View style={styles.iconWrap}>
-            <Avatar uri={actor.avatar_url} name={actor.display_name} size={44} />
+            <Avatar uri={actor.avatar_url} name={actor.display_name} size={sizes.avatar.xl} />
             <View style={[styles.typeIcon, {backgroundColor: iconInfo.color}]}> 
               <Icon name={iconInfo.icon} size={12} color="#fff" />
             </View>
@@ -131,7 +131,7 @@ export default function NotificationsScreen({navigation}: Props) {
         </TouchableOpacity>
       );
     },
-    [c, handlePress],
+    [c, handlePress, notificationIcons],
   );
 
   const unreadExists = notifications.some(n => !n.is_read && n.actor?.username);
@@ -207,9 +207,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -2,
     right: -2,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: sizes.notification.typeIcon,
+    height: sizes.notification.typeIcon,
+    borderRadius: sizes.notification.typeIcon / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },

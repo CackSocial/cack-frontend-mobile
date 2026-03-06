@@ -41,7 +41,7 @@ export type NotificationsStackParamList = {
 };
 
 export type ProfileStackParamList = {
-  Profile: {username?: string} | undefined;
+  Profile: {username?: string};
   EditProfile: undefined;
   Followers: {username: string};
   Following: {username: string};

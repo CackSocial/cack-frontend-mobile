@@ -1,4 +1,4 @@
-import client, {buildFormData} from './client';
+import client from './client';
 import type {UserProfile, PaginatedResponse, ImageAsset} from '../types';
 import {PAGINATION_LIMIT} from '../config';
 

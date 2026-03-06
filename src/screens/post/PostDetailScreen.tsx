@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {
   View,
   FlatList,
@@ -23,12 +23,15 @@ import {useOptimisticRepost} from '../../hooks/useOptimisticRepost';
 import {createComment} from '../../api/comments';
 import {usePostsStore} from '../../stores/postsStore';
 import {useAuthStore} from '../../stores/authStore';
+import {MAX_COMMENT_LENGTH} from '../../config';
 import {useColors, fonts, radii, spacing, typography} from '../../theme';
-import {getErrorMessage} from '../../utils/log';
+import {getErrorMessage, logError} from '../../utils/log';
+import {navigateToExploreTag, type MainTabNavigation} from '../../navigation/helpers';
 import {sharedStyles} from '../../styles/shared';
 import type {Comment} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {HomeStackParamList} from '../../navigation/types';
+import {resolveActionTarget} from '../../utils/posts';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'PostDetail'>;
 
@@ -49,8 +52,11 @@ const ReplyBar = React.memo(function ReplyBar({
     try {
       await onSubmit(trimmed);
       setText('');
-    } catch {}
-    setSending(false);
+    } catch (error: unknown) {
+      logError('ReplyBar:handleSend', error);
+    } finally {
+      setSending(false);
+    }
   }, [text, sending, onSubmit]);
 
   return (
@@ -65,7 +71,7 @@ const ReplyBar = React.memo(function ReplyBar({
             value={text}
             onChangeText={setText}
             multiline
-            maxLength={2000}
+            maxLength={MAX_COMMENT_LENGTH}
             accessibilityLabel="Reply input"
           />
         </View>
@@ -97,6 +103,9 @@ export default function PostDetailScreen({route, navigation}: Props) {
   const {post, setPost, comments, loading, commentsHasMore, fetchPost, fetchComments, addComment} =
     usePostDetail(postId);
 
+  const postRef = useRef(post);
+  postRef.current = post;
+
   useSyncPostLike(setPost);
 
   const handleLike = useOptimisticLike(undefined, setPost);
@@ -106,31 +115,45 @@ export default function PostDetailScreen({route, navigation}: Props) {
   useEffect(() => {
     fetchPost();
     fetchComments(true);
-  }, []);
+  }, [fetchComments, fetchPost]);
 
   const handleSubmitComment = useCallback(
     async (text: string) => {
       try {
         const newComment = await createComment(postId, text);
         addComment(newComment);
-        if (post) {
-          cachePost(postId, {comment_count: post.comment_count + 1});
+        const currentPost = postRef.current;
+        if (currentPost) {
+          cachePost(postId, {comment_count: currentPost.comment_count + 1});
         }
       } catch (e: unknown) {
         Alert.alert('Error', getErrorMessage(e));
         throw e;
       }
     },
-    [postId, post, addComment, cachePost],
+    [postId, addComment, cachePost],
   );
 
-  const navigateToProfile = (username: string) => {
-    navigation.navigate('Profile', {username});
-  };
+  const navigateToProfile = useCallback(
+    (username: string) => {
+      navigation.navigate('Profile', {username});
+    },
+    [navigation],
+  );
+
+  const handleTagPress = useCallback(
+    (tag: string) => {
+      const parentNavigation = navigation.getParent<MainTabNavigation>();
+      if (parentNavigation) {
+        navigateToExploreTag(parentNavigation, tag);
+      }
+    },
+    [navigation],
+  );
 
   const renderHeader = useCallback(() => {
     if (!post) return null;
-    const actionTarget = post.post_type === 'repost' && post.original_post ? post.original_post : post;
+    const actionTarget = resolveActionTarget(post);
     return (
       <View style={styles.headerContent}>
         <PostCard
@@ -140,13 +163,7 @@ export default function PostDetailScreen({route, navigation}: Props) {
           onBookmark={() => handleBookmark(post)}
           onRepost={() => handleRepost(post)}
           onQuote={() => navigation.navigate('QuotePost', {post: actionTarget})}
-          onTagPress={tag =>
-            navigation.getParent()?.navigate('ExploreTab', {
-              screen: 'TagPosts',
-              params: {tagName: tag},
-              initial: false,
-            })
-          }
+          onTagPress={handleTagPress}
           onMentionPress={username => navigateToProfile(username)}
           onOriginalPostPress={
             post.original_post
@@ -158,22 +175,16 @@ export default function PostDetailScreen({route, navigation}: Props) {
         <Text style={[styles.repliesTitle, {color: c.textPrimary}]}>Replies</Text>
       </View>
     );
-  }, [c.textPrimary, handleBookmark, handleLike, handleRepost, handleSubmitComment, navigation, post]);
+  }, [c.textPrimary, handleBookmark, handleLike, handleRepost, handleSubmitComment, handleTagPress, navigateToProfile, navigation, post]);
 
-  const renderComment = ({item}: {item: Comment}) => (
+  const renderComment = useCallback(({item}: {item: Comment}) => (
     <CommentItem
       comment={item}
       onAuthorPress={() => navigateToProfile(item.author.username)}
       onMentionPress={username => navigateToProfile(username)}
-      onTagPress={tag =>
-        navigation.getParent()?.navigate('ExploreTab', {
-          screen: 'TagPosts',
-          params: {tagName: tag},
-          initial: false,
-        })
-      }
+      onTagPress={handleTagPress}
     />
-  );
+  ), [navigateToProfile, handleTagPress]);
 
   if (loading && !post) {
     return (

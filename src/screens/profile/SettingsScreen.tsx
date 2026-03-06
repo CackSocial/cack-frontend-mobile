@@ -14,7 +14,6 @@ import Button from '../../components/common/Button';
 import Surface from '../../components/common/Surface';
 import ThemeToggleButton from '../../components/common/ThemeToggleButton';
 import {useAuthStore} from '../../stores/authStore';
-import {useMessagesStore} from '../../stores/messagesStore';
 import {deleteAccount} from '../../api/users';
 import {useColors, fonts, layout, radii, spacing, typography} from '../../theme';
 import {getErrorMessage} from '../../utils/log';
@@ -55,13 +54,11 @@ export default function SettingsScreen({navigation}: Props) {
   const c = useColors();
   const user = useAuthStore(s => s.user);
   const logout = useAuthStore(s => s.logout);
-  const disconnectWS = useMessagesStore(s => s.disconnectWS);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
 
   const handleLogout = () => {
-    disconnectWS();
     logout();
   };
 
@@ -71,12 +68,12 @@ export default function SettingsScreen({navigation}: Props) {
     try {
       await deleteAccount(deletePassword);
       setShowDeleteModal(false);
-      disconnectWS();
+      // logout() unmounts this component — no state updates after it
       logout();
     } catch (e: unknown) {
       Alert.alert('Error', getErrorMessage(e));
+      setDeleteLoading(false);
     }
-    setDeleteLoading(false);
   };
 
   return (

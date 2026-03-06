@@ -7,20 +7,20 @@ import {
   Image,
   Text,
   StyleSheet,
-  Alert,
   PanResponder,
   useWindowDimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {launchImageLibrary} from 'react-native-image-picker';
 import type {ImageAsset} from '../../types';
 import Button from '../common/Button';
 import Avatar from '../common/Avatar';
 import Surface from '../common/Surface';
 import {useAuthStore} from '../../stores/authStore';
-import {MAX_POST_LENGTH, MAX_IMAGE_SIZE_MB} from '../../config';
-import {useColors, fonts, radii, spacing, typography} from '../../theme';
+import {useThemeStore} from '../../stores/themeStore';
+import {MAX_POST_LENGTH} from '../../config';
+import {useColors, fonts, radii, sizes, spacing, typography} from '../../theme';
 import {logError} from '../../utils/log';
+import {useImagePicker} from '../../hooks/useImagePicker';
 
 interface Props {
   onSubmit: (content: string, image?: ImageAsset) => Promise<void>;
@@ -38,6 +38,7 @@ export default function PostComposer({
   compact = false,
 }: Props) {
   const c = useColors();
+  const theme = useThemeStore(s => s.theme);
   const {height: windowHeight} = useWindowDimensions();
   const inputScrollRef = useRef<ScrollView>(null);
   const scrollbarDragStartRef = useRef({thumbOffset: 0, scrollOffset: 0});
@@ -52,16 +53,28 @@ export default function PostComposer({
   const [image, setImage] = useState<ImageAsset | null>(null);
   const [scrollOffset, setScrollOffset] = useState(0);
 
-  const minInputHeight = useMemo(() => (compact ? 92 : 132), [compact]);
+  const minInputHeight = useMemo(
+    () =>
+      compact
+        ? sizes.composer.compactMinInputHeight
+        : sizes.composer.defaultMinInputHeight,
+    [compact],
+  );
   const verticalInputPadding = useMemo(
     () => (compact ? spacing[3] * 2 : spacing[4] * 2),
     [compact],
   );
   const maxInputHeight = useMemo(() => {
     const maxComposerHeight = Math.floor(windowHeight * 0.5);
-    return Math.max(minInputHeight, maxComposerHeight - (compact ? 138 : 170));
+    return Math.max(
+      minInputHeight,
+      maxComposerHeight
+        - (compact
+          ? sizes.composer.compactHeightOffset
+          : sizes.composer.defaultHeightOffset),
+    );
   }, [compact, minInputHeight, windowHeight]);
-  const [inputContentHeight, setInputContentHeight] = useState(minInputHeight);
+  const [inputContentHeight, setInputContentHeight] = useState<number>(minInputHeight);
 
   const tags = useMemo(() => {
     const matches = content.match(/#(\w+)/g) || [];
@@ -73,7 +86,7 @@ export default function PostComposer({
   const canSubmit = (content.trim().length > 0 || image) && !isOverLimit;
   const inputViewportHeight = Math.min(inputContentHeight, maxInputHeight);
   const isInputScrollable = inputContentHeight > maxInputHeight;
-  const scrollIndicatorStyle = c.textPrimary === '#fafafa' ? 'white' : 'black';
+  const scrollIndicatorStyle = theme === 'dark' ? 'white' : 'black';
   const scrollbarTrackHeight = Math.max(inputViewportHeight - spacing[4], 0);
   const scrollbarThumbHeight = useMemo(() => {
     if (!isInputScrollable || scrollbarTrackHeight <= 0) {
@@ -81,7 +94,7 @@ export default function PostComposer({
     }
 
     return Math.max(
-      24,
+      sizes.composer.minScrollbarThumbHeight,
       (scrollbarTrackHeight * inputViewportHeight) / inputContentHeight,
     );
   }, [
@@ -181,25 +194,10 @@ export default function PostComposer({
     scrollbarThumbTravelRef.current = scrollbarThumbTravel;
   }, [scrollbarThumbTravel]);
 
-  const pickImage = async () => {
-    const result = await launchImageLibrary({
-      mediaType: 'photo',
-      quality: 0.8,
-    });
-    if (result.assets && result.assets[0]) {
-      const asset = result.assets[0];
-      if (asset.fileSize && asset.fileSize > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
-        Alert.alert('Image too large', `Max file size is ${MAX_IMAGE_SIZE_MB}MB`);
-        return;
-      }
-      setImage({
-        uri: asset.uri!,
-        fileName: asset.fileName,
-        type: asset.type,
-        fileSize: asset.fileSize,
-      });
-    }
-  };
+  const pickImage = useImagePicker({
+    context: 'PostComposer:pickImage',
+    onPicked: setImage,
+  });
 
   const handleSubmit = async () => {
     if (!canSubmit || loading) return;
@@ -247,7 +245,7 @@ export default function PostComposer({
         <Avatar
           uri={user?.avatar_url}
           name={user?.display_name}
-          size={compact ? 40 : 44}
+          size={compact ? sizes.avatar.lg : sizes.avatar.xl}
         />
       </View>
 
@@ -452,20 +450,20 @@ const styles = StyleSheet.create({
     top: spacing[2],
     right: 0,
     bottom: spacing[2],
-    width: 18,
+    width: sizes.composer.scrollbarOverlayWidth,
   },
   scrollbarTrack: {
     position: 'absolute',
     top: 0,
     bottom: 0,
-    right: 7,
-    width: 4,
+    right: sizes.composer.scrollbarTrackInset,
+    width: sizes.composer.scrollbarTrackWidth,
     borderRadius: radii.pill,
   },
   scrollbarThumb: {
     position: 'absolute',
-    right: 7,
-    width: 4,
+    right: sizes.composer.scrollbarTrackInset,
+    width: sizes.composer.scrollbarTrackWidth,
     borderRadius: radii.pill,
   },
   compactInput: {
@@ -478,16 +476,16 @@ const styles = StyleSheet.create({
   },
   previewImage: {
     width: '100%',
-    height: 220,
+    height: sizes.composer.previewHeight,
     borderRadius: radii.xl,
   },
   removeImage: {
     position: 'absolute',
     top: spacing[3],
     right: spacing[3],
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: sizes.iconButton.sm,
+    height: sizes.iconButton.sm,
+    borderRadius: sizes.iconButton.sm / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },

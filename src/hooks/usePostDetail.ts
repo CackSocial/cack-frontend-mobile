@@ -2,14 +2,11 @@ import {useState, useCallback} from 'react';
 import type {Post, Comment} from '../types';
 import {getPost} from '../api/posts';
 import {getComments} from '../api/comments';
-import {PAGINATION_LIMIT} from '../config';
 import {logError} from '../utils/log';
+import {usePaginatedFetch} from './usePaginatedFetch';
 
 export function usePostDetail(postId: string) {
   const [post, setPost] = useState<Post | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [commentsPage, setCommentsPage] = useState(1);
-  const [commentsHasMore, setCommentsHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const fetchPost = useCallback(async () => {
@@ -23,37 +20,50 @@ export function usePostDetail(postId: string) {
     setLoading(false);
   }, [postId]);
 
+  const fetchCommentsPage = useCallback(
+    async (page: number, limit: number) => {
+      const res = await getComments(postId, page, limit);
+      return res.data ?? [];
+    },
+    [postId],
+  );
+
+  const {
+    items: comments,
+    setItems: setComments,
+    hasMore: commentsHasMore,
+    refresh: refreshComments,
+    loadMore: loadMoreComments,
+  } = usePaginatedFetch<Comment>({
+    fetchPage: fetchCommentsPage,
+    errorContext: 'usePostDetail:fetchComments',
+  });
+
   const fetchComments = useCallback(
     async (reset = false) => {
-      const p = reset ? 1 : commentsPage;
-      if (!reset && !commentsHasMore) return;
-
-      try {
-        const res = await getComments(postId, p, PAGINATION_LIMIT);
-        const data = res.data ?? [];
-        setComments(prev => (reset ? data : [...prev, ...data]));
-        setCommentsPage(p + 1);
-        setCommentsHasMore(data.length === PAGINATION_LIMIT);
-      } catch (e) {
-        logError('usePostDetail:fetchComments', e);
+      if (reset) {
+        await refreshComments();
+        return;
       }
+
+      await loadMoreComments();
     },
-    [postId, commentsPage, commentsHasMore],
+    [loadMoreComments, refreshComments],
   );
 
   const addComment = useCallback((comment: Comment) => {
-    setComments(prev => [...prev, comment]);
+    setComments(current => [...current, comment]);
     setPost(prev =>
       prev ? {...prev, comment_count: prev.comment_count + 1} : prev,
     );
-  }, []);
+  }, [setComments]);
 
   const removeComment = useCallback((commentId: string) => {
-    setComments(prev => prev.filter(c => c.id !== commentId));
+    setComments(current => current.filter(comment => comment.id !== commentId));
     setPost(prev =>
       prev ? {...prev, comment_count: prev.comment_count - 1} : prev,
     );
-  }, []);
+  }, [setComments]);
 
   return {
     post,

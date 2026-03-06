@@ -1,43 +1,28 @@
-import {useState, useCallback, useRef} from 'react';
+import {useCallback} from 'react';
 import type {Post} from '../types';
 import {getUserPosts} from '../api/posts';
-import {PAGINATION_LIMIT} from '../config';
-import {logError} from '../utils/log';
+import {usePaginatedFetch} from './usePaginatedFetch';
 
 export function useUserPosts(username: string) {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const pageRef = useRef(1);
-  const hasMoreRef = useRef(true);
-  const loadingRef = useRef(false);
-
-  const fetch = useCallback(
-    async (reset = false) => {
-      if (loadingRef.current) return;
-      const page = reset ? 1 : pageRef.current;
-      if (!reset && !hasMoreRef.current) return;
-
-      loadingRef.current = true;
-      setLoading(true);
-      try {
-        const res = await getUserPosts(username, page, PAGINATION_LIMIT);
-        const data = res.data ?? [];
-        setPosts(prev => (reset ? data : [...prev, ...data]));
-        pageRef.current = page + 1;
-        hasMoreRef.current = data.length === PAGINATION_LIMIT;
-        setHasMore(hasMoreRef.current);
-      } catch (e) {
-        logError('useUserPosts:fetch', e);
-      }
-      loadingRef.current = false;
-      setLoading(false);
+  const fetchUserPosts = useCallback(
+    async (page: number, limit: number) => {
+      const res = await getUserPosts(username, page, limit);
+      return res.data ?? [];
     },
     [username],
   );
 
-  const refresh = useCallback(() => fetch(true), [fetch]);
-  const loadMore = useCallback(() => fetch(false), [fetch]);
+  const {
+    items: posts,
+    setItems: setPosts,
+    loading,
+    hasMore,
+    refresh,
+    loadMore,
+  } = usePaginatedFetch<Post>({
+    fetchPage: fetchUserPosts,
+    errorContext: 'useUserPosts:fetch',
+  });
 
   return {posts, setPosts, loading, hasMore, refresh, loadMore};
 }

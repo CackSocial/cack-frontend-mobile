@@ -107,6 +107,69 @@ export const layout = {
   headerHeight: 56,
 } as const;
 
+export const sizes = {
+  avatar: {
+    sm: 28,
+    md: 36,
+    lg: 40,
+    xl: 44,
+    profile: 84,
+    hero: 104,
+  },
+  icon: {
+    sm: 18,
+    md: 20,
+    lg: 22,
+  },
+  iconButton: {
+    sm: 32,
+    md: 34,
+    lg: 38,
+    xl: 42,
+  },
+  notification: {
+    badge: 18,
+    typeIcon: 22,
+  },
+  composer: {
+    compactMinInputHeight: 92,
+    defaultMinInputHeight: 132,
+    compactHeightOffset: 138,
+    defaultHeightOffset: 170,
+    previewHeight: 220,
+    scrollbarOverlayWidth: 18,
+    scrollbarTrackWidth: 4,
+    scrollbarTrackInset: 7,
+    minScrollbarThumbHeight: 24,
+  },
+  conversation: {
+    imagePreview: 60,
+    inputMaxHeight: 100,
+    keyboardOffset: 88,
+  },
+  quotePreview: {
+    imageHeight: 160,
+  },
+  editProfile: {
+    bioMinHeight: 120,
+  },
+  reply: {
+    button: 42,
+    inputMinHeight: 48,
+    inputMaxHeight: 110,
+  },
+} as const;
+
+export const opacity = {
+  active: 0.84,
+  actionPressed: 0.75,
+  contentPressed: 0.88,
+} as const;
+
+export const timing = {
+  scrollToEndDelayMs: 100,
+} as const;
+
 export const elevation = {
   card:
     Platform.select<ViewStyle>({

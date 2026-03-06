@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useMemo} from 'react';
 import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {ActivityIndicator, View} from 'react-native';
@@ -43,13 +43,36 @@ export default function RootNavigator() {
 
   useEffect(() => {
     hydrate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hydrate]);
 
   // Build navigation theme from app colors
-  const navTheme = theme === 'dark'
-    ? {...DarkTheme, colors: {...DarkTheme.colors, background: c.bgPrimary, card: c.bgPrimary, border: c.border, text: c.textPrimary, primary: c.accent}}
-    : {...DefaultTheme, colors: {...DefaultTheme.colors, background: c.bgPrimary, card: c.bgPrimary, border: c.border, text: c.textPrimary, primary: c.accent}};
+  const navTheme = useMemo(
+    () =>
+      theme === 'dark'
+        ? {
+            ...DarkTheme,
+            colors: {
+              ...DarkTheme.colors,
+              background: c.bgPrimary,
+              card: c.bgPrimary,
+              border: c.border,
+              text: c.textPrimary,
+              primary: c.accent,
+            },
+          }
+        : {
+            ...DefaultTheme,
+            colors: {
+              ...DefaultTheme.colors,
+              background: c.bgPrimary,
+              card: c.bgPrimary,
+              border: c.border,
+              text: c.textPrimary,
+              primary: c.accent,
+            },
+          },
+    [c, theme],
+  );
 
   if (isLoading) {
     return (

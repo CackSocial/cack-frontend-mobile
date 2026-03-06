@@ -163,9 +163,10 @@ export default React.memo(function PostCard({
                     {post.original_post.content}
                   </Text>
                 ) : null}
-                {post.original_post.image_url ? (
+                {post.original_post.image_url &&
+                resolveImageUri(post.original_post.image_url) ? (
                   <Image
-                    source={{uri: resolveImageUri(post.original_post.image_url)!}}
+                    source={{uri: resolveImageUri(post.original_post.image_url) as string}}
                     style={[styles.quotedImage, {borderColor: c.border}]}
                     resizeMode="cover"
                   />

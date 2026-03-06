@@ -4,6 +4,7 @@ import type {Post} from '../types';
 import * as api from '../api';
 import {PAGINATION_LIMIT} from '../config';
 import {logError} from '../utils/log';
+import {findPostById, updatePostsById} from '../utils/posts';
 
 /** Cached post metadata kept in sync across all screens */
 interface CachedPostState {
@@ -32,6 +33,73 @@ interface PostsState {
   updatePost(id: string, updates: Partial<Post>): void;
 }
 
+type PostsSnapshot = Pick<PostsState, 'timeline' | 'postCache'>;
+
+function buildCachedPostState(
+  patch: Partial<CachedPostState> = {},
+  cached?: Partial<CachedPostState>,
+  post?: Post,
+): CachedPostState {
+  return {
+    is_liked: patch.is_liked ?? cached?.is_liked ?? post?.is_liked ?? false,
+    like_count: patch.like_count ?? cached?.like_count ?? post?.like_count ?? 0,
+    comment_count:
+      patch.comment_count ?? cached?.comment_count ?? post?.comment_count ?? 0,
+    is_bookmarked:
+      patch.is_bookmarked
+      ?? cached?.is_bookmarked
+      ?? post?.is_bookmarked
+      ?? false,
+    is_reposted:
+      patch.is_reposted ?? cached?.is_reposted ?? post?.is_reposted ?? false,
+    repost_count:
+      patch.repost_count ?? cached?.repost_count ?? post?.repost_count ?? 0,
+  };
+}
+
+function getCachedState(snapshot: PostsSnapshot, id: string): CachedPostState {
+  return buildCachedPostState(
+    {},
+    snapshot.postCache[id],
+    findPostById(snapshot.timeline, id),
+  );
+}
+
+function applyCachedState(
+  snapshot: PostsSnapshot,
+  id: string,
+  cachedState: CachedPostState,
+) {
+  return {
+    timeline: updatePostsById(snapshot.timeline, id, cachedState),
+    postCache: {
+      ...snapshot.postCache,
+      [id]: cachedState,
+    },
+  };
+}
+
+function cacheTimelinePosts(
+  postCache: Record<string, CachedPostState>,
+  posts: Post[],
+) {
+  return posts.reduce<Record<string, CachedPostState>>((nextCache, post) => {
+    nextCache[post.id] = buildCachedPostState({}, nextCache[post.id], post);
+    return nextCache;
+  }, {...postCache});
+}
+
+function hasCachedStateDiff(post: Post, cachedState: CachedPostState): boolean {
+  return (
+    cachedState.is_liked !== post.is_liked
+    || cachedState.like_count !== post.like_count
+    || cachedState.comment_count !== post.comment_count
+    || cachedState.is_bookmarked !== post.is_bookmarked
+    || cachedState.is_reposted !== post.is_reposted
+    || cachedState.repost_count !== post.repost_count
+  );
+}
+
 export const usePostsStore = create<PostsState>((set, get) => ({
   timeline: [],
   timelinePage: 1,
@@ -50,256 +118,152 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     try {
       const res = await api.getTimeline(page, PAGINATION_LIMIT);
       const posts = res.data ?? [];
-      const newCache = {...get().postCache};
-      posts.forEach(p => {
-        newCache[p.id] = {
-          is_liked: p.is_liked,
-          like_count: p.like_count,
-          comment_count: p.comment_count,
-          is_bookmarked: p.is_bookmarked,
-          is_reposted: p.is_reposted,
-          repost_count: p.repost_count,
+
+      set(current => {
+        const existing = reset ? [] : current.timeline;
+        const existingIds = new Set(existing.map(post => post.id));
+        const deduped = posts.filter(post => !existingIds.has(post.id));
+
+        return {
+          timeline: reset ? posts : [...existing, ...deduped],
+          timelinePage: page + 1,
+          timelineHasMore: posts.length === PAGINATION_LIMIT,
+          isLoading: false,
+          postCache: cacheTimelinePosts(current.postCache, posts),
         };
       });
-      const existing = reset ? [] : state.timeline;
-      const existingIds = new Set(existing.map(p => p.id));
-      const deduped = posts.filter(p => !existingIds.has(p.id));
-      set({
-        timeline: reset ? posts : [...existing, ...deduped],
-        timelinePage: page + 1,
-        timelineHasMore: posts.length === PAGINATION_LIMIT,
-        isLoading: false,
-        postCache: newCache,
-      });
-    } catch (e) {
-      logError('fetchTimeline', e);
+    } catch (error: unknown) {
+      logError('fetchTimeline', error);
       set({isLoading: false});
     }
   },
 
   prependPost(post: Post) {
-    set(s => ({
-      timeline: s.timeline.some(p => p.id === post.id)
-        ? s.timeline
-        : [post, ...s.timeline],
+    set(current => ({
+      timeline: current.timeline.some(existing => existing.id === post.id)
+        ? current.timeline
+        : [post, ...current.timeline],
       postCache: {
-        ...s.postCache,
-        [post.id]: {
-          is_liked: post.is_liked,
-          like_count: post.like_count,
-          comment_count: post.comment_count,
-          is_bookmarked: post.is_bookmarked,
-          is_reposted: post.is_reposted,
-          repost_count: post.repost_count,
-        },
+        ...current.postCache,
+        [post.id]: buildCachedPostState({}, current.postCache[post.id], post),
       },
     }));
   },
 
   removePost(id: string) {
-    set(s => ({timeline: s.timeline.filter(p => p.id !== id)}));
+    set(current => ({timeline: current.timeline.filter(post => post.id !== id)}));
   },
 
   toggleLike(id: string) {
-    const state = get();
-    const cached = state.postCache[id];
-    const post = state.timeline.find(p => p.id === id)
-      ?? state.timeline.find(p => p.original_post?.id === id)?.original_post;
-    const wasLiked = cached?.is_liked ?? post?.is_liked ?? false;
-    const wasCount = cached?.like_count ?? post?.like_count ?? 0;
-    const commentCount = cached?.comment_count ?? post?.comment_count ?? 0;
-    const isBookmarked = cached?.is_bookmarked ?? post?.is_bookmarked ?? false;
-    const isReposted = cached?.is_reposted ?? post?.is_reposted ?? false;
-    const repostCount = cached?.repost_count ?? post?.repost_count ?? 0;
-    const newLiked = !wasLiked;
-    const newCount = wasCount + (newLiked ? 1 : -1);
+    const currentState = get();
+    const previous = getCachedState(currentState, id);
+    const next = buildCachedPostState(
+      {
+        is_liked: !previous.is_liked,
+        like_count: previous.like_count + (!previous.is_liked ? 1 : -1),
+      },
+      previous,
+    );
 
-    const newMeta: CachedPostState = {is_liked: newLiked, like_count: newCount, comment_count: commentCount, is_bookmarked: isBookmarked, is_reposted: isReposted, repost_count: repostCount};
-    const oldMeta: CachedPostState = {is_liked: wasLiked, like_count: wasCount, comment_count: commentCount, is_bookmarked: isBookmarked, is_reposted: isReposted, repost_count: repostCount};
+    set(current => applyCachedState(current, id, next));
 
-    set(s => ({
-      timeline: s.timeline.map(p => {
-        if (p.id === id) return {...p, is_liked: newLiked, like_count: newCount};
-        if (p.original_post?.id === id) {
-          return {...p, original_post: {...p.original_post, is_liked: newLiked, like_count: newCount}};
-        }
-        return p;
-      }),
-      postCache: {...s.postCache, [id]: newMeta},
-    }));
-
-    const apiCall = newLiked ? api.likePost : api.unlikePost;
-    apiCall(id).catch(e => {
-      logError('toggleLike', e);
-      set(s => ({
-        timeline: s.timeline.map(p => {
-          if (p.id === id) return {...p, is_liked: wasLiked, like_count: wasCount};
-          if (p.original_post?.id === id) {
-            return {...p, original_post: {...p.original_post, is_liked: wasLiked, like_count: wasCount}};
-          }
-          return p;
-        }),
-        postCache: {...s.postCache, [id]: oldMeta},
-      }));
+    const request = next.is_liked ? api.likePost : api.unlikePost;
+    request(id).catch((error: unknown) => {
+      logError('toggleLike', error);
+      set(current => applyCachedState(current, id, previous));
     });
   },
 
   toggleBookmark(id: string) {
-    const state = get();
-    const cached = state.postCache[id];
-    const post = state.timeline.find(p => p.id === id)
-      ?? state.timeline.find(p => p.original_post?.id === id)?.original_post;
-    const wasBookmarked = cached?.is_bookmarked ?? post?.is_bookmarked ?? false;
-    const newBookmarked = !wasBookmarked;
+    const currentState = get();
+    const previous = getCachedState(currentState, id);
+    const next = buildCachedPostState(
+      {
+        is_bookmarked: !previous.is_bookmarked,
+      },
+      previous,
+    );
 
-    const baseMeta = {
-      is_liked: cached?.is_liked ?? post?.is_liked ?? false,
-      like_count: cached?.like_count ?? post?.like_count ?? 0,
-      comment_count: cached?.comment_count ?? post?.comment_count ?? 0,
-      is_reposted: cached?.is_reposted ?? post?.is_reposted ?? false,
-      repost_count: cached?.repost_count ?? post?.repost_count ?? 0,
-    };
+    set(current => applyCachedState(current, id, next));
 
-    set(s => ({
-      timeline: s.timeline.map(p => {
-        if (p.id === id) return {...p, is_bookmarked: newBookmarked};
-        if (p.original_post?.id === id) {
-          return {...p, original_post: {...p.original_post, is_bookmarked: newBookmarked}};
-        }
-        return p;
-      }),
-      postCache: {...s.postCache, [id]: {...baseMeta, is_bookmarked: newBookmarked}},
-    }));
-
-    const apiCall = newBookmarked ? api.bookmarkPost : api.unbookmarkPost;
-    apiCall(id).catch(e => {
-      logError('toggleBookmark', e);
-      set(s => ({
-        timeline: s.timeline.map(p => {
-          if (p.id === id) return {...p, is_bookmarked: wasBookmarked};
-          if (p.original_post?.id === id) {
-            return {...p, original_post: {...p.original_post, is_bookmarked: wasBookmarked}};
-          }
-          return p;
-        }),
-        postCache: {...s.postCache, [id]: {...baseMeta, is_bookmarked: wasBookmarked}},
-      }));
+    const request = next.is_bookmarked ? api.bookmarkPost : api.unbookmarkPost;
+    request(id).catch((error: unknown) => {
+      logError('toggleBookmark', error);
+      set(current => applyCachedState(current, id, previous));
     });
   },
 
   toggleRepost(id: string) {
-    const state = get();
-    const cached = state.postCache[id];
-    const post = state.timeline.find(p => p.id === id)
-      ?? state.timeline.find(p => p.original_post?.id === id)?.original_post;
-    const wasReposted = cached?.is_reposted ?? post?.is_reposted ?? false;
-    const wasCount = cached?.repost_count ?? post?.repost_count ?? 0;
-    const newReposted = !wasReposted;
-    const newCount = wasCount + (newReposted ? 1 : -1);
+    const currentState = get();
+    const previous = getCachedState(currentState, id);
+    const next = buildCachedPostState(
+      {
+        is_reposted: !previous.is_reposted,
+        repost_count:
+          previous.repost_count + (!previous.is_reposted ? 1 : -1),
+      },
+      previous,
+    );
 
-    const baseMeta = {
-      is_liked: cached?.is_liked ?? post?.is_liked ?? false,
-      like_count: cached?.like_count ?? post?.like_count ?? 0,
-      comment_count: cached?.comment_count ?? post?.comment_count ?? 0,
-      is_bookmarked: cached?.is_bookmarked ?? post?.is_bookmarked ?? false,
-    };
+    set(current => applyCachedState(current, id, next));
 
-    set(s => ({
-      timeline: s.timeline.map(p => {
-        if (p.id === id) return {...p, is_reposted: newReposted, repost_count: newCount};
-        if (p.original_post?.id === id) {
-          return {...p, original_post: {...p.original_post, is_reposted: newReposted, repost_count: newCount}};
-        }
-        return p;
-      }),
-      postCache: {...s.postCache, [id]: {...baseMeta, is_reposted: newReposted, repost_count: newCount}},
-    }));
-
-    const apiCall = newReposted ? api.repost : api.deleteRepost;
-    apiCall(id).catch(e => {
-      logError('toggleRepost', e);
-      Alert.alert('Error', newReposted ? 'Failed to repost.' : 'Failed to remove repost. Please try again.');
-      set(s => ({
-        timeline: s.timeline.map(p => {
-          if (p.id === id) return {...p, is_reposted: wasReposted, repost_count: wasCount};
-          if (p.original_post?.id === id) {
-            return {...p, original_post: {...p.original_post, is_reposted: wasReposted, repost_count: wasCount}};
-          }
-          return p;
-        }),
-        postCache: {...s.postCache, [id]: {...baseMeta, is_reposted: wasReposted, repost_count: wasCount}},
-      }));
+    const request = next.is_reposted ? api.repost : api.deleteRepost;
+    request(id).catch((error: unknown) => {
+      logError('toggleRepost', error);
+      Alert.alert(
+        'Error',
+        next.is_reposted
+          ? 'Failed to repost.'
+          : 'Failed to remove repost. Please try again.',
+      );
+      set(current => applyCachedState(current, id, previous));
     });
   },
 
-  // Write post metadata to global cache + update timeline if present
   cachePost(id: string, meta: Partial<CachedPostState>) {
-    set(s => {
-      const prev = s.postCache[id];
-      const post = s.timeline.find(p => p.id === id)
-        ?? s.timeline.find(p => p.original_post?.id === id)?.original_post;
-      const merged: CachedPostState = {
-        is_liked: meta.is_liked ?? prev?.is_liked ?? post?.is_liked ?? false,
-        like_count: meta.like_count ?? prev?.like_count ?? post?.like_count ?? 0,
-        comment_count: meta.comment_count ?? prev?.comment_count ?? post?.comment_count ?? 0,
-        is_bookmarked: meta.is_bookmarked ?? prev?.is_bookmarked ?? post?.is_bookmarked ?? false,
-        is_reposted: meta.is_reposted ?? prev?.is_reposted ?? post?.is_reposted ?? false,
-        repost_count: meta.repost_count ?? prev?.repost_count ?? post?.repost_count ?? 0,
-      };
-      return {
-        timeline: s.timeline.map(p => {
-          if (p.id === id) return {...p, ...merged};
-          if (p.original_post?.id === id) {
-            return {...p, original_post: {...p.original_post, ...merged}};
-          }
-          return p;
-        }),
-        postCache: {...s.postCache, [id]: merged},
-      };
+    set(current => {
+      const merged = buildCachedPostState(
+        meta,
+        current.postCache[id],
+        findPostById(current.timeline, id),
+      );
+      return applyCachedState(current, id, merged);
     });
   },
 
-  // Apply cached post states to an array of posts
   applyPostCache(posts: Post[]): Post[] {
-    const cache = get().postCache;
+    const {postCache} = get();
     let changed = false;
-    const result = posts.map(p => {
-      let updated = p;
-      const c = cache[p.id];
-      if (c && (
-        c.is_liked !== p.is_liked ||
-        c.like_count !== p.like_count ||
-        c.comment_count !== p.comment_count ||
-        c.is_bookmarked !== p.is_bookmarked ||
-        c.is_reposted !== p.is_reposted ||
-        c.repost_count !== p.repost_count
-      )) {
+
+    const nextPosts = posts.map(post => {
+      let nextPost = post;
+      const cachedPost = postCache[post.id];
+
+      if (cachedPost && hasCachedStateDiff(post, cachedPost)) {
         changed = true;
-        updated = {...updated, ...c};
+        nextPost = {...nextPost, ...cachedPost};
       }
-      // Also apply cache to nested original_post
-      if (p.original_post) {
-        const oc = cache[p.original_post.id];
-        if (oc && (
-          oc.is_liked !== p.original_post.is_liked ||
-          oc.like_count !== p.original_post.like_count ||
-          oc.comment_count !== p.original_post.comment_count ||
-          oc.is_bookmarked !== p.original_post.is_bookmarked ||
-          oc.is_reposted !== p.original_post.is_reposted ||
-          oc.repost_count !== p.original_post.repost_count
-        )) {
+
+      if (post.original_post) {
+        const cachedOriginal = postCache[post.original_post.id];
+        if (cachedOriginal && hasCachedStateDiff(post.original_post, cachedOriginal)) {
           changed = true;
-          updated = {...updated, original_post: {...p.original_post, ...oc}};
+          nextPost = {
+            ...nextPost,
+            original_post: {...post.original_post, ...cachedOriginal},
+          };
         }
       }
-      return updated;
+
+      return nextPost;
     });
-    return changed ? result : posts;
+
+    return changed ? nextPosts : posts;
   },
 
   updatePost(id: string, updates: Partial<Post>) {
-    set(s => ({
-      timeline: s.timeline.map(p => (p.id === id ? {...p, ...updates} : p)),
+    set(current => ({
+      timeline: updatePostsById(current.timeline, id, updates),
     }));
   },
 }));

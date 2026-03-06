@@ -10,21 +10,14 @@ import ExploreStack from './ExploreStack';
 import NotificationsStack from './NotificationsStack';
 import MessagesStack from './MessagesStack';
 import ProfileStack from './ProfileStack';
+import {TAB_ROOT, navigateToTabRoot} from './helpers';
 import {useMessagesStore} from '../stores/messagesStore';
 import {useNotificationsStore} from '../stores/notificationsStore';
-import {useColors, fonts, layout, spacing, typography} from '../theme';
+import {useColors, fonts, layout, sizes, spacing, typography} from '../theme';
 import type {ConversationListItem} from '../types';
 import type {MainTabParamList} from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
-
-const TAB_ROOT: Record<string, string> = {
-  HomeTab: 'Home',
-  ExploreTab: 'Explore',
-  NotificationsTab: 'Notifications',
-  MessagesTab: 'Messages',
-  ProfileTab: 'Profile',
-};
 
 function TabBadge({count, color}: {count: number; color: string}) {
   if (count <= 0) return null;
@@ -40,9 +33,9 @@ const badgeStyles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -12,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    minWidth: sizes.notification.badge,
+    height: sizes.notification.badge,
+    borderRadius: sizes.notification.badge / 2,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
@@ -85,7 +78,7 @@ export default function MainTabs() {
   );
 
   const getTabBarStyle = useCallback(
-    (route: Partial<Route<string>>, tabName: string) => {
+    (route: Partial<Route<string>>, tabName: keyof typeof TAB_ROOT) => {
       const routeName = getFocusedRouteNameFromRoute(route);
       if (!routeName || routeName === TAB_ROOT[tabName]) {
         return visibleStyle;
@@ -111,23 +104,7 @@ export default function MainTabs() {
       }}
       screenListeners={({navigation, route}) => ({
         tabPress: () => {
-          switch (route.name) {
-            case 'HomeTab':
-              navigation.navigate('HomeTab', {screen: 'Home'});
-              break;
-            case 'ExploreTab':
-              navigation.navigate('ExploreTab', {screen: 'Explore'});
-              break;
-            case 'NotificationsTab':
-              navigation.navigate('NotificationsTab', {screen: 'Notifications'});
-              break;
-            case 'MessagesTab':
-              navigation.navigate('MessagesTab', {screen: 'Messages'});
-              break;
-            case 'ProfileTab':
-              navigation.navigate('ProfileTab', {screen: 'Profile'});
-              break;
-          }
+          navigateToTabRoot(navigation, route.name);
         },
       })}>
       <Tab.Screen

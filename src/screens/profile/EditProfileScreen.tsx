@@ -10,19 +10,18 @@ import {
   StyleSheet,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {launchImageLibrary} from 'react-native-image-picker';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Avatar from '../../components/common/Avatar';
 import Surface from '../../components/common/Surface';
 import {updateMe} from '../../api/users';
 import {useAuthStore} from '../../stores/authStore';
-import {useColors, spacing, layout} from '../../theme';
+import {useColors, layout, sizes, spacing} from '../../theme';
 import {getErrorMessage} from '../../utils/log';
-import {MAX_IMAGE_SIZE_MB} from '../../config';
 import type {ImageAsset} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {ProfileStackParamList} from '../../navigation/types';
+import {useImagePicker} from '../../hooks/useImagePicker';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'EditProfile'>;
 
@@ -35,23 +34,10 @@ export default function EditProfileScreen({navigation}: Props) {
   const [bio, setBio] = useState(user?.bio || '');
   const [avatar, setAvatar] = useState<ImageAsset | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const pickAvatar = async () => {
-    const result = await launchImageLibrary({mediaType: 'photo', quality: 0.8});
-    if (result.assets && result.assets[0]) {
-      const asset = result.assets[0];
-      if (asset.fileSize && asset.fileSize > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
-        Alert.alert('Image too large', `Max file size is ${MAX_IMAGE_SIZE_MB}MB`);
-        return;
-      }
-      setAvatar({
-        uri: asset.uri!,
-        fileName: asset.fileName,
-        type: asset.type,
-        fileSize: asset.fileSize,
-      });
-    }
-  };
+  const pickAvatar = useImagePicker({
+    context: 'EditProfileScreen:pickAvatar',
+    onPicked: setAvatar,
+  });
 
   const handleSave = async () => {
     setLoading(true);
@@ -79,9 +65,13 @@ export default function EditProfileScreen({navigation}: Props) {
             onPress={pickAvatar}
             accessibilityRole="button"
             accessibilityLabel="Change profile picture">
-            {avatar ? <Image source={{uri: avatar.uri}} style={styles.avatarImage} /> : <Avatar uri={user?.avatar_url} name={user?.display_name} size={104} />}
+            {avatar ? (
+              <Image source={{uri: avatar.uri}} style={styles.avatarImage} />
+            ) : (
+              <Avatar uri={user?.avatar_url} name={user?.display_name} size={sizes.avatar.hero} />
+            )}
             <View style={[styles.cameraIcon, {backgroundColor: c.accent, borderColor: c.bgElevated}]}>
-              <Icon name="camera-outline" size={18} color={c.accentText} />
+              <Icon name="camera-outline" size={sizes.icon.sm} color={c.accentText} />
             </View>
           </TouchableOpacity>
 
@@ -123,23 +113,23 @@ const styles = StyleSheet.create({
     marginBottom: spacing[2],
   },
   avatarImage: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
+    width: sizes.avatar.hero,
+    height: sizes.avatar.hero,
+    borderRadius: sizes.avatar.hero / 2,
   },
   cameraIcon: {
     position: 'absolute',
     right: 0,
     bottom: 0,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: sizes.iconButton.md,
+    height: sizes.iconButton.md,
+    borderRadius: sizes.iconButton.md / 2,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
   },
   bioInput: {
-    minHeight: 120,
+    minHeight: sizes.editProfile.bioMinHeight,
     textAlignVertical: 'top',
   },
 });

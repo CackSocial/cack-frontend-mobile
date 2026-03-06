@@ -2,7 +2,8 @@ import {create} from 'zustand';
 import type {ConversationListItem, Message} from '../types';
 import * as api from '../api';
 import {WS_URL, PAGINATION_LIMIT} from '../config';
-import {useAuthStore} from './authStore';
+import {getClientToken} from '../api/client';
+import {useNotificationsStore} from './notificationsStore';
 import {logError} from '../utils/log';
 
 interface MessagesState {
@@ -12,7 +13,7 @@ interface MessagesState {
   isLoading: boolean;
   connectWS(token: string): void;
   disconnectWS(): void;
-  sendMessage(receiverId: string, content: string, imageUrl?: string): void;
+  sendMessage(receiverId: string, content: string, imageUrl?: string): boolean;
   receiveMessage(msg: Message): void;
   fetchConversations(): Promise<void>;
   fetchMessages(username: string, page?: number): Promise<Message[]>;
@@ -21,6 +22,9 @@ interface MessagesState {
 
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectDelay = 1000;
+let reconnectAttempts = 0;
+let shouldReconnect = true;
+const MAX_RECONNECT_ATTEMPTS = 5;
 
 export const useMessagesStore = create<MessagesState>((set, get) => ({
   conversations: [],
@@ -29,8 +33,14 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
   isLoading: false,
 
   connectWS(token: string) {
+    shouldReconnect = true;
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
     const state = get();
     if (state.ws) {
+      state.ws.onclose = null;
       state.ws.close();
     }
 
@@ -38,6 +48,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
 
     ws.onopen = () => {
       reconnectDelay = 1000;
+      reconnectAttempts = 0;
     };
 
     ws.onmessage = event => {
@@ -49,7 +60,6 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
           get().receiveMessage(msg);
         } else if (data.type === 'notification') {
           // WS wraps notification inside a `data` field
-          const {useNotificationsStore} = require('./notificationsStore');
           useNotificationsStore.getState().addNotification(data.data);
         }
       } catch (e) {
@@ -59,11 +69,22 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
 
     ws.onclose = () => {
       set({ws: null});
+      if (!shouldReconnect || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        reconnectTimer = null;
+        return;
+      }
+
       if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectAttempts += 1;
       reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (!shouldReconnect) {
+          return;
+        }
+
         const current = get();
         if (!current.ws) {
-          const freshToken = useAuthStore.getState().token;
+          const freshToken = getClientToken();
           if (freshToken) {
             current.connectWS(freshToken);
           }
@@ -80,13 +101,16 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
   },
 
   disconnectWS() {
+    shouldReconnect = false;
     if (reconnectTimer) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
     reconnectDelay = 1000;
+    reconnectAttempts = 0;
     const {ws} = get();
     if (ws) {
+      ws.onclose = null;
       ws.close();
       set({ws: null});
     }
@@ -103,7 +127,10 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
           image_url: imageUrl || '',
         }),
       );
+      return true;
     }
+
+    return false;
   },
 
   receiveMessage(msg: Message) {

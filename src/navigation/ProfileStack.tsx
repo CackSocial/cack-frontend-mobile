@@ -1,5 +1,5 @@
 import React from 'react';
-import {TouchableOpacity} from 'react-native';
+import {TouchableOpacity, StyleSheet} from 'react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ProfileScreen from '../screens/profile/ProfileScreen';
@@ -16,6 +16,12 @@ import type {ProfileStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
+const styles = StyleSheet.create({
+  headerButton: {
+    padding: 4,
+  },
+});
+
 export default function ProfileStack() {
   const c = useColors();
   const screenOptions = useStackScreenOptions();
@@ -31,7 +37,7 @@ export default function ProfileStack() {
             <TouchableOpacity
               onPress={() => navigation.navigate('Settings')}
               accessibilityLabel="Settings"
-              style={{padding: 4}}>
+              style={styles.headerButton}>
               <Icon name="cog-outline" size={22} color={c.textPrimary} />
             </TouchableOpacity>
           ),

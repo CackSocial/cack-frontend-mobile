@@ -43,7 +43,7 @@ export default function App() {
 
   useEffect(() => {
     hydrateTheme();
-  }, []);
+  }, [hydrateTheme]);
 
   return (
     <ErrorBoundary>

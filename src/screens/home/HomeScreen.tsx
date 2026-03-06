@@ -14,6 +14,8 @@ import {createPost} from '../../api/posts';
 import {usePostsStore} from '../../stores/postsStore';
 import {useColors, layout, spacing} from '../../theme';
 import {getErrorMessage} from '../../utils/log';
+import {navigateToExploreTag, type MainTabNavigation} from '../../navigation/helpers';
+import {usePostCardActions} from '../../hooks/usePostCardActions';
 import {sharedStyles} from '../../styles/shared';
 import type {Post, ImageAsset} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -23,7 +25,11 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
 
 export default function HomeScreen({navigation}: Props) {
   const c = useColors();
-  const {timeline, isLoading, timelineHasMore, fetchTimeline, prependPost} = usePostsStore();
+  const timeline = usePostsStore(s => s.timeline);
+  const isLoading = usePostsStore(s => s.isLoading);
+  const timelineHasMore = usePostsStore(s => s.timelineHasMore);
+  const fetchTimeline = usePostsStore(s => s.fetchTimeline);
+  const prependPost = usePostsStore(s => s.prependPost);
   const toggleLike = usePostsStore(s => s.toggleLike);
   const toggleBookmark = usePostsStore(s => s.toggleBookmark);
   const toggleRepost = usePostsStore(s => s.toggleRepost);
@@ -31,7 +37,7 @@ export default function HomeScreen({navigation}: Props) {
 
   useEffect(() => {
     fetchTimeline(true);
-  }, []);
+  }, [fetchTimeline]);
 
   const handleRefresh = useCallback(() => {
     fetchTimeline(true);
@@ -58,11 +64,10 @@ export default function HomeScreen({navigation}: Props) {
 
   const handleTagPress = useCallback(
     (tag: string) => {
-      navigation.getParent()?.navigate('ExploreTab', {
-        screen: 'TagPosts',
-        params: {tagName: tag},
-        initial: false,
-      });
+      const parentNavigation = navigation.getParent<MainTabNavigation>();
+      if (parentNavigation) {
+        navigateToExploreTag(parentNavigation, tag);
+      }
     },
     [navigation],
   );
@@ -80,32 +85,21 @@ export default function HomeScreen({navigation}: Props) {
     [composerLoading, handleCreatePost],
   );
 
+  const getPostCardActions = usePostCardActions({
+    navigation,
+    onLike: (_, actionTarget) => toggleLike(actionTarget.id),
+    onBookmark: (_, actionTarget) => toggleBookmark(actionTarget.id),
+    onRepost: (_, actionTarget) => toggleRepost(actionTarget.id),
+    onTagPress: handleTagPress,
+  });
+
   const renderPost = useCallback(
     ({item}: {item: Post}) => {
-      const actionTarget = item.post_type === 'repost' && item.original_post ? item.original_post : item;
       return (
-        <PostCard
-          post={item}
-          onPress={() => navigation.navigate('PostDetail', {postId: actionTarget.id})}
-          onAuthorPress={() =>
-            navigation.navigate('Profile', {username: actionTarget.author.username})
-          }
-          onLike={() => toggleLike(actionTarget.id)}
-          onComment={() => navigation.navigate('PostDetail', {postId: actionTarget.id})}
-          onBookmark={() => toggleBookmark(actionTarget.id)}
-          onRepost={() => toggleRepost(actionTarget.id)}
-          onQuote={() => navigation.navigate('QuotePost', {post: actionTarget})}
-          onTagPress={handleTagPress}
-          onMentionPress={username => navigation.navigate('Profile', {username})}
-          onOriginalPostPress={
-            item.original_post
-              ? () => navigation.navigate('PostDetail', {postId: item.original_post!.id})
-              : undefined
-          }
-        />
+        <PostCard post={item} {...getPostCardActions(item)} />
       );
     },
-    [handleTagPress, navigation, toggleBookmark, toggleLike, toggleRepost],
+    [getPostCardActions],
   );
 
   return (

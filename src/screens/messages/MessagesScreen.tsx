@@ -23,7 +23,7 @@ export default function MessagesScreen({navigation}: Props) {
       headerRight: () => (
         <TouchableOpacity
           onPress={() => navigation.navigate('NewConversation')}
-          style={{padding: 4}}
+          style={styles.headerButton}
           accessibilityLabel="New message"
           accessibilityRole="button">
           <Icon name="square-edit-outline" size={22} color={c.textPrimary} />
@@ -67,4 +67,5 @@ export default function MessagesScreen({navigation}: Props) {
 
 const styles = StyleSheet.create({
   container: {flex: 1},
+  headerButton: {padding: 4},
 });

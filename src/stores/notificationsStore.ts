@@ -34,14 +34,16 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 
     try {
       const items = await api.getNotifications(page, PAGINATION_LIMIT);
-      const existing = reset ? [] : state.notifications;
-      const existingIds = new Set(existing.map(n => n.id));
-      const deduped = items.filter(n => !existingIds.has(n.id));
-      set({
-        notifications: reset ? items : [...existing, ...deduped],
-        page: page + 1,
-        hasMore: items.length === PAGINATION_LIMIT,
-        isLoading: false,
+      set(current => {
+        const existing = reset ? [] : current.notifications;
+        const existingIds = new Set(existing.map(n => n.id));
+        const deduped = items.filter(n => !existingIds.has(n.id));
+        return {
+          notifications: reset ? items : [...existing, ...deduped],
+          page: page + 1,
+          hasMore: items.length === PAGINATION_LIMIT,
+          isLoading: false,
+        };
       });
     } catch (e) {
       logError('fetchNotifications', e);

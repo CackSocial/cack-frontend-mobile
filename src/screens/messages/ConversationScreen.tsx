@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback, useRef} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {
   View,
   Text,
@@ -13,19 +13,21 @@ import {
   Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {launchImageLibrary} from 'react-native-image-picker';
 import MessageBubble from '../../components/messages/MessageBubble';
 import {useConversation} from '../../hooks/useConversation';
 import {useMessagesStore} from '../../stores/messagesStore';
 import {useAuthStore} from '../../stores/authStore';
-import {useColors, fonts, radii, spacing, typography} from '../../theme';
+import {useColors, fonts, radii, sizes, spacing, timing, typography} from '../../theme';
 import {getErrorMessage} from '../../utils/log';
 import {sharedStyles} from '../../styles/shared';
 import {sendMessage as sendMessageApi} from '../../api/messages';
-import {MAX_IMAGE_SIZE_MB} from '../../config';
+import {MAX_POST_LENGTH} from '../../config';
 import type {Message, ImageAsset} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {MessagesStackParamList} from '../../navigation/types';
+import {useConversationLiveUpdates} from '../../hooks/useConversationLiveUpdates';
+import {useImagePicker} from '../../hooks/useImagePicker';
+import {createOptimisticMessageId} from '../../utils/messages';
 
 type Props = NativeStackScreenProps<MessagesStackParamList, 'Conversation'>;
 
@@ -41,55 +43,32 @@ export default function ConversationScreen({route}: Props) {
   const [text, setText] = useState('');
   const [imagePreview, setImagePreview] = useState<ImageAsset | null>(null);
   const [sending, setSending] = useState(false);
-  const listRef = useRef<FlatList>(null);
-  const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  const listRef = useRef<FlatList<Message>>(null);
+  const pickImage = useImagePicker({
+    context: 'ConversationScreen:pickImage',
+    onPicked: setImagePreview,
+  });
 
   useEffect(() => {
     refresh();
-  }, []);
+  }, [refresh]);
 
-  useEffect(() => {
-    seenMessageIdsRef.current = new Set(messages.map(m => m.id));
-  }, [messages]);
-
-  // Listen for incoming WS messages for this conversation
-  useEffect(() => {
-    const unsub = useMessagesStore.subscribe(state => {
-      const convMsgs = state.messages[username];
-      const newest = convMsgs?.[convMsgs.length - 1];
-      if (!newest || seenMessageIdsRef.current.has(newest.id)) return;
-
-      if (newest.sender_id !== currentUser?.id) {
-        // Incoming message from the other user
-        seenMessageIdsRef.current.add(newest.id);
-        addMessage(newest);
-      } else {
-        // Echo of our own message — replace the optimistic tmp-* entry
-        seenMessageIdsRef.current.add(newest.id);
-        setMessages(prev => {
-          const tmpIdx = prev.findIndex(
-            m => m.id.startsWith('tmp-') && m.content === newest.content && m.receiver_id === newest.receiver_id,
-          );
-          if (tmpIdx !== -1) {
-            const updated = [...prev];
-            updated[tmpIdx] = newest;
-            return updated;
-          }
-          return prev;
-        });
-      }
-    });
-    return unsub;
-  }, [username, addMessage, setMessages, currentUser?.id]);
+  useConversationLiveUpdates({
+    username,
+    currentUserId: currentUser?.id,
+    messages,
+    setMessages,
+  });
 
   const handleSend = async () => {
-    if ((!text.trim() && !imagePreview) || sending) return;
+    const trimmedText = text.trim();
+    if ((!trimmedText && !imagePreview) || sending) return;
 
     if (imagePreview) {
       // Image messages go via REST
       setSending(true);
       try {
-        const msg = await sendMessageApi(username, text.trim(), imagePreview);
+        const msg = await sendMessageApi(username, trimmedText, imagePreview);
         addMessage(msg);
         setText('');
         setImagePreview(null);
@@ -99,13 +78,18 @@ export default function ConversationScreen({route}: Props) {
       setSending(false);
     } else {
       // Text-only via WebSocket
-      wsSend(userId, text.trim());
+      const sent = wsSend(userId, trimmedText);
+      if (!sent) {
+        Alert.alert('Error', 'Unable to send message right now. Please try again.');
+        return;
+      }
+
       // Optimistic add
       const optimistic: Message = {
-        id: `tmp-${Date.now()}`,
+        id: createOptimisticMessageId(),
         sender_id: currentUser?.id || '',
         receiver_id: userId,
-        content: text.trim(),
+        content: trimmedText,
         image_url: '',
         read_at: null,
         created_at: new Date().toISOString(),
@@ -117,24 +101,7 @@ export default function ConversationScreen({route}: Props) {
     // Scroll to bottom
     setTimeout(() => {
       listRef.current?.scrollToEnd({animated: true});
-    }, 100);
-  };
-
-  const pickImage = async () => {
-    const result = await launchImageLibrary({mediaType: 'photo', quality: 0.8});
-    if (result.assets?.[0]) {
-      const asset = result.assets[0];
-      if (asset.fileSize && asset.fileSize > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
-        Alert.alert('Image too large', `Max size is ${MAX_IMAGE_SIZE_MB}MB`);
-        return;
-      }
-      setImagePreview({
-        uri: asset.uri!,
-        fileName: asset.fileName,
-        type: asset.type,
-        fileSize: asset.fileSize,
-      });
-    }
+    }, timing.scrollToEndDelayMs);
   };
 
   const renderMessage = ({item}: {item: Message}) => (
@@ -148,7 +115,7 @@ export default function ConversationScreen({route}: Props) {
     <KeyboardAvoidingView
       style={[styles.flex, {backgroundColor: c.bgPrimary}]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={88}>
+      keyboardVerticalOffset={sizes.conversation.keyboardOffset}>
       <FlatList
         ref={listRef}
         data={messages}
@@ -213,11 +180,11 @@ export default function ConversationScreen({route}: Props) {
             ]}
             placeholder="Type a message..."
             placeholderTextColor={c.textMuted}
-            value={text}
-            onChangeText={setText}
-            multiline
-            maxLength={5000}
-            accessibilityLabel="Message input"
+             value={text}
+             onChangeText={setText}
+             multiline
+             maxLength={MAX_POST_LENGTH}
+             accessibilityLabel="Message input"
           />
           <TouchableOpacity
             onPress={handleSend}
@@ -278,9 +245,9 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: sizes.iconButton.lg,
+    height: sizes.iconButton.lg,
+    borderRadius: sizes.iconButton.lg / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -288,14 +255,14 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: typography.base,
     fontFamily: fonts.body,
-    maxHeight: 100,
+    maxHeight: sizes.conversation.inputMaxHeight,
     paddingVertical: spacing[2],
     paddingHorizontal: 2,
   },
   sendBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: sizes.iconButton.lg,
+    height: sizes.iconButton.lg,
+    borderRadius: sizes.iconButton.lg / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -307,8 +274,8 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   previewThumb: {
-    width: 60,
-    height: 60,
+    width: sizes.conversation.imagePreview,
+    height: sizes.conversation.imagePreview,
     borderRadius: radii.lg,
   },
 });
