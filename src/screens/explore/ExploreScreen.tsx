@@ -16,7 +16,7 @@ import ErrorBanner from '../../components/common/ErrorBanner';
 import Surface from '../../components/common/Surface';
 import {getTrendingTags} from '../../api/tags';
 import {lookupUser} from '../../api/users';
-import {useColors, fonts, radii, spacing, typography, elevation} from '../../theme';
+import {useColors, fonts, radii, spacing, typography, elevation, opacity} from '../../theme';
 import {useDebounce} from '../../hooks/useDebounce';
 import {getErrorMessage} from '../../utils/log';
 import {formatCount} from '../../utils/format';
@@ -92,7 +92,7 @@ export default function ExploreScreen({navigation}: Props) {
       <TouchableOpacity
         style={[styles.rowCard, elevation.card, {backgroundColor: c.bgElevated, borderColor: c.border}]}
         onPress={() => navigation.navigate('TagPosts', {tagName: item.name})}
-        activeOpacity={0.84}
+        activeOpacity={opacity.active}
         accessibilityRole="button"
         accessibilityLabel={`Tag ${item.name}, ${item.post_count} posts`}>
         <View style={[styles.hashBg, {backgroundColor: c.bgSecondary}]}> 
@@ -115,7 +115,7 @@ export default function ExploreScreen({navigation}: Props) {
       <TouchableOpacity
         style={[styles.rowCard, elevation.card, {backgroundColor: c.bgElevated, borderColor: c.border}]}
         onPress={() => navigation.navigate('Profile', {username: item.username})}
-        activeOpacity={0.84}
+        activeOpacity={opacity.active}
         accessibilityRole="button"
         accessibilityLabel={`${item.display_name} @${item.username}`}>
         <Avatar uri={item.avatar_url} name={item.display_name} size={44} />

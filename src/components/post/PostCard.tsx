@@ -6,7 +6,7 @@ import Avatar from '../common/Avatar';
 import RenderTaggedContent from '../../utils/renderTaggedContent';
 import {resolveImageUri} from '../../utils/resolveImageUri';
 import {formatRelativeTime, formatCount} from '../../utils/format';
-import {useColors, fonts, radii, spacing, typography, elevation} from '../../theme';
+import {useColors, fonts, radii, spacing, typography, elevation, opacity, sizes} from '../../theme';
 
 interface Props {
   post: Post;
@@ -34,7 +34,7 @@ function ActionButton({icon, label, tintColor, onPress}: ActionButtonProps) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      style={({pressed}) => [styles.actionButton, pressed ? {opacity: 0.75} : null]}>
+      style={({pressed}) => [styles.actionButton, pressed ? {opacity: opacity.actionPressed} : null]}>
       <Icon name={icon} size={18} color={tintColor} />
       {label ? <Text style={[styles.actionText, {color: tintColor}]}>{label}</Text> : null}
     </Pressable>
@@ -98,7 +98,7 @@ export default React.memo(function PostCard({
         <View style={styles.body}>
           <Pressable
             onPress={onPress}
-            style={({pressed}) => [styles.contentPressable, pressed ? {opacity: 0.88} : null]}>
+            style={({pressed}) => [styles.contentPressable, pressed ? {opacity: opacity.contentPressed} : null]}>
             <Pressable
               onPress={onAuthorPress}
               style={styles.authorRow}
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   },
   postImage: {
     width: '100%',
-    height: 220,
+    height: sizes.postCard.imageHeight,
     borderRadius: radii.xl,
     borderWidth: 1,
   },
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   },
   quotedImage: {
     width: '100%',
-    height: 120,
+    height: sizes.postCard.quotedImageHeight,
     borderRadius: radii.lg,
     borderWidth: 1,
   },

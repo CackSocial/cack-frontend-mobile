@@ -4,7 +4,7 @@ import type {ConversationListItem} from '../../types';
 import Avatar from '../common/Avatar';
 import Badge from '../common/Badge';
 import {formatMessageTime} from '../../utils/format';
-import {useColors, fonts, radii, spacing, typography, elevation} from '../../theme';
+import {useColors, fonts, radii, spacing, typography, elevation, opacity} from '../../theme';
 
 interface Props {
   conversation: ConversationListItem;
@@ -28,7 +28,7 @@ export default React.memo(function ConversationItem({conversation, onPress}: Pro
         },
       ]}
       onPress={onPress}
-      activeOpacity={0.84}
+      activeOpacity={opacity.active}
       accessibilityRole="button"
       accessibilityLabel={`Conversation with ${user.display_name}`}>
       <Avatar uri={user.avatar_url} name={user.display_name} size={52} />

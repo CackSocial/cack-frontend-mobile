@@ -153,6 +153,10 @@ export const sizes = {
   editProfile: {
     bioMinHeight: 120,
   },
+  postCard: {
+    imageHeight: 220,
+    quotedImageHeight: 120,
+  },
   reply: {
     button: 42,
     inputMinHeight: 48,

@@ -3,7 +3,7 @@ import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import type {UserProfile} from '../../types';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
-import {useColors, fonts, radii, spacing, typography, elevation} from '../../theme';
+import {useColors, fonts, radii, spacing, typography, elevation, opacity} from '../../theme';
 import {useAuthStore} from '../../stores/authStore';
 
 interface Props {
@@ -28,7 +28,7 @@ export default React.memo(function UserListItem({user, onPress, onFollowToggle}:
         },
       ]}
       onPress={onPress}
-      activeOpacity={0.84}
+      activeOpacity={opacity.active}
       accessibilityRole="button"
       accessibilityLabel={`${user.display_name} @${user.username}`}>
       <Avatar uri={user.avatar_url} name={user.display_name} size={48} />

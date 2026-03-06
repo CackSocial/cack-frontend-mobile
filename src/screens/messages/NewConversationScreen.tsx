@@ -14,7 +14,7 @@ import EmptyState from '../../components/common/EmptyState';
 import Surface from '../../components/common/Surface';
 import {lookupUser} from '../../api/users';
 import {useDebounce} from '../../hooks/useDebounce';
-import {useColors, fonts, radii, spacing, typography, elevation} from '../../theme';
+import {useColors, fonts, radii, spacing, typography, elevation, opacity} from '../../theme';
 import {sharedStyles} from '../../styles/shared';
 import type {UserProfile} from '../../types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -68,7 +68,7 @@ export default function NewConversationScreen({navigation}: Props) {
       <TouchableOpacity
         style={[styles.userRow, elevation.card, {backgroundColor: c.bgElevated, borderColor: c.border}]}
         onPress={() => handleSelect(item)}
-        activeOpacity={0.84}>
+        activeOpacity={opacity.active}>
         <Avatar uri={item.avatar_url} name={item.display_name} size={48} />
         <View style={styles.userInfo}>
           <Text style={[styles.displayName, {color: c.textPrimary}]}>{item.display_name}</Text>
