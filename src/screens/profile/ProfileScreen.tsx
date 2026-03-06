@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
+import {useFocusEffect} from '@react-navigation/native';
 import {
   View,
   Text,
@@ -50,6 +51,7 @@ export default function ProfileScreen({route, navigation}: Props) {
   const paramUsername = route.params?.username;
   const c = useColors();
   const currentUser = useAuthStore(s => s.user);
+  const updateUser = useAuthStore(s => s.updateUser);
 
   const username = paramUsername || currentUser?.username || '';
   const isOwnProfile = !paramUsername || paramUsername === currentUser?.username;
@@ -183,10 +185,14 @@ export default function ProfileScreen({route, navigation}: Props) {
     }
   }, [username]);
 
-  useEffect(() => {
-    loadProfile();
-    refresh();
-  }, [loadProfile, refresh]);
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+      refresh();
+      // Reset lazy-load flag so liked posts re-fetch on next tab switch
+      likedPostsFetchedRef.current = false;
+    }, [loadProfile, refresh]),
+  );
 
   // Lazy-load liked posts only when the user first switches to the Likes tab
   useEffect(() => {
@@ -214,6 +220,9 @@ export default function ProfileScreen({route, navigation}: Props) {
               }
             : current,
         );
+        if (currentUser) {
+          updateUser({following_count: currentUser.following_count - 1});
+        }
       } else {
         await followUser(profile.username);
         setProfile(current =>
@@ -225,13 +234,16 @@ export default function ProfileScreen({route, navigation}: Props) {
               }
             : current,
         );
+        if (currentUser) {
+          updateUser({following_count: currentUser.following_count + 1});
+        }
       }
     } catch (toggleError: unknown) {
       Alert.alert('Error', getErrorMessage(toggleError));
     } finally {
       setFollowLoading(false);
     }
-  }, [followLoading, profile]);
+  }, [currentUser, followLoading, profile, updateUser]);
 
   const displayPosts = useMemo(
     () => (activeTab === 'posts' ? posts : likedPosts),

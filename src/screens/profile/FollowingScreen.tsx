@@ -4,6 +4,7 @@ import UserListItem from '../../components/user/UserListItem';
 import EmptyState from '../../components/common/EmptyState';
 import {getFollowing} from '../../api/users';
 import {followUser, unfollowUser} from '../../api/follows';
+import {useAuthStore} from '../../stores/authStore';
 import {useColors} from '../../theme';
 import {getErrorMessage, logError} from '../../utils/log';
 import {sharedStyles} from '../../styles/shared';
@@ -17,6 +18,8 @@ type Props = NativeStackScreenProps<ProfileStackParamList, 'Following'>;
 export default function FollowingScreen({route, navigation}: Props) {
   const {username} = route.params;
   const c = useColors();
+  const currentUser = useAuthStore(s => s.user);
+  const updateUser = useAuthStore(s => s.updateUser);
   const fetchFollowingPage = useCallback(
     async (page: number, limit: number) => {
       const res = await getFollowing(username, page, limit);
@@ -42,7 +45,8 @@ export default function FollowingScreen({route, navigation}: Props) {
 
   const handleFollowToggle = useCallback(async (user: UserProfile) => {
     try {
-      if (user.is_following) {
+      const wasFollowing = user.is_following;
+      if (wasFollowing) {
         await unfollowUser(user.username);
       } else {
         await followUser(user.username);
@@ -52,11 +56,16 @@ export default function FollowingScreen({route, navigation}: Props) {
           entry.id === user.id ? {...entry, is_following: !entry.is_following} : entry,
         ),
       );
+      if (currentUser) {
+        updateUser({
+          following_count: currentUser.following_count + (wasFollowing ? -1 : 1),
+        });
+      }
     } catch (error: unknown) {
       logError('FollowingScreen:followToggle', error);
       Alert.alert('Error', getErrorMessage(error));
     }
-  }, [setUsers]);
+  }, [currentUser, setUsers, updateUser]);
 
   return (
     <View style={[styles.container, {backgroundColor: c.bgPrimary}]}>

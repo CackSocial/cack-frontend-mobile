@@ -22,6 +22,7 @@ import {getTrendingTags} from '../../api/tags';
 import {lookupUser} from '../../api/users';
 import {followUser, unfollowUser} from '../../api/follows';
 import {useExploreStore} from '../../stores/exploreStore';
+import {useAuthStore} from '../../stores/authStore';
 import {usePostsStore} from '../../stores/postsStore';
 import {usePostCardActions} from '../../hooks/usePostCardActions';
 import {useColors, fonts, radii, spacing, typography, elevation, opacity} from '../../theme';
@@ -45,6 +46,8 @@ const FEED_TABS: {key: FeedTab; label: string}[] = [
 
 export default function ExploreScreen({navigation}: Props) {
   const c = useColors();
+  const currentUser = useAuthStore(s => s.user);
+  const updateUser = useAuthStore(s => s.updateUser);
   const [activeTab, setActiveTab] = useState<FeedTab>('popular');
   const [tags, setTags] = useState<Tag[]>([]);
   const [tagsLoading, setTagsLoading] = useState(false);
@@ -156,10 +159,13 @@ export default function ExploreScreen({navigation}: Props) {
     try {
       await followUser(username);
       setFollowingSet(prev => new Set(prev).add(username));
+      if (currentUser) {
+        updateUser({following_count: currentUser.following_count + 1});
+      }
     } catch (error: unknown) {
       logError('followSuggestedUser', error);
     }
-  }, []);
+  }, [currentUser, updateUser]);
 
   const handleUnfollow = useCallback(async (username: string) => {
     try {
@@ -169,10 +175,13 @@ export default function ExploreScreen({navigation}: Props) {
         next.delete(username);
         return next;
       });
+      if (currentUser) {
+        updateUser({following_count: currentUser.following_count - 1});
+      }
     } catch (error: unknown) {
       logError('unfollowSuggestedUser', error);
     }
-  }, []);
+  }, [currentUser, updateUser]);
 
   // Refresh handler
   const handleRefresh = useCallback(() => {
